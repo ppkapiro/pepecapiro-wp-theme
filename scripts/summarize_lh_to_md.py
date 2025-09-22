@@ -8,6 +8,7 @@ REPORT_DIR = os.path.join(os.getcwd(), 'lighthouse_reports')
 DOC_PATH = os.path.join(os.getcwd(), 'docs', 'VALIDACION_MVP_v0_2_1.md')
 
 # Map file base name to page path for the table
+# Map file base name to page path for the table
 PAGE_MAP = {
   'home': '/',
   'en-home': '/en/',
@@ -103,9 +104,10 @@ def main():
         'recursos','en-resources','contacto','en-contact'
     ]
     for k in ordered_keys:
-        page = PAGE_MAP[k]
+        page_path = PAGE_MAP[k]
+        link = f"[{page_path}](lighthouse/{k}.html)" if k in name_to_metrics else page_path
         perf, lcp, tti, inp, top2 = name_to_metrics.get(k, ('n/a','n/a','n/a','n/a','—'))
-        rows.append((page, perf, lcp, tti, inp, top2))
+        rows.append((link, perf, lcp, tti, inp, top2))
 
     table_md = build_table(rows)
 

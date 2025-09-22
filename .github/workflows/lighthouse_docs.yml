@@ -2,8 +2,13 @@ name: Lighthouse Mobile + Docs
 
 on:
   workflow_dispatch:
+    inputs:
+      urls_file:
+        description: "Ruta del archivo con URLs"
+        required: false
+        default: "scripts/urls_lighthouse.txt"
   schedule:
-    - cron: "0 13 * * 1"   # Lunes 13:00 UTC (ajustar si conviene)
+    - cron: "0 13 * * 1"  # Lunes 13:00 UTC
 
 permissions:
   contents: write
@@ -12,6 +17,10 @@ permissions:
 jobs:
   audit-and-update:
     runs-on: ubuntu-latest
+    env:
+      PERF_HOME_MIN: "90"
+      PERF_OTHERS_MIN: "85"
+      LCP_MAX: "2.5"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -23,45 +32,103 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install deps
+      - name: Prepare environment
         run: |
-          npm -v || true
-          python3 --version || true
           sudo apt-get update -y
-          sudo apt-get install -y jq
+          sudo apt-get install -y jq python3
 
-      # TODO: Sustituir por paso real de Lighthouse o PSI
-      - name: Run Lighthouse (placeholder)
+      - name: Read URLs file
+        id: read_urls
         run: |
-          mkdir -p lighthouse_reports
-          echo '{}' > lighthouse_reports/home.json
-          echo '<!-- demo -->\n<html><body>demo</body></html>' > lighthouse_reports/home.html
+          FILE_PATH="${{ github.event.inputs.urls_file }}"
+          echo "urls<<EOF" >> "$GITHUB_OUTPUT"
+          # Imprimir solo líneas no vacías
+          grep -v '^\s*$' "$FILE_PATH" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
 
-      - name: Publicar reportes en docs/lighthouse
-        run: |
-          mkdir -p docs/lighthouse
-          cp -f lighthouse_reports/*.html docs/lighthouse/ || true
+      - name: Run Lighthouse (Mobile) for URL list
+        uses: treosh/lighthouse-ci-action@v10
+        with:
+          urls: ${{ steps.read_urls.outputs.urls }}
+          configPath: lighthouserc.json
+          uploadArtifacts: true
 
-      - name: Resumir a Markdown (actualiza VALIDACION_MVP_v0_2_1.md)
+      - name: Normalize report filenames and publish HTML
         run: |
-          python3 scripts/summarize_lh_to_md.py || echo "[i] summarizer opcional"
+          python3 scripts/normalize_lighthouse_results.py
 
-      - name: Ajustar enlaces y notas (asegurar navegación)
+      - name: Summarize to Markdown
         run: |
-          if grep -q "Índice navegable de reportes" docs/VALIDACION_MVP_v0_2_1.md; then
-            echo "[i] Nota ya presente."
-          else
+          python3 scripts/summarize_lh_to_md.py
+
+      - name: Verify thresholds (gates)
+        run: |
+          python3 scripts/check_thresholds.py
+
+      - name: Upload failure evidence
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lh_fail
+          path: /tmp/lh_fail.md
+
+      - name: Open GitHub Issue on failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          TITLE="Incidencia de rendimiento: Lighthouse móvil (gates)"
+          BODY=$(cat /tmp/lh_fail.md || echo "Fallo de umbrales. Ver artifacts y docs.")
+          curl -s -X POST -H "Authorization: Bearer ${GH_TOKEN}" -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/${REPO}/issues \
+            -d "{ \"title\": \"${TITLE}\", \"body\": \"${BODY//\n/\\n}\", \"labels\": [\"incidencia-perf\"] }"
+
+      - name: Ensure navigation note exists
+        run: |
+          if ! grep -q "Índice navegable de reportes" docs/VALIDACION_MVP_v0_2_1.md; then
             printf "\n> **Índice navegable de reportes:** ver \`docs/lighthouse/index.html\`.\n" >> docs/VALIDACION_MVP_v0_2_1.md
           fi
 
-      - name: Commit [skip ci] si hay cambios
+      - name: Commit updated docs [skip ci]
+        if: success()
         run: |
-          git config user.name "github-actions[bot]"
+          git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add docs/lighthouse/ docs/VALIDACION_MVP_v0_2_1.md || true
           if ! git diff --cached --quiet; then
-            git commit -m "docs: actualizar Lighthouse y navegación [skip ci]"
+            git commit -m "docs: Lighthouse móvil (LHCI), HTML a Pages y resumen actualizado [skip ci]"
             git push origin ${{ github.ref_name }}
           else
-            echo "[i] Sin cambios para commitear."
+            echo "[i] No hay cambios para commitear."
           fi
+
+  # ----- OPCIONAL: Modo PSI (PageSpeed Insights) con API Key -----
+  # Requiere secret: PSI_API_KEY
+  # Descomenta y ajusta si prefieres medir con PSI en lugar de LHCI local.
+  #psi-and-update:
+  #  runs-on: ubuntu-latest
+  #  steps:
+  #    - uses: actions/checkout@v4
+  #    - name: Fetch PSI JSON for each URL (mobile)
+  #      env:
+  #        PSI_API_KEY: ${{ secrets.PSI_API_KEY }}
+  #      run: |
+  #        mkdir -p lighthouse_reports
+  #        while IFS= read -r u; do
+  #          out="lighthouse_reports/$(echo "$u" | sed 's#https\?://##; s#/##g; s/[^a-zA-Z0-9_-]/_/g').json"
+  #          curl -s "https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${u}&strategy=mobile&key=${PSI_API_KEY}" > "$out"
+  #        done < scripts/urls_lighthouse.txt
+  #    - name: Summarize PSI to Markdown
+  #      run: |
+  #        python3 scripts/summarize_lh_to_md.py
+  #    - name: Commit PSI summary [skip ci]
+  #      run: |
+  #        git config user.name  "github-actions[bot]"
+  #        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+  #        git add docs/VALIDACION_MVP_v0_2_1.md || true
+  #        if ! git diff --cached --quiet; then
+  #          git commit -m "docs: PSI mobile summary actualizado [skip ci]"
+  #          git push origin ${{ github.ref_name }}
+  #        else
+  #          echo "[i] Sin cambios."

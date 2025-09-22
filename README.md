@@ -1,5 +1,7 @@
 # pepecapiro-wp-theme
 
+[![Lighthouse Mobile + Docs](https://github.com/ppkapiro/pepecapiro-wp-theme/actions/workflows/lighthouse_docs.yml/badge.svg)](https://github.com/ppkapiro/pepecapiro-wp-theme/actions/workflows/lighthouse_docs.yml)
+
 Tema WordPress para pepecapiro.com.
 
 ## Métricas & Demo
