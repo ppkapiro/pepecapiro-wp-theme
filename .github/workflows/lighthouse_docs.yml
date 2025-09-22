@@ -1,0 +1,67 @@
+name: Lighthouse Mobile + Docs
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 13 * * 1"   # Lunes 13:00 UTC (ajustar si conviene)
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  audit-and-update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install deps
+        run: |
+          npm -v || true
+          python3 --version || true
+          sudo apt-get update -y
+          sudo apt-get install -y jq
+
+      # TODO: Sustituir por paso real de Lighthouse o PSI
+      - name: Run Lighthouse (placeholder)
+        run: |
+          mkdir -p lighthouse_reports
+          echo '{}' > lighthouse_reports/home.json
+          echo '<!-- demo -->\n<html><body>demo</body></html>' > lighthouse_reports/home.html
+
+      - name: Publicar reportes en docs/lighthouse
+        run: |
+          mkdir -p docs/lighthouse
+          cp -f lighthouse_reports/*.html docs/lighthouse/ || true
+
+      - name: Resumir a Markdown (actualiza VALIDACION_MVP_v0_2_1.md)
+        run: |
+          python3 scripts/summarize_lh_to_md.py || echo "[i] summarizer opcional"
+
+      - name: Ajustar enlaces y notas (asegurar navegación)
+        run: |
+          if grep -q "Índice navegable de reportes" docs/VALIDACION_MVP_v0_2_1.md; then
+            echo "[i] Nota ya presente."
+          else
+            printf "\n> **Índice navegable de reportes:** ver \`docs/lighthouse/index.html\`.\n" >> docs/VALIDACION_MVP_v0_2_1.md
+          fi
+
+      - name: Commit [skip ci] si hay cambios
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/lighthouse/ docs/VALIDACION_MVP_v0_2_1.md || true
+          if ! git diff --cached --quiet; then
+            git commit -m "docs: actualizar Lighthouse y navegación [skip ci]"
+            git push origin ${{ github.ref_name }}
+          else
+            echo "[i] Sin cambios para commitear."
+          fi
