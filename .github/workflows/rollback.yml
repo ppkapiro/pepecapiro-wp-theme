@@ -1,0 +1,35 @@
+name: Rollback pepecapiro theme
+
+on:
+  workflow_dispatch:
+    inputs:
+      zip_url:
+        description: "URL del zip artefacto (o sube el archivo en este run)"
+        required: false
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Preparar SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PEPE_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p "${{ secrets.PEPE_PORT }}" "${{ secrets.PEPE_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Descargar paquete (si zip_url provisto)
+        if: ${{ inputs.zip_url != '' }}
+        run: |
+          curl -L "${{ inputs.zip_url }}" -o restore.zip
+
+      - name: Subir y restaurar en servidor
+        run: |
+          scp -i ~/.ssh/id_ed25519 -P "${{ secrets.PEPE_PORT }}" restore.zip "${{ secrets.PEPE_USER }}@${{ secrets.PEPE_HOST }}:/home/u525829715/backups_pepecapiro_theme/restore_ci.zip" || true
+          ssh -i ~/.ssh/id_ed25519 -p "${{ secrets.PEPE_PORT }}" "${{ secrets.PEPE_USER }}@${{ secrets.PEPE_HOST }}" "\
+            set -e; \
+            THEME=/home/u525829715/domains/pepecapiro.com/public_html/wp-content/themes/pepecapiro; \
+            mkdir -p /home/u525829715/backups_pepecapiro_theme; \
+            cd $(dirname $THEME); zip -r /home/u525829715/backups_pepecapiro_theme/pre_rollback_$(date +%Y%m%d_%H%M%S).zip $(basename $THEME) >/dev/null; \
+            [ -f /home/u525829715/backups_pepecapiro_theme/restore_ci.zip ] && { rm -rf $THEME/*; unzip -o /home/u525829715/backups_pepecapiro_theme/restore_ci.zip -d $(dirname $THEME) >/dev/null; } \
+          "

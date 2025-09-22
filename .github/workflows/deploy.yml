@@ -1,0 +1,145 @@
+name: Deploy pepecapiro theme
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Versión para desplegar (ej: 0.1.9)'
+        required: false
+      continue_on_verify_fail:
+        description: 'Permitir continuar si hay difs en verificación (true/false)'
+        required: false
+        default: 'false'
+
+env:
+  REMOTE_PATH: /home/u525829715/domains/pepecapiro.com/public_html/wp-content/themes/pepecapiro
+  SSH_HOST: ${{ secrets.PEPE_HOST }}
+  SSH_PORT: ${{ secrets.PEPE_PORT }}
+  SSH_USER: ${{ secrets.PEPE_USER }}
+  CONTINUE_ON_VERIFY_FAIL: ${{ github.event.inputs.continue_on_verify_fail || 'false' }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Determinar versión
+        id: ver
+        run: |
+          if [ -n "${{ github.ref_name }}" ] && [ "${{ github.ref_type }}" = "tag" ]; then
+            RAW="${{ github.ref_name }}"
+            VER="${RAW#v}"
+          else
+            VER="${{ github.event.inputs.version || '' }}"
+          fi
+          if [ -z "$VER" ]; then
+            echo "No version provided"; exit 1
+          fi
+          echo "ver=$VER" >> $GITHUB_OUTPUT
+
+      - name: Preparar SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PEPE_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p "${{ env.SSH_PORT }}" "${{ env.SSH_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Bump style.css a versión (idempotente)
+        run: |
+          perl -0777 -pe "s/(^\s*Version:\s*)[0-9]+\.[0-9]+\.[0-9]+/\1${{ steps.ver.outputs.ver }}/m" -i pepecapiro/style.css
+
+      - name: Build (minificar CSS)
+        run: |
+          if [ -f _scratch/build_assets.sh ]; then
+            chmod +x _scratch/build_assets.sh || true
+            ./_scratch/build_assets.sh || true
+          fi
+
+      - name: Generar manifest local
+        id: manlocal
+        run: |
+          chmod +x _scratch/gen_manifest.sh
+          ./_scratch/gen_manifest.sh _scratch/manifest_local.txt
+          test -s _scratch/manifest_local.txt
+
+      - name: Generar artefacto (zip + sha)
+        run: |
+          TAG=$(date +%Y%m%d_%H%M%S)
+          echo "TAG=$TAG" >> $GITHUB_ENV
+          mkdir -p _releases _scratch
+          zip -r "_releases/pepecapiro_${TAG}_v${{ steps.ver.outputs.ver }}.zip" pepecapiro > /dev/null
+          sha256sum "_releases/pepecapiro_${TAG}_v${{ steps.ver.outputs.ver }}.zip" | cut -d" " -f1 > "_releases/pepecapiro_${TAG}.sha256"
+      - name: Exponer TAG
+        id: env_tag
+        run: |
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+
+      - name: Desplegar por rsync
+        run: |
+          RSYNC_RSH="ssh -i ~/.ssh/id_ed25519 -p ${{ env.SSH_PORT }}"
+          rsync -avz --delete -e "$RSYNC_RSH" pepecapiro/ "${{ env.SSH_USER }}@${{ env.SSH_HOST }}:${{ env.REMOTE_PATH }}/"
+
+      - name: Smoke tests remotos (wp-cli)
+        run: |
+          ssh -i ~/.ssh/id_ed25519 -p "${{ env.SSH_PORT }}" "${{ env.SSH_USER }}@${{ env.SSH_HOST }}" "\
+            cd /home/u525829715/domains/pepecapiro.com/public_html && \
+            wp theme list && \
+            wp option get permalink_structure && \
+            wp plugin is-installed litespeed-cache && wp litespeed-purge all || true \
+          "
+
+      - name: Verificación de integridad (manifest remoto vs local)
+        id: verify
+        run: |
+          set -e
+          if [ ! -f _scratch/manifest_local.txt ]; then echo "Manifest local no existe" >&2; exit 2; fi
+          # Subir manifest local temporal
+          scp -i ~/.ssh/id_ed25519 -P "${{ env.SSH_PORT }}" _scratch/manifest_local.txt "${{ env.SSH_USER }}@${{ env.SSH_HOST }}:/tmp/manifest_local_ci.txt"
+          # Generar manifest remoto
+          ssh -i ~/.ssh/id_ed25519 -p "${{ env.SSH_PORT }}" "${{ env.SSH_USER }}@${{ env.SSH_HOST }}" "\
+            cd '${{ env.REMOTE_PATH }}' && \
+            find . -type f \( -name '*.php' -o -name '*.css' -o -name '*.js' -o -name '*.svg' -o -name '*.png' -o -name '*.jpg' -o -name '*.jpeg' -o -name '*.webp' -o -name '*.woff2' -o -name '*.webmanifest' -o -name '*.json' -o -name '*.ico' \) -print0 \
+            | sort -z | xargs -0 sha256sum > /tmp/_man_srv.txt && \
+            sed -E 's#^([0-9a-f]{64})\\s+\\./#\\1  pepecapiro/#' /tmp/_man_srv.txt > /tmp/manifest_srv_norm_ci.txt \
+          "
+          # Normalizar local similar
+          sed -E 's#\\s+\\./#  #; s#^([0-9a-f]{64})\\s+pepecapiro/#\\1  pepecapiro/#' _scratch/manifest_local.txt > _scratch/manifest_local_norm_ci.txt
+          scp -i ~/.ssh/id_ed25519 -P "${{ env.SSH_PORT }}" "${{ env.SSH_USER }}@${{ env.SSH_HOST }}:/tmp/manifest_srv_norm_ci.txt" _scratch/manifest_remote_ci.txt
+          echo "[i] Comparando manifests..." > _scratch/integrity_ci.log
+          diff -u _scratch/manifest_local_norm_ci.txt _scratch/manifest_remote_ci.txt >> _scratch/integrity_ci.log || true
+          MISM=$(diff -U0 _scratch/manifest_local_norm_ci.txt _scratch/manifest_remote_ci.txt | grep -E '^[+-][0-9a-f]{64}' | wc -l | tr -d ' ')
+          echo "mismatches=$MISM" >> $GITHUB_OUTPUT
+
+      - name: Subir log de integridad
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integrity-${{ steps.verify.outputs.mismatches || 'unknown' }}
+          path: |
+            _scratch/manifest_local.txt
+            _scratch/manifest_local_norm_ci.txt
+            _scratch/manifest_remote_ci.txt
+            _scratch/integrity_ci.log
+
+      - name: Fallar si hay difs (STRICT)
+        if: ${{ steps.verify.outputs.mismatches && steps.verify.outputs.mismatches != '0' && env.CONTINUE_ON_VERIFY_FAIL != 'true' }}
+        run: |
+          echo "❌ Integridad: se detectaron ${{ steps.verify.outputs.mismatches }} diferencias. Revisa integrity_ci.log" >&2
+          exit 1
+
+      - name: Aviso tolerante
+        if: ${{ steps.verify.outputs.mismatches && steps.verify.outputs.mismatches != '0' && env.CONTINUE_ON_VERIFY_FAIL == 'true' }}
+        run: echo "⚠️ Integridad con diferencias, pero se permite continuar."
+
+      - name: Guardar artefactos en Actions
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ steps.ver.outputs.ver }}-${{ steps.env_tag.outputs.tag }}
+          path: |
+            _releases/pepecapiro_${{ steps.env_tag.outputs.tag }}_v${{ steps.ver.outputs.ver }}.zip
+            _releases/pepecapiro_${{ steps.env_tag.outputs.tag }}.sha256

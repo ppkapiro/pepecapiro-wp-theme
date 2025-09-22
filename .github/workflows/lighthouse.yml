@@ -1,0 +1,91 @@
+name: Lighthouse Mobile Audit
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js (LTS)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+
+      - name: Setup Google Chrome
+        uses: browser-actions/setup-chrome@v1
+        id: setup-chrome
+
+      - name: Install Lighthouse CLI
+        run: |
+          npm -g install lighthouse @lhci/cli
+
+      - name: Prepare reports directory
+        run: |
+          mkdir -p lighthouse_reports
+
+      - name: Run Lighthouse (mobile) for target URLs
+        env:
+          CHROME_PATH: ${{ steps.setup-chrome.outputs.chrome-path }}
+        run: |
+          set -euo pipefail
+          base="https://pepecapiro.com"
+          run_lh(){
+            local path="$1"; local name="$2";
+            echo "==> Auditing $path -> $name"
+            lighthouse "${base}${path}" \
+              --output=json --output=html \
+              --output-path="lighthouse_reports/${name}" \
+              --preset=perf \
+              --emulated-form-factor=mobile \
+              --throttling-method=devtools \
+              --chrome-flags="--headless=new --no-sandbox --disable-gpu" \
+              ${CHROME_PATH:+--chrome-path="$CHROME_PATH"}
+            # Normalizar nombres
+            mv "lighthouse_reports/${name}.report.json" "lighthouse_reports/${name}.json"
+            mv "lighthouse_reports/${name}.report.html" "lighthouse_reports/${name}.html"
+          }
+
+          run_lh "/"              "home"
+          run_lh "/en/"           "en-home"
+          run_lh "/sobre-mi/"     "sobre-mi"
+          run_lh "/en/about/"     "en-about"
+          run_lh "/proyectos/"    "proyectos"
+          run_lh "/en/projects/"  "en-projects"
+          run_lh "/recursos/"     "recursos"
+          run_lh "/en/resources/" "en-resources"
+          run_lh "/contacto/"     "contacto"
+          run_lh "/en/contact/"   "en-contact"
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Generate Markdown summary
+        run: |
+          python3 scripts/summarize_lh_to_md.py
+
+      - name: Upload Lighthouse artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse_reports
+          path: lighthouse_reports
+
+      - name: Commit updated report
+        run: |
+          set -e
+          if [[ -n "$(git status --porcelain docs/VALIDACION_MVP_v0_2_1.md)" ]]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add docs/VALIDACION_MVP_v0_2_1.md
+            git commit -m "chore(ci): actualizar tabla Lighthouse móvil"
+            git push
+          else
+            echo "No changes to commit in docs/VALIDACION_MVP_v0_2_1.md"
+          fi
