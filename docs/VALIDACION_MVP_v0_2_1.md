@@ -102,14 +102,22 @@ Notas:
 
 | Página | Perf | LCP | TTI | INP | Top 2 oportunidades |
 |--------|------|-----|-----|-----|----------------------|
-| / | 99 | 1.6s | 1.6s | n/a | — |
-| /en/ | 98 | 2.0s | 2.0s | n/a | — |
-| /sobre-mi/ | 100 | 1.5s | 1.5s | n/a | — |
-| /en/about/ | 100 | 1.5s | 1.5s | n/a | — |
-| /proyectos/ | 100 | 1.5s | 1.5s | n/a | — |
-| /en/projects/ | 100 | 1.4s | 1.4s | n/a | — |
-| /recursos/ | 100 | 1.5s | 1.5s | n/a | — |
-| /en/resources/ | 100 | 1.4s | 1.4s | n/a | — |
-| /contacto/ | 100 | 1.5s | 1.5s | n/a | — |
-| /en/contact/ | 100 | 1.5s | 1.5s | n/a | — |
+| [/](lighthouse/home.html) | 99 | 1.6s | 1.6s | n/a | — |
+| [/en/](lighthouse/en-home.html) | 98 | 2.0s | 2.0s | n/a | — |
+| [/sobre-mi/](lighthouse/sobre-mi.html) | 100 | 1.5s | 1.5s | n/a | — |
+| [/en/about/](lighthouse/en-about.html) | 100 | 1.5s | 1.5s | n/a | — |
+| [/proyectos/](lighthouse/proyectos.html) | 100 | 1.5s | 1.5s | n/a | — |
+| [/en/projects/](lighthouse/en-projects.html) | 100 | 1.4s | 1.4s | n/a | — |
+| [/recursos/](lighthouse/recursos.html) | 100 | 1.5s | 1.5s | n/a | — |
+| [/en/resources/](lighthouse/en-resources.html) | 100 | 1.4s | 1.4s | n/a | — |
+| [/contacto/](lighthouse/contacto.html) | 100 | 1.5s | 1.5s | n/a | — |
+| [/en/contact/](lighthouse/en-contact.html) | 100 | 1.5s | 1.5s | n/a | — |
+
+Nota: Reportes completos disponibles en [docs/lighthouse/](lighthouse/).
+
+### Checklist v0.2.1
+
+- [x] Performance (móvil) ≥ 90 en Home ES (/)
+- [x] Performance (móvil) ≥ 90 en Home EN (/en/)
+- [x] LCP ≤ 2.5s en todas las 10 URLs
 
