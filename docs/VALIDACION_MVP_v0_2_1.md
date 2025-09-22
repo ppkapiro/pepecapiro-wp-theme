@@ -117,7 +117,7 @@ Nota: Reportes completos disponibles en [docs/lighthouse/](lighthouse/).
 
 > Índice navegable de reportes: ver [`docs/lighthouse/index.html`](lighthouse/index.html).
 
-> (Opcional) GitHub Pages: https://REPLACE_USER.github.io/REPLACE_REPO/docs/index.html
+> GitHub Pages: https://ppkapiro.github.io/pepecapiro-wp-theme/docs/index.html
 
 ### Checklist v0.2.1
 
