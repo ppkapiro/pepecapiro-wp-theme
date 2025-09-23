@@ -107,6 +107,25 @@ jobs:
             echo "[i] Saltando fallback PSI (hay JSONs o no hay API key)"
           fi
 
+      - name: List lighthouse_reports (post)
+        if: always()
+        run: |
+          echo "--- lighthouse_reports (post) ---"
+          ls -la lighthouse_reports || true
+          echo "--- docs/lighthouse (post) ---"
+          ls -la docs/lighthouse || true
+
+      - name: Upload reports_after artifact (debug)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reports_after
+          path: |
+            lighthouse_reports
+            docs/lighthouse
+          if-no-files-found: warn
+          retention-days: 3
+
       - name: Verify thresholds (gates)
         if: always()
         run: |
