@@ -55,6 +55,9 @@ if [ -z "$WF_ID" ]; then echo "[X] No se encontró el workflow ${WF_FILE}"; exit
 echo "     Workflow ID: $WF_ID"
 
 echo "[2/5] Disparar workflow_dispatch…"
+# Registrar último run antes de disparar para detectar el nuevo
+LAST_BEFORE=$(gh_api GET "/actions/workflows/${WF_ID}/runs?branch=${BRANCH}&per_page=1" \
+  | jq -r '.workflow_runs[0].id // empty')
 PAYLOAD=$(jq -nc --arg ref "$BRANCH" --arg urls "$URLS_FILE" '{ref:$ref, inputs:{urls_file:$urls}}')
 gh_api POST "/actions/workflows/${WF_ID}/dispatches" "$PAYLOAD" >/dev/null
 echo "     Enviado. Esperando a que aparezca el run…"
@@ -62,13 +65,13 @@ echo "     Enviado. Esperando a que aparezca el run…"
 echo "[3/5] Localizar el run recien creado…"
 RUN_ID=""
 ATTEMPT=0
-while [ -z "$RUN_ID" ] && [ $ATTEMPT -lt 20 ]; do
+while [ -z "$RUN_ID" ] && [ $ATTEMPT -lt 40 ]; do
   sleep 3
-  RUNS_JSON=$(gh_api GET "/actions/workflows/${WF_ID}/runs?branch=${BRANCH}&event=workflow_dispatch&per_page=5")
-  # Toma el más reciente sin conclusión o el más reciente en progreso
-  RUN_ID=$(echo "$RUNS_JSON" | jq -r '.workflow_runs | map(select(.status!="completed" or .conclusion==null)) | .[0].id // empty')
-  if [ -z "$RUN_ID" ]; then
-    RUN_ID=$(echo "$RUNS_JSON" | jq -r '.workflow_runs[0].id // empty')
+  RUNS_JSON=$(gh_api GET "/actions/workflows/${WF_ID}/runs?branch=${BRANCH}&event=workflow_dispatch&per_page=3")
+  CANDIDATE=$(echo "$RUNS_JSON" | jq -r '.workflow_runs[0].id // empty')
+  if [ -n "$CANDIDATE" ] && [ "$CANDIDATE" != "$LAST_BEFORE" ]; then
+    RUN_ID="$CANDIDATE"
+    break
   fi
   ATTEMPT=$((ATTEMPT+1))
 done
@@ -113,7 +116,7 @@ ARTS=$(gh_api GET "/actions/runs/${RUN_ID}/artifacts")
 LH_FAIL_URL=$(echo "$ARTS" | jq -r '.artifacts[] | select(.name=="lh_fail") | .archive_download_url' | head -n1)
 if [ -n "$LH_FAIL_URL" ]; then
   echo "     Artifact lh_fail: $LH_FAIL_URL"
-  echo "     (Descarga con: curl -L -H 'Authorization: Bearer $TOKEN' \"$LH_FAIL_URL\" -o lh_fail.zip)"
+  echo "     (Descárgalo autenticado con un token de GitHub si lo necesitas)"
 else
   echo "     No se encontró artifact lh_fail. Revisa el run."
 fi
