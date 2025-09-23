@@ -7,3 +7,7 @@ _scratch/
 # Versionamos .vscode porque contiene sftp.json
 # WordPress: solo el tema; nada del core
 !pepecapiro/
+
+# Entornos locales
+.env.lighthouse
+!.env.lighthouse.example
