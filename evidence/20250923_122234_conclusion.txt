@@ -1,0 +1,10 @@
+====== CONCLUSIÓN RÁPIDA ======
+[!] No fue posible comparar CSS (archivo local/descarga remota ausente).
+[!] La Home ES NO enlaza tokens.css del child.
+[!] Hero ES no contiene el copy esperado (quizá la portada no usa tu front-page o caché).
+[!] Hero EN no contiene el copy esperado.
+[!] og:image ES NO apunta a og-home-es.png (puede dominar el plugin SEO o faltar deploy).
+[!] og:image EN NO apunta a og-home-en.png
+[i] Se detectaron metatags OG generadas por plugin SEO (Yoast/Rank Math). Evitar doble salida.
+[i] LiteSpeed Cache activo. Si los hashes no coinciden, purgar caché (WP y/o CDN) tras deploy.
+EVIDENCIA: /home/pepe/work/pepecapiro-wp-theme/evidence (prefijo 20250923_122234_*)

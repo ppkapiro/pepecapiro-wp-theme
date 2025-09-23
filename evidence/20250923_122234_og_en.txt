@@ -1,0 +1,11 @@
+19:<meta property="og:title" content="Pepe Capiro — AI &amp; Technology Consultant in Miami" />
+20:<meta property="og:description" content="I optimize processes and deliver value with applied AI and practical automation in Miami. See how to streamline your business today." />
+26:<meta name="twitter:card" content="summary_large_image" />
+27:<meta name="twitter:title" content="Pepe Capiro — AI &amp; Technology Consultant in Miami" />
+28:<meta name="twitter:description" content="I optimize processes and deliver value with applied AI and practical automation in Miami. See how to streamline your business today." />
+29:<meta name="twitter:label1" content="Written by" />
+30:<meta name="twitter:data1" content="ppcapiro" />
+31:<meta name="twitter:label2" content="Time to read" />
+32:<meta name="twitter:data2" content="Less than a minute" />
+38:<meta property="og:title" content="Pepe Capiro — AI &amp; Technology Consultant in Miami" />
+41:<meta name="twitter:card" content="summary_large_image" />
