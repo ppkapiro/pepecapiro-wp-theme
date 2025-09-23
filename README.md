@@ -22,6 +22,18 @@ Tema WordPress para pepecapiro.com.
 ## CI
 - GitHub Actions: ejecución de Lighthouse (móvil) sobre 10 URLs, artefactos y reportes HTML.
 
+## CI/CD & Deploy (importante)
+
+- Runbook de despliegue por tags y troubleshooting:
+  - `docs/DEPLOY_RUNBOOK.md`
+- Workflow principal de deploy (Actions):
+  - `.github/workflows/deploy.yml`
+- Releases (tags v*):
+  - https://github.com/ppkapiro/pepecapiro-wp-theme/releases
+- Último release (ejemplo v0.3.4):
+  - https://github.com/ppkapiro/pepecapiro-wp-theme/releases/tag/v0.3.4
+- Artifacts y logs de integridad: ver pestaña “Actions” del run correspondiente.
+
 ## Estado de validación de rendimiento (etapa cerrada)
 
 - Último workflow: https://github.com/ppkapiro/pepecapiro-wp-theme/actions/workflows/lighthouse_docs.yml
