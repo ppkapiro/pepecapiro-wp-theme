@@ -55,7 +55,7 @@ jobs:
       - name: Sanity SSH (CI -> servidor)
         run: |
           set -e
-          ssh -o BatchMode=yes -o IdentitiesOnly=yes -p "${{ env.SSH_PORT }}" "${{ env.SSH_USER }}@${{ env.SSH_HOST }}" "echo OK_CI && uname -a"
+          ssh -o BatchMode=yes -p "${{ env.SSH_PORT }}" "${{ env.SSH_USER }}@${{ env.SSH_HOST }}" "echo OK_CI && uname -a"
 
       - name: Bump style.css a versión (idempotente)
         run: |
@@ -98,12 +98,12 @@ jobs:
 
       - name: Desplegar por rsync
         run: |
-          RSYNC_RSH="ssh -o IdentitiesOnly=yes -p ${{ env.SSH_PORT }}"
+          RSYNC_RSH="ssh -p ${{ env.SSH_PORT }}"
           rsync -avz --delete -e "$RSYNC_RSH" pepecapiro/ "${{ env.SSH_USER }}@${{ env.SSH_HOST }}:${{ env.REMOTE_PATH }}/"
 
       - name: Smoke tests remotos (wp-cli)
         run: |
-          ssh -o IdentitiesOnly=yes -p "${{ env.SSH_PORT }}" "${{ env.SSH_USER }}@${{ env.SSH_HOST }}" "\
+          ssh -p "${{ env.SSH_PORT }}" "${{ env.SSH_USER }}@${{ env.SSH_HOST }}" "\
             cd /home/u525829715/domains/pepecapiro.com/public_html && \
             wp theme list && \
             wp option get permalink_structure && \
@@ -116,9 +116,9 @@ jobs:
           set -e
           if [ ! -f _scratch/manifest_local.txt ]; then echo "Manifest local no existe" >&2; exit 2; fi
           # Subir manifest local temporal
-          scp -o IdentitiesOnly=yes -P "${{ env.SSH_PORT }}" _scratch/manifest_local.txt "${{ env.SSH_USER }}@${{ env.SSH_HOST }}:/tmp/manifest_local_ci.txt"
+          scp -P "${{ env.SSH_PORT }}" _scratch/manifest_local.txt "${{ env.SSH_USER }}@${{ env.SSH_HOST }}:/tmp/manifest_local_ci.txt"
           # Generar manifest remoto
-          ssh -o IdentitiesOnly=yes -p "${{ env.SSH_PORT }}" "${{ env.SSH_USER }}@${{ env.SSH_HOST }}" "\
+          ssh -p "${{ env.SSH_PORT }}" "${{ env.SSH_USER }}@${{ env.SSH_HOST }}" "\
             cd '${{ env.REMOTE_PATH }}' && \
             find . -type f \( -name '*.php' -o -name '*.css' -o -name '*.js' -o -name '*.svg' -o -name '*.png' -o -name '*.jpg' -o -name '*.jpeg' -o -name '*.webp' -o -name '*.woff2' -o -name '*.webmanifest' -o -name '*.json' -o -name '*.ico' \) -print0 \
             | sort -z | xargs -0 sha256sum > /tmp/_man_srv.txt && \
@@ -126,7 +126,7 @@ jobs:
           "
           # Normalizar local similar
           sed -E 's#\\s+\\./#  #; s#^([0-9a-f]{64})\\s+pepecapiro/#\\1  pepecapiro/#' _scratch/manifest_local.txt > _scratch/manifest_local_norm_ci.txt
-          scp -o IdentitiesOnly=yes -P "${{ env.SSH_PORT }}" "${{ env.SSH_USER }}@${{ env.SSH_HOST }}:/tmp/manifest_srv_norm_ci.txt" _scratch/manifest_remote_ci.txt
+          scp -P "${{ env.SSH_PORT }}" "${{ env.SSH_USER }}@${{ env.SSH_HOST }}:/tmp/manifest_srv_norm_ci.txt" _scratch/manifest_remote_ci.txt
           echo "[i] Comparando manifests..." > _scratch/integrity_ci.log
           diff -u _scratch/manifest_local_norm_ci.txt _scratch/manifest_remote_ci.txt >> _scratch/integrity_ci.log || true
           MISM=$(diff -U0 _scratch/manifest_local_norm_ci.txt _scratch/manifest_remote_ci.txt | grep -E '^[+-][0-9a-f]{64}' | wc -l | tr -d ' ')
