@@ -73,7 +73,7 @@ add_action('wp_head', function(){
 
   // Imagen OG para Home
   if ($is_home) {
-    $og_img_url  = get_stylesheet_directory_uri() . '/assets/og/og-home.png';
+    $og_img_url  = get_stylesheet_directory_uri() . ( $is_en ? '/assets/og/og-home-en.png' : '/assets/og/og-home-es.png' );
     echo '<meta property="og:image" content="'.esc_url($og_img_url).'" />' . "\n";
     echo '<meta property="og:image:width" content="1200" />' . "\n";
     echo '<meta property="og:image:height" content="630" />' . "\n";
@@ -118,3 +118,69 @@ function pc_breadcrumbs(){
   echo '</nav>';
 }
 add_action('wp_body_open','pc_breadcrumbs');
+
+// ===== Contact form handler (admin-post.php) =====
+function pc_contact_handle_submit(){
+  $lang = function_exists('pll_current_language') ? pll_current_language('slug') : 'es';
+  $is_en = ($lang === 'en');
+  $redirect = $is_en ? home_url('/en/contact') : home_url('/contacto');
+
+  if ( ! isset($_POST['pc_contact_nonce']) || ! wp_verify_nonce( $_POST['pc_contact_nonce'], 'pc_contact_form') ){
+    wp_safe_redirect( add_query_arg('status','error',$redirect) );
+    exit;
+  }
+  $hp = isset($_POST['hp']) ? trim((string)$_POST['hp']) : '';
+  if ($hp !== ''){
+    wp_safe_redirect( add_query_arg('status','ok',$redirect) ); // simular éxito para bots
+    exit;
+  }
+
+  $name = isset($_POST['name']) ? sanitize_text_field($_POST['name']) : '';
+  $email = isset($_POST['email']) ? sanitize_email($_POST['email']) : '';
+  $message = isset($_POST['message']) ? wp_kses_post($_POST['message']) : '';
+
+  if ( empty($name) || empty($email) || !is_email($email) || empty($message) ){
+    wp_safe_redirect( add_query_arg('status','error',$redirect) );
+    exit;
+  }
+
+  $to = $is_en ? (get_option('pc_contact_to_en') ?: 'contact@pepecapiro.com') : (get_option('pc_contact_to_es') ?: 'contacto@pepecapiro.com');
+  $subject = $is_en ? 'New contact from website' : 'Nuevo contacto desde la web';
+  $body  = ( $is_en ? "Name" : "Nombre" ) . ": $name\n";
+  $body .= "Email: $email\n\n";
+  $body .= ( $is_en ? "Message:" : "Mensaje:" ) . "\n" . wp_strip_all_tags($message) . "\n";
+
+  $headers = [];
+  $from = $is_en ? (get_option('pc_contact_from_en') ?: 'contact@pepecapiro.com') : (get_option('pc_contact_from_es') ?: 'contacto@pepecapiro.com');
+  $headers[] = 'From: Pepecapiro <' . $from . '>';
+  $headers[] = 'Reply-To: ' . $name . ' <' . $email . '>';
+
+  $sent = wp_mail($to, $subject, $body, $headers);
+  $status = $sent ? 'ok' : 'error';
+  wp_safe_redirect( add_query_arg('status',$status,$redirect) );
+  exit;
+}
+add_action('admin_post_pc_contact_submit', 'pc_contact_handle_submit');
+add_action('admin_post_nopriv_pc_contact_submit', 'pc_contact_handle_submit');
+
+// ===== SMTP (PHPMailer) configurable =====
+add_action('phpmailer_init', function($phpmailer){
+  // Si ya hay un plugin de SMTP activo, no forzar
+  if (has_action('wp_mail_smtp_core_before_send') || class_exists('WPMailSMTP\Core')) { return; }
+
+  $host = getenv('SMTP_HOST') ?: get_option('pc_smtp_host');
+  $port = getenv('SMTP_PORT') ?: get_option('pc_smtp_port');
+  $user = getenv('SMTP_USER') ?: get_option('pc_smtp_user');
+  $pass = getenv('SMTP_PASS') ?: get_option('pc_smtp_pass');
+  $secure = getenv('SMTP_SECURE') ?: (get_option('pc_smtp_secure') ?: 'tls'); // 'ssl' o 'tls'
+
+  if (!$host || !$port || !$user || !$pass) { return; }
+
+  $phpmailer->isSMTP();
+  $phpmailer->Host = $host;
+  $phpmailer->Port = (int)$port;
+  $phpmailer->SMTPAuth = true;
+  $phpmailer->Username = $user;
+  $phpmailer->Password = $pass;
+  $phpmailer->SMTPSecure = $secure; // 'ssl' o 'tls'
+});
