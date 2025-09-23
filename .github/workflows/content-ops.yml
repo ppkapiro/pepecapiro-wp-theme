@@ -83,7 +83,7 @@ jobs:
           if [ -z "$PID" ]; then
             echo "Crear Privacidad ES"
             if [ "${{ steps.flags.outputs.apply }}" = "true" ]; then
-              ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "cd '$SITE_ROOT' && wp post create --post_type=page --post_status=publish --post_title='Política de Privacidad' --post_name=privacidad --porcelain"
+              ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "cd '$SITE_ROOT' && NEW=\$(wp post create --post_type=page --post_status=publish --post_title='Política de Privacidad' --post_name=privacidad --porcelain) && if wp term list language --field=slug | grep -q '^es$'; then wp term set post \"$NEW\" language es --by=slug; fi && echo \"$NEW\""
             fi
           fi
           ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "cd '$SITE_ROOT' && wp post list --post_type=page --name=cookies --field=ID" > c_es.txt || true
@@ -91,7 +91,7 @@ jobs:
           if [ -z "$CID" ]; then
             echo "Crear Cookies ES"
             if [ "${{ steps.flags.outputs.apply }}" = "true" ]; then
-              ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "cd '$SITE_ROOT' && wp post create --post_type=page --post_status=publish --post_title='Política de Cookies' --post_name=cookies --porcelain"
+              ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "cd '$SITE_ROOT' && NEW=\$(wp post create --post_type=page --post_status=publish --post_title='Política de Cookies' --post_name=cookies --porcelain) && if wp term list language --field=slug | grep -q '^es$'; then wp term set post \"$NEW\" language es --by=slug; fi && echo \"$NEW\""
             fi
           fi
           # EN
@@ -100,7 +100,7 @@ jobs:
           if [ -z "$PID_EN" ]; then
             echo "Create Privacy EN"
             if [ "${{ steps.flags.outputs.apply }}" = "true" ]; then
-              ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "cd '$SITE_ROOT' && wp post create --post_type=page --post_status=publish --post_title='Privacy Policy' --post_name=privacy --porcelain"
+              ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "cd '$SITE_ROOT' && NEW=\$(wp post create --post_type=page --post_status=publish --post_title='Privacy Policy' --post_name=privacy --porcelain) && if wp term list language --field=slug | grep -q '^en$'; then wp term set post \"$NEW\" language en --by=slug; fi && echo \"$NEW\""
             fi
           fi
           ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "cd '$SITE_ROOT' && wp post list --post_type=page --name=cookies --field=ID --path='$SITE_ROOT/en'" || true
@@ -109,7 +109,7 @@ jobs:
           if [ -z "$CID_EN" ]; then
             echo "Create Cookies EN"
             if [ "${{ steps.flags.outputs.apply }}" = "true" ]; then
-              ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "cd '$SITE_ROOT' && wp post create --post_type=page --post_status=publish --post_title='Cookies Policy' --post_name=cookies --porcelain"
+              ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "cd '$SITE_ROOT' && NEW=\$(wp post create --post_type=page --post_status=publish --post_title='Cookies Policy' --post_name=cookies --porcelain) && if wp term list language --field=slug | grep -q '^en$'; then wp term set post \"$NEW\" language en --by=slug; fi && echo \"$NEW\""
             fi
           fi
 
@@ -130,7 +130,7 @@ jobs:
           ES_ID=$(ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "cd '$SITE_ROOT' && wp post list --post_type=post --name=$ES_SLUG --field=ID" || true)
           if [ -z "$ES_ID" ] && [ "${{ steps.flags.outputs.apply }}" = "true" ]; then
             ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "cd '$SITE_ROOT' && wp term create category 'Guías' --slug=guias || true"
-            ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "cd '$SITE_ROOT' && wp post create --post_type=post --post_status=publish --post_title='Checklist para poner un WordPress a producir en 1 día' --post_name=$ES_SLUG --post_excerpt='Una guía práctica para pasar de cero a producción en 24 horas: seguridad, rendimiento, SEO, contenido mínimo y verificación.' --post_date='2025-09-23 09:00:00' --porcelain" > es_id.txt
+            ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "cd '$SITE_ROOT' && NEW=\$(wp post create --post_type=post --post_status=publish --post_title='Checklist para poner un WordPress a producir en 1 día' --post_name=$ES_SLUG --post_excerpt='Una guía práctica para pasar de cero a producción en 24 horas: seguridad, rendimiento, SEO, contenido mínimo y verificación.' --post_date='2025-09-23 09:00:00' --porcelain) && if wp term list language --field=slug | grep -q '^es$'; then wp term set post \"$NEW\" language es --by=slug; fi && echo \"$NEW\"" > es_id.txt
             NEW_ES_ID=$(cat es_id.txt)
             ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "cd '$SITE_ROOT' && wp post term add $NEW_ES_ID category guias"
           fi
@@ -139,9 +139,13 @@ jobs:
           EN_ID=$(ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "cd '$SITE_ROOT' && wp post list --post_type=post --name=$EN_SLUG --field=ID" || true)
           if [ -z "$EN_ID" ] && [ "${{ steps.flags.outputs.apply }}" = "true" ]; then
             ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "cd '$SITE_ROOT' && wp term create category 'Guides' --slug=guides || true"
-            ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "cd '$SITE_ROOT' && wp post create --post_type=post --post_status=publish --post_title='Ship a Production‑Ready WordPress in One Day: A Practical Checklist' --post_name=$EN_SLUG --post_excerpt='A hands‑on guide to go live in 24 hours: security, performance, SEO, minimum content, and final checks.' --post_date='2025-09-23 09:00:00' --porcelain" > en_id.txt
+            ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "cd '$SITE_ROOT' && NEW=\$(wp post create --post_type=post --post_status=publish --post_title='Ship a Production‑Ready WordPress in One Day: A Practical Checklist' --post_name=$EN_SLUG --post_excerpt='A hands‑on guide to go live in 24 hours: security, performance, SEO, minimum content, and final checks.' --post_date='2025-09-23 09:00:00' --porcelain) && if wp term list language --field=slug | grep -q '^en$'; then wp term set post \"$NEW\" language en --by=slug; fi && echo \"$NEW\"" > en_id.txt
             NEW_EN_ID=$(cat en_id.txt)
             ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "cd '$SITE_ROOT' && wp post term add $NEW_EN_ID category guides"
+          fi
+          # Asegurar permalinks guardados
+          if [ "${{ steps.flags.outputs.apply }}" = "true" ]; then
+            ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "cd '$SITE_ROOT' && wp rewrite flush --hard"
           fi
 
       - name: Purga de cachés
