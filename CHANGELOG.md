@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.4 – 20250923_193656
+- CI/CD: deploy 100% automatizado por tags `v*` (Actions).
+- SSH estable vía ssh-agent con clave PEM en `PEPE_SSH_KEY` (sin base64).
+- Verificación de integridad determinista (LC_ALL=C + sort) sin falsos positivos.
+- Smoke tests remotos: `wp theme list`, estructura de permalinks y purga LiteSpeed.
+- Validación post-deploy: tokens.css 200, héroe y OG correctos en ES/EN.
+
 ## 0.1.2 – 20250917_191856
 - Paleta y tipografías (Montserrat + Open Sans).
 - Home con Hero + 3 cards (front-page.php).
