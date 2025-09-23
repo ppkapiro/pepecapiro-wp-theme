@@ -50,3 +50,4 @@ a:hover{text-decoration:underline}
 .hero{padding:var(--space-6) 0;}
 .hero .subtitle{color:var(--color-fg-muted);} 
 .cards{margin:var(--space-6) 0;}
+.section-center{ margin: var(--space-6) auto; text-align:center; }

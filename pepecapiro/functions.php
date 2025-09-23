@@ -45,29 +45,35 @@ add_action('wp_enqueue_scripts', function(){
 // SEO mínimo OpenGraph / Twitter
 add_action('wp_head', function(){
   if (is_admin()) return;
+  $url   = esc_url(home_url(add_query_arg([], $_SERVER['REQUEST_URI'] ?? '')));
+  $is_home = (is_front_page() || is_page_template('page-home.php'));
+  $is_en = function_exists('pll_current_language') ? (pll_current_language('slug') === 'en') : (strpos($url, '/en/') !== false);
+
+  // Base
   $title = wp_get_document_title();
   $desc  = get_bloginfo('description');
-  $url   = esc_url(home_url(add_query_arg([], $_SERVER['REQUEST_URI'] ?? '')));
+
+  // Overrides para Home con copy definido
+  if ($is_home) {
+    if ($is_en) {
+      $title = 'Technical support and automation—without the headache.';
+      $desc  = 'I fix what’s urgent today and simplify your processes for tomorrow.';
+    } else {
+      $title = 'Soporte técnico y automatización, sin drama.';
+      $desc  = 'Arreglo lo urgente hoy y dejo procesos más simples para mañana.';
+    }
+  }
+
   echo "\n<!-- SEO base -->\n";
   echo '<meta property="og:title" content="'.esc_attr($title).'" />' . "\n";
+  echo '<meta property="og:description" content="'.esc_attr($desc).'" />' . "\n";
   echo '<meta property="og:type" content="'. (is_singular() ? 'article' : 'website') .'" />' . "\n";
   echo '<meta property="og:url" content="'.$url.'" />' . "\n";
   echo '<meta name="twitter:card" content="summary_large_image" />' . "\n";
-  
-  // OG específico para Home ES/EN
-  if (is_front_page() || is_page_template('page-home.php')) {
-    $is_en = function_exists('pll_current_language') ? (pll_current_language('slug') === 'en') : (strpos($url, '/en/') !== false);
-    if ($is_en) {
-      $og_title = 'Technical support and automation—without the headache.';
-      $og_desc  = 'I fix what’s urgent today and simplify your processes for tomorrow.';
-    } else {
-      $og_title = 'Soporte técnico y automatización, sin drama.';
-      $og_desc  = 'Arreglo lo urgente hoy y dejo procesos más simples para mañana.';
-    }
-    $og_img_path = get_stylesheet_directory() . '/assets/og/og-home.png';
+
+  // Imagen OG para Home
+  if ($is_home) {
     $og_img_url  = get_stylesheet_directory_uri() . '/assets/og/og-home.png';
-    echo '<meta property="og:title" content="'.esc_attr($og_title).'" />' . "\n";
-    echo '<meta property="og:description" content="'.esc_attr($og_desc).'" />' . "\n";
     echo '<meta property="og:image" content="'.esc_url($og_img_url).'" />' . "\n";
     echo '<meta property="og:image:width" content="1200" />' . "\n";
     echo '<meta property="og:image:height" content="630" />' . "\n";
