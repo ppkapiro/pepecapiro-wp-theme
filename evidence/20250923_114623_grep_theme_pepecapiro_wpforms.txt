@@ -1,0 +1,61 @@
+== grep -Rin 'wpforms' . ==
+./scripts/get_wp_diagnostico_profundo.sh:168:REMOTE_WPFORMS_VER="$(ssh_run "wp plugin get wpforms" "cd '$SITE_ROOT' && wp plugin get wpforms --field=version 2>&1 || true")"
+./scripts/get_wp_diagnostico_profundo.sh:169:REMOTE_WPFORMS_LITE_VER="$(ssh_run "wp plugin get wpforms-lite" "cd '$SITE_ROOT' && wp plugin get wpforms-lite --field=version 2>&1 || true")"
+./scripts/get_wp_diagnostico_profundo.sh:170:REMOTE_FORMS_JSON="$(ssh_run "listar formularios json" "cd '$SITE_ROOT' && wp post list --post_type=wpforms --fields=ID,post_title,post_status --format=json 2>&1 || true")"
+./scripts/get_wp_diagnostico_profundo.sh:171:REMOTE_FORMS_TABLE="$(ssh_run "listar formularios table" "cd '$SITE_ROOT' && wp post list --post_type=wpforms --fields=ID,post_title,post_status --format=table 2>&1 || true")"
+./scripts/get_wp_diagnostico_profundo.sh:181:detect_shortcode(){ local content="$1"; echo "$content" | tr -d '\r' | grep -o -i '\[wpforms[^]]*\]' | head -n1 || true; }
+./scripts/get_wp_diagnostico_profundo.sh:183:SHORTCODE_CONTACTO_HTML="$(echo "$REMOTE_CONTACTO_HTML" | tr -d '\r' | grep -inF '[wpforms' -m 1 || true)"
+./scripts/get_wp_diagnostico_profundo.sh:184:SHORTCODE_CONTACT_HTML="$(echo "$REMOTE_CONTACT_HTML" | tr -d '\r' | grep -inF '[wpforms' -m 1 || true)"
+./scripts/get_wp_diagnostico_profundo.sh:189:WPFORMS_VER_CLEAN="$(clean_ver "$REMOTE_WPFORMS_VER")"; WPFORMS_LITE_VER_CLEAN="$(clean_ver "$REMOTE_WPFORMS_LITE_VER")"
+./scripts/get_wp_diagnostico_profundo.sh:210:ACTIVE_WPFORMS="$(echo "$REMOTE_PLUGIN_ACTIVE_JSON" | tr -d '\r' | grep -o '"name"\s*:\s*"wpforms"' | head -n1 || true)"
+./scripts/get_wp_diagnostico_profundo.sh:211:ACTIVE_WPFORMS_LITE="$(echo "$REMOTE_PLUGIN_ACTIVE_JSON" | tr -d '\r' | grep -o '"name"\s*:\s*"wpforms-lite"' | head -n1 || true)"
+./scripts/get_wp_diagnostico_profundo.sh:250:  echo "- Plugins WPForms: wpforms=${WPFORMS_VER_CLEAN:-ND} | wpforms-lite=${WPFORMS_LITE_VER_CLEAN:-ND} | activos: wpforms=$([[ -n $ACTIVE_WPFORMS ]] && echo si || echo no) / wpforms-lite=$([[ -n $ACTIVE_WPFORMS_LITE ]] && echo si || echo no)"
+./scripts/get_wp_diagnostico_profundo.sh:252:  echo "- Formularios (post_type=wpforms): $(echo "$REMOTE_FORMS_JSON" | wc -c) bytes JSON; publicados=$FORMS_PUBLISHED_COUNT (detalle abajo)"
+./scripts/get_wp_diagnostico_profundo.sh:269:  echo "- Formularios (post_type=wpforms) (json):"; echo '```json'; echo "$REMOTE_FORMS_JSON"; echo '```'
+./scripts/get_wp_diagnostico_profundo.sh:280:  if [[ -z "$ACTIVE_WPFORMS" && -n "$ACTIVE_WPFORMS_LITE" ]]; then echo "- Solo wpforms-lite activo (OK)."; else echo "- Revisión: coexistencia wpforms/wpforms-lite."; fi
+./scripts/get_wp_diagnostico_profundo.sh:294:  echo "- Formularios: validar que el formulario ID=${SHORTCODE_FORM_ID:-ND} exista/publicado en WPForms Lite; si no existe, actualizar shortcode o restaurar formulario."
+./scripts/grep_trazas.sh:11:wpforms
+./scripts/auditoria_pepecapiro.sh:45:for PAT in "\[wpforms" "\[contact-form-7" "\[gravityforms" "\[shortcode-"; do
+./scripts/get_wp_diagnostico.sh:3:# y del WordPress remoto (Hostinger) enfocado en tema "pepecapiro" y WPForms.
+./scripts/get_wp_diagnostico.sh:197:REMOTE_WPFORMS_VER="$(ssh_run "wp plugin get wpforms" "cd '$SITE_ROOT' && wp plugin get wpforms --field=version 2>&1 || true")"
+./scripts/get_wp_diagnostico.sh:198:REMOTE_WPFORMS_LITE_VER="$(ssh_run "wp plugin get wpforms-lite" "cd '$SITE_ROOT' && wp plugin get wpforms-lite --field=version 2>&1 || true")"
+./scripts/get_wp_diagnostico.sh:206:REMOTE_LS_WPFORMS="$(ssh_run "ls plugins|grep wpforms" "ls -la '$SITE_ROOT/wp-content/plugins' 2>/dev/null | grep -i wpforms || true")"
+./scripts/get_wp_diagnostico.sh:209:REMOTE_DEBUG_GREP="$(ssh_run "grep wpforms|square" "[ -f '$SITE_ROOT/wp-content/debug.log' ] && grep -inE 'wpforms|square' '$SITE_ROOT/wp-content/debug.log' | sed -n '1,10p' || echo 'ND' 2>/dev/null")"
+./scripts/get_wp_diagnostico.sh:210:REMOTE_DEBUG_GREP_COUNT="$(ssh_run "count grep" "[ -f '$SITE_ROOT/wp-content/debug.log' ] && grep -inE 'wpforms|square' '$SITE_ROOT/wp-content/debug.log' | wc -l || echo '0' 2>/dev/null")"
+./scripts/get_wp_diagnostico.sh:217:  echo "$content" | tr -d '\r' | grep -o -i '\[wpforms[^]]*\]' | head -n1 || true
+./scripts/get_wp_diagnostico.sh:229:# Versiones WPForms limpias (si error, dejar ND)
+./scripts/get_wp_diagnostico.sh:234:WPFORMS_VER_CLEAN="$(clean_ver "$REMOTE_WPFORMS_VER")"
+./scripts/get_wp_diagnostico.sh:235:WPFORMS_LITE_VER_CLEAN="$(clean_ver "$REMOTE_WPFORMS_LITE_VER")"
+./scripts/get_wp_diagnostico.sh:247:# Detección de estado WPForms activo
+./scripts/get_wp_diagnostico.sh:248:ACTIVE_WPFORMS=$(echo "$REMOTE_PLUGIN_ACTIVE_JSON" | tr -d '\r' | grep -o '"name"\s*:\s*"wpforms"' | head -n1 || true)
+./scripts/get_wp_diagnostico.sh:249:ACTIVE_WPFORMS_LITE=$(echo "$REMOTE_PLUGIN_ACTIVE_JSON" | tr -d '\r' | grep -o '"name"\s*:\s*"wpforms-lite"' | head -n1 || true)
+./scripts/get_wp_diagnostico.sh:250:if [[ -n "$ACTIVE_WPFORMS" && -n "$ACTIVE_WPFORMS_LITE" ]]; then CRIT_NOTES+=("Ambos plugins wpforms y wpforms-lite activos a la vez"); fi
+./scripts/get_wp_diagnostico.sh:251:if [[ -z "$ACTIVE_WPFORMS" && -z "$ACTIVE_WPFORMS_LITE" ]]; then CRIT_NOTES+=("Ningún plugin WPForms activo, pero existen shortcodes en páginas de contacto") ; fi
+./scripts/get_wp_diagnostico.sh:252:if [[ "$LOG_HITS" != "0" && "$LOG_HITS" != "ND" ]]; then CRIT_NOTES+=("debug.log contiene $LOG_HITS entradas que mencionan 'wpforms' o 'square'"); fi
+./scripts/get_wp_diagnostico.sh:269:  echo "- Plugins WPForms: wpforms=${WPFORMS_VER_CLEAN:-ND} | wpforms-lite=${WPFORMS_LITE_VER_CLEAN:-ND} | activos: wpforms=$([[ -n $ACTIVE_WPFORMS ]] && echo si || echo no) / wpforms-lite=$([[ -n $ACTIVE_WPFORMS_LITE ]] && echo si || echo no)"
+./scripts/get_wp_diagnostico.sh:271:  echo "- debug.log menciones (wpforms/square): ${LOG_HITS}"
+./scripts/get_wp_diagnostico.sh:332:  echo "- WPForms versiones detectadas:"
+./scripts/get_wp_diagnostico.sh:333:  echo "  - wpforms: ${WPFORMS_VER_CLEAN}"
+./scripts/get_wp_diagnostico.sh:334:  echo "  - wpforms-lite: ${WPFORMS_LITE_VER_CLEAN}"
+./scripts/get_wp_diagnostico.sh:345:  echo "  - $SITE_ROOT/wp-content/plugins | grep -i wpforms"
+./scripts/get_wp_diagnostico.sh:347:  echo "$REMOTE_LS_WPFORMS"
+./scripts/get_wp_diagnostico.sh:359:  echo "  - HTML público /contacto (fragmentos con '[wpforms')"
+./scripts/get_wp_diagnostico.sh:361:  echo "$REMOTE_CONTACTO_HTML" | tr -d '\r' | grep -inF '[wpforms' -m 5 || echo "(sin coincidencias)"
+./scripts/get_wp_diagnostico.sh:363:  echo "  - HTML público /contact (fragmentos con '[wpforms')"
+./scripts/get_wp_diagnostico.sh:365:  echo "$REMOTE_CONTACT_HTML" | tr -d '\r' | grep -inF '[wpforms' -m 5 || echo "(sin coincidencias)"
+./scripts/get_wp_diagnostico.sh:373:  echo "  - Conteo de líneas con 'wpforms' y/o 'square': $LOG_HITS"
+./scripts/get_wp_diagnostico.sh:388:  echo "  - WPForms activo: wpforms=$([[ -n $ACTIVE_WPFORMS ]] && echo si || echo no), wpforms-lite=$([[ -n $ACTIVE_WPFORMS_LITE ]] && echo si || echo no)"
+./scripts/get_wp_diagnostico.sh:389:  echo "  - WPForms versiones: wpforms=${WPFORMS_VER_CLEAN}, wpforms-lite=${WPFORMS_LITE_VER_CLEAN}"
+./scripts/get_wp_diagnostico.sh:397:  echo "- Potenciales causas: shortcode con ID inexistente, conflicto wpforms/wpforms-lite, diferencias de tema entre local y remoto, integración Square incompleta."
+./scripts/get_wp_diagnostico.sh:403:  echo "  - Confirmar solo un plugin WPForms activo (completo o lite)"
+./scripts/resumen_auditoria.py:152:    pats = [r"wpforms", r"post-smtp", r"wpmailsmtp", r'action=\"/wp-json/\"']
+./scripts/resumen_auditoria.py:243:        out.write("- Formularios: implementar solución única (CF7/Gravity/WPForms) o shortcode propio — hoy no hay huellas.\n")
+./scripts/resumen_auditoria.py:252:            out.write("Sin señales visibles de wpforms/post-smtp/wp-mail-smtp ni formularios que POSTeen a /wp-json/.\n")
+./evidence/INFORME_AUDITORIA_20250923_114216.md:57:== Resultados para patrón \[wpforms ==
+./evidence/INFORME_AUDITORIA_20250923_114216.md:81:- Formularios: implementar solución única (CF7/Gravity/WPForms) o shortcode propio — hoy no hay huellas.
+./evidence/INFORME_AUDITORIA_20250923_114216.md:87:Sin señales visibles de wpforms/post-smtp/wp-mail-smtp ni formularios que POSTeen a /wp-json/.
+./evidence/20250923_114216_shortcodes_scan.txt:1:== Resultados para patrón \[wpforms ==
+./CHANGELOG.md:116:- Formulario de contacto (WPForms Lite) creado (ID=29) e incrustado en páginas Contacto/Contact.
+./desarrollo_entorno_pepecapiro.md:11:- Plugins clave: Polylang, LiteSpeed Cache, Rank Math, WPForms
+./docs/PLAN_v0_3_0.md:5:## 1) SMTP / Formularios (WPForms)
+./docs/SMTP_CHECKLIST.md:17:- [ ] Confirmación visual en WPForms

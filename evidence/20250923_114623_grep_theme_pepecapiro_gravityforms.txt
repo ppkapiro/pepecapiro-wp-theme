@@ -1,0 +1,8 @@
+== grep -Rin 'gravityforms' . ==
+./scripts/grep_trazas.sh:13:gravityforms
+./scripts/auditoria_pepecapiro.sh:45:for PAT in "\[wpforms" "\[contact-form-7" "\[gravityforms" "\[shortcode-"; do
+./evidence/20250923_114623_grep_theme_pepecapiro_contact-form-7.txt:3:./scripts/auditoria_pepecapiro.sh:45:for PAT in "\[wpforms" "\[contact-form-7" "\[gravityforms" "\[shortcode-"; do
+./evidence/20250923_114623_grep_theme_pepecapiro_contact-form-7.txt:5:./evidence/20250923_114623_grep_theme_pepecapiro_wpforms.txt:18:./scripts/auditoria_pepecapiro.sh:45:for PAT in "\[wpforms" "\[contact-form-7" "\[gravityforms" "\[shortcode-"; do
+./evidence/INFORME_AUDITORIA_20250923_114216.md:59:== Resultados para patrón \[gravityforms ==
+./evidence/20250923_114623_grep_theme_pepecapiro_wpforms.txt:18:./scripts/auditoria_pepecapiro.sh:45:for PAT in "\[wpforms" "\[contact-form-7" "\[gravityforms" "\[shortcode-"; do
+./evidence/20250923_114216_shortcodes_scan.txt:3:== Resultados para patrón \[gravityforms ==

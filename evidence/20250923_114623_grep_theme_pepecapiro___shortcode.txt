@@ -1,0 +1,12 @@
+== grep -Rin '\[shortcode' . ==
+./scripts/grep_trazas.sh:14:\[shortcode
+./scripts/auditoria_pepecapiro.sh:45:for PAT in "\[wpforms" "\[contact-form-7" "\[gravityforms" "\[shortcode-"; do
+./evidence/20250923_114623_grep_theme_pepecapiro_contact-form-7.txt:3:./scripts/auditoria_pepecapiro.sh:45:for PAT in "\[wpforms" "\[contact-form-7" "\[gravityforms" "\[shortcode-"; do
+./evidence/20250923_114623_grep_theme_pepecapiro_contact-form-7.txt:5:./evidence/20250923_114623_grep_theme_pepecapiro_wpforms.txt:18:./scripts/auditoria_pepecapiro.sh:45:for PAT in "\[wpforms" "\[contact-form-7" "\[gravityforms" "\[shortcode-"; do
+./evidence/INFORME_AUDITORIA_20250923_114216.md:60:== Resultados para patrón \[shortcode- ==
+./evidence/20250923_114623_grep_theme_pepecapiro_gravityforms.txt:3:./scripts/auditoria_pepecapiro.sh:45:for PAT in "\[wpforms" "\[contact-form-7" "\[gravityforms" "\[shortcode-"; do
+./evidence/20250923_114623_grep_theme_pepecapiro_gravityforms.txt:4:./evidence/20250923_114623_grep_theme_pepecapiro_contact-form-7.txt:3:./scripts/auditoria_pepecapiro.sh:45:for PAT in "\[wpforms" "\[contact-form-7" "\[gravityforms" "\[shortcode-"; do
+./evidence/20250923_114623_grep_theme_pepecapiro_gravityforms.txt:5:./evidence/20250923_114623_grep_theme_pepecapiro_contact-form-7.txt:5:./evidence/20250923_114623_grep_theme_pepecapiro_wpforms.txt:18:./scripts/auditoria_pepecapiro.sh:45:for PAT in "\[wpforms" "\[contact-form-7" "\[gravityforms" "\[shortcode-"; do
+./evidence/20250923_114623_grep_theme_pepecapiro_gravityforms.txt:7:./evidence/20250923_114623_grep_theme_pepecapiro_wpforms.txt:18:./scripts/auditoria_pepecapiro.sh:45:for PAT in "\[wpforms" "\[contact-form-7" "\[gravityforms" "\[shortcode-"; do
+./evidence/20250923_114623_grep_theme_pepecapiro_wpforms.txt:18:./scripts/auditoria_pepecapiro.sh:45:for PAT in "\[wpforms" "\[contact-form-7" "\[gravityforms" "\[shortcode-"; do
+./evidence/20250923_114216_shortcodes_scan.txt:4:== Resultados para patrón \[shortcode- ==

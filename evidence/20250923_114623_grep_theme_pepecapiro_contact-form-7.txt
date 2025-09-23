@@ -1,0 +1,6 @@
+== grep -Rin 'contact-form-7' . ==
+./scripts/grep_trazas.sh:12:contact-form-7
+./scripts/auditoria_pepecapiro.sh:45:for PAT in "\[wpforms" "\[contact-form-7" "\[gravityforms" "\[shortcode-"; do
+./evidence/INFORME_AUDITORIA_20250923_114216.md:58:== Resultados para patrón \[contact-form-7 ==
+./evidence/20250923_114623_grep_theme_pepecapiro_wpforms.txt:18:./scripts/auditoria_pepecapiro.sh:45:for PAT in "\[wpforms" "\[contact-form-7" "\[gravityforms" "\[shortcode-"; do
+./evidence/20250923_114216_shortcodes_scan.txt:2:== Resultados para patrón \[contact-form-7 ==

@@ -1,10 +1,27 @@
-<footer class="site-footer" style="margin-top:40px;padding:24px 0;border-top:1px solid #eee;">
-  <div style="max-width:960px;margin:0 auto;padding:0 16px;display:flex;flex-direction:column;gap:8px;">
-    <nav style="font-size:14px;display:flex;flex-wrap:wrap;gap:12px;">
-      <a href="#" rel="nofollow">Política de privacidad</a>
-      <a href="#" rel="nofollow">Términos</a>
-    </nav>
-    <p style="font-size:14px;margin:0;">© <?php echo date('Y'); ?> Pepecapiro</p>
+<footer class="site-footer">
+  <div class="container footer-grid">
+    <div class="footer-col">
+      <h3>Pepecapiro</h3>
+      <p class="muted">Soporte técnico y automatización con enfoque práctico.</p>
+    </div>
+    <div class="footer-col">
+      <h3>Enlaces</h3>
+      <nav>
+        <a href="<?php echo esc_url(home_url('/')); ?>">Inicio</a><br>
+        <a href="<?php echo esc_url(home_url('/proyectos/')); ?>">Proyectos</a><br>
+        <a href="<?php echo esc_url(home_url('/blog/')); ?>">Blog</a>
+      </nav>
+    </div>
+    <div class="footer-col">
+      <h3>Contacto</h3>
+      <nav>
+        <a href="mailto:contacto@pepecapiro.com">contacto@pepecapiro.com</a><br>
+        <a href="<?php echo esc_url(home_url('/contacto')); ?>" class="btn">Hablemos</a>
+      </nav>
+    </div>
+  </div>
+  <div class="container" style="margin-top:var(--space-3);">
+    <p class="muted" style="font-size:var(--step--1);">© <?php echo date('Y'); ?> Pepecapiro</p>
   </div>
 </footer>
 <?php wp_footer(); ?>

@@ -21,6 +21,12 @@ add_action('wp_enqueue_scripts', function(){
   $public_path = get_stylesheet_directory_uri() . '/assets/css/' . basename($preferred);
   wp_enqueue_style('pepecapiro-theme', $public_path, [], $version);
 
+  // Enqueue tokens CSS (Design System) después del CSS principal
+  $tokens_file = $theme_dir . '/assets/css/tokens.css';
+  if ( file_exists($tokens_file) ) {
+    wp_enqueue_style('pepecapiro-tokens', get_stylesheet_directory_uri() . '/assets/css/tokens.css', ['pepecapiro-theme'], filemtime($tokens_file));
+  }
+
   // Critical CSS opcional
   $critical_file = $theme_dir . '/assets/css/critical.css';
   if ( file_exists( $critical_file ) ) {
@@ -47,6 +53,25 @@ add_action('wp_head', function(){
   echo '<meta property="og:type" content="'. (is_singular() ? 'article' : 'website') .'" />' . "\n";
   echo '<meta property="og:url" content="'.$url.'" />' . "\n";
   echo '<meta name="twitter:card" content="summary_large_image" />' . "\n";
+  
+  // OG específico para Home ES/EN
+  if (is_front_page() || is_page_template('page-home.php')) {
+    $is_en = function_exists('pll_current_language') ? (pll_current_language('slug') === 'en') : (strpos($url, '/en/') !== false);
+    if ($is_en) {
+      $og_title = 'Technical support and automation—without the headache.';
+      $og_desc  = 'I fix what’s urgent today and simplify your processes for tomorrow.';
+    } else {
+      $og_title = 'Soporte técnico y automatización, sin drama.';
+      $og_desc  = 'Arreglo lo urgente hoy y dejo procesos más simples para mañana.';
+    }
+    $og_img_path = get_stylesheet_directory() . '/assets/og/og-home.png';
+    $og_img_url  = get_stylesheet_directory_uri() . '/assets/og/og-home.png';
+    echo '<meta property="og:title" content="'.esc_attr($og_title).'" />' . "\n";
+    echo '<meta property="og:description" content="'.esc_attr($og_desc).'" />' . "\n";
+    echo '<meta property="og:image" content="'.esc_url($og_img_url).'" />' . "\n";
+    echo '<meta property="og:image:width" content="1200" />' . "\n";
+    echo '<meta property="og:image:height" content="630" />' . "\n";
+  }
 }, 5);
 
 // Desregistrar CSS de bloques y global-styles en el FRONT (no afecta editor)
