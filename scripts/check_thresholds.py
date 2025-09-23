@@ -44,7 +44,18 @@ def read_perf_and_lcp(p):
 
 rows = []
 violations = []
-for path in sorted(glob.glob("lighthouse_reports/*.json")):
+json_list = sorted(glob.glob("lighthouse_reports/*.json"))
+if not json_list:
+    msg = (
+        "No se encontraron reportes JSON en lighthouse_reports/.\n"
+        "Es posible que la ejecución de Lighthouse haya fallado o no haya generado resultados."
+    )
+    print("[X] ", msg)
+    with open("/tmp/lh_fail.md", "w", encoding="utf-8") as f:
+        f.write("### Fallo en recolección de Lighthouse\n\n" + msg + "\n")
+    sys.exit(2)
+
+for path in json_list:
     name = os.path.splitext(os.path.basename(path))[0]
     perf, lcp = read_perf_and_lcp(path)
     url = PRETTY.get(name, name)
