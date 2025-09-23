@@ -23,6 +23,9 @@ env:
 
 jobs:
   deploy:
+    concurrency:
+      group: deploy-${{ github.ref }}
+      cancel-in-progress: true
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -111,7 +114,6 @@ jobs:
           "
 
       - name: Content Ops (WP-CLI remoto)
-        if: ${{ hashFiles('.github/content-ops/run.apply') != '' }}
         run: |
           set -e
           ROOT="/home/u525829715/domains/pepecapiro.com/public_html"
@@ -147,17 +149,50 @@ jobs:
           $SSH "cd '$ROOT' && echo 'PAGES:' >> '$LOG' && wp post list --post_type=page --fields=ID,post_name,post_title,post_status --format=table >> '$LOG' && echo 'POSTS:' >> '$LOG' && wp post list --post_type=post --fields=ID,post_name,post_title,post_status --format=table >> '$LOG'"
 
       - name: Recuperar log remoto Content Ops
-        if: ${{ hashFiles('.github/content-ops/run.apply') != '' }}
         run: |
           mkdir -p content_ops_logs
           scp -P "${{ env.SSH_PORT }}" "${{ env.SSH_USER }}@${{ env.SSH_HOST }}:/tmp/content_ops_*.log" content_ops_logs/ || true
 
       - name: Subir log Content Ops
-        if: ${{ hashFiles('.github/content-ops/run.apply') != '' }}
         uses: actions/upload-artifact@v4
         with:
           name: content-ops-log
           path: content_ops_logs/*.log
+
+      - name: Monitorizar endpoints clave (hasta 3 min)
+        run: |
+          set -e
+          urls=(
+            https://pepecapiro.com/privacidad/
+            https://pepecapiro.com/cookies/
+            https://pepecapiro.com/en/privacy/
+            https://pepecapiro.com/en/cookies/
+          )
+          ok=false
+          for i in $(seq 1 18); do
+            echo "[Try $i] Verificando páginas legales…"
+            pass=1
+            for u in "${urls[@]}"; do
+              code=$(curl -s -L -o /tmp/_b -w '%{http_code}' "$u" || echo 000)
+              if [ "$code" != "200" ] || grep -qiE 'Página no encontrada|Page not found' /tmp/_b; then
+                echo "  - $u => $code (no OK)"; pass=0
+              else
+                echo "  - $u => $code OK"
+              fi
+            done
+            sm_code=$(curl -s -L -o /tmp/_psm https://pepecapiro.com/post-sitemap.xml -w '%{http_code}' || echo 000)
+            if [ "$sm_code" = "200" ] && ! grep -qi 'hello-world' /tmp/_psm; then
+              echo "  - post-sitemap.xml OK (sin hello-world)"
+            else
+              echo "  - post-sitemap.xml pendiente (code=$sm_code)"; pass=0
+            fi
+            if [ $pass -eq 1 ]; then ok=true; break; fi
+            sleep 10
+          done
+          if [ "$ok" != true ]; then
+            echo "❌ Endpoints no estabilizados tras Content Ops" >&2
+            exit 1
+          fi
 
       - name: Verificación de integridad (manifest remoto vs local)
         id: verify
