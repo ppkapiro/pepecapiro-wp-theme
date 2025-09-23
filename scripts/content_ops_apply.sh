@@ -6,6 +6,7 @@ set -euo pipefail
 SSH_HOST="${PEPE_HOST:-}"
 SSH_USER="${PEPE_USER:-}"
 SSH_PORT="${PEPE_PORT:-22}"
+SSH_KEY="${PEPE_SSH_KEY:-}"
 ROOT="/home/u525829715/domains/pepecapiro.com/public_html"
 
 if [[ -z "$SSH_HOST" || -z "$SSH_USER" ]]; then
@@ -15,7 +16,11 @@ fi
 
 echo "[i] Ejecutando Content Ops en $SSH_USER@$SSH_HOST:$SSH_PORT …"
 
-ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "bash -se" <<'REMOTE_CMDS'
+# Construir opciones SSH
+SSH_OPTS=("-p" "$SSH_PORT" "-o" "StrictHostKeyChecking=no" "-o" "UserKnownHostsFile=/dev/null")
+if [[ -n "$SSH_KEY" ]]; then SSH_OPTS+=("-i" "$SSH_KEY"); fi
+
+ssh "${SSH_OPTS[@]}" "$SSH_USER@$SSH_HOST" "bash -se" <<'REMOTE_CMDS'
 set -euo pipefail
 ROOT="/home/u525829715/domains/pepecapiro.com/public_html"
 LOG="/tmp/content_ops_$(date +%s).log"
