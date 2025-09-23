@@ -198,6 +198,47 @@ CTA final
 - [x] Servicios (3 tarjetas) definidos ES/EN  
 - [x] Proyectos (2–3) definidos a nivel de copy y criterios de imagen  
 - [x] Testimonio/Logos definidos (opciones)  
+
+---
+
+## 5) Deployment v0.3.0 (Producción)
+
+Fecha/Hora: 2025-09-23 (UTC)  
+Tag final: v0.3.0  
+Servidor: Hostinger (Linux, PHP 8.2)  
+Ruta remota: `/home/u525829715/domains/pepecapiro.com/public_html/wp-content/themes/pepecapiro`
+
+### Auditoría previa
+- Alcance v0.3.0: contenido inicial ES/EN (primer post definido), páginas legales ES/EN, SMTP por entorno en theme, SEO mínimo (sitemaps/robots, Rank Math activo), footer con enlaces legales bilingües.  
+- Estado productivo antes de deploy: páginas legales ya accesibles 200; sitemap listaba `hello-world` (a limpiar post-deploy).
+
+### Pasos ejecutados
+1) Bump de versión del tema a 0.3.0 en `pepecapiro/style.css` y creación de tag `v0.3.0`.  
+2) Build de assets (minificado) y generación de manifest + SHA256.  
+3) Deploy por `rsync` sobre SSH (puerto 65002) al path remoto indicado; permisos 644/755.  
+4) Remediación post-deploy con WP-CLI: activar tema si era necesario, `rewrite flush`, purga de cachés (WP + LiteSpeed).  
+5) Content Ops: asignación de idioma Polylang a legales ES/EN, enlace de traducciones, eliminación de `Hello world` (todas variantes), creación de categorías y primer post ES/EN si no existían, limpieza de caché de sitemaps Rank Math y recalentado de sitemaps.  
+6) Monitorización de endpoints hasta estabilizar (legales ES/EN 200 sin contenido 404; `post-sitemap.xml` sin `hello-world`).
+
+### Resultados de validación
+- Páginas: Home, About, Contacto/Contact, Blog y Legales — todas 200 OK, sin contenido 404.  
+- Sitemap: `post-sitemap.xml` 200 OK y sin `hello-world`.  
+- Robots: accesible y correcto.  
+- WP-CLI smoke: `wp theme list` ok, `wp option get permalink_structure` ok, `wp plugin` muestra LiteSpeed/Rank Math activos.  
+- Lighthouse rápido (móvil): ejecutable vía workflow o script; sin bloqueadores detectados.  
+- SMTP: configuración por entorno presente en `functions.php`; validación completa requiere prueba de envío (pendiente coordinar destinatario de prueba si hace falta evidencia).
+
+### Checklist de cierre del deployment
+- [x] Deploy del tema `pepecapiro` v0.3.0 aplicado en producción  
+- [x] Cachés purgadas (WP + LiteSpeed)  
+- [x] Legales ES/EN y contacto responden 200 y correctos  
+- [x] Sitemap actualizado (sin `hello-world`)  
+- [x] Smoke tests WP-CLI  
+- [ ] SMTP confirmado con envío real (opcional, coordinar prueba)  
+- [x] Rollback listo (backup Hostinger + tag previo estable)  
+
+Observaciones: Se deja jobs programados y/o scripts de remediación para auto-verificar y limpiar cachés/sitemaps en caso de ser necesario.
+
 - [x] CTA final definido ES/EN  
 - [x] Validaciones, riesgos y quick-wins añadidos  
 
