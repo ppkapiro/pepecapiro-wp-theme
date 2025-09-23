@@ -78,9 +78,9 @@ jobs:
             ./_scratch/gen_manifest.sh _scratch/manifest_local.txt
           else
             echo "[i] _scratch/gen_manifest.sh no encontrado; generando manifest inline..."
-            find pepecapiro -type f \
+            LC_ALL=C find pepecapiro -type f \
               \( -name '*.php' -o -name '*.css' -o -name '*.js' -o -name '*.svg' -o -name '*.png' -o -name '*.jpg' -o -name '*.jpeg' -o -name '*.webp' -o -name '*.woff2' -o -name '*.webmanifest' -o -name '*.json' -o -name '*.ico' \) \
-              -print0 | sort -z | xargs -0 sha256sum > _scratch/manifest_local.txt
+              -print0 | LC_ALL=C sort -z | xargs -0 sha256sum > _scratch/manifest_local.txt
           fi
           test -s _scratch/manifest_local.txt
 
@@ -120,13 +120,16 @@ jobs:
           # Generar manifest remoto
           ssh -p "${{ env.SSH_PORT }}" "${{ env.SSH_USER }}@${{ env.SSH_HOST }}" "\
             cd '${{ env.REMOTE_PATH }}' && \
-            find . -type f \( -name '*.php' -o -name '*.css' -o -name '*.js' -o -name '*.svg' -o -name '*.png' -o -name '*.jpg' -o -name '*.jpeg' -o -name '*.webp' -o -name '*.woff2' -o -name '*.webmanifest' -o -name '*.json' -o -name '*.ico' \) -print0 \
-            | sort -z | xargs -0 sha256sum > /tmp/_man_srv.txt && \
+            LC_ALL=C find . -type f \( -name '*.php' -o -name '*.css' -o -name '*.js' -o -name '*.svg' -o -name '*.png' -o -name '*.jpg' -o -name '*.jpeg' -o -name '*.webp' -o -name '*.woff2' -o -name '*.webmanifest' -o -name '*.json' -o -name '*.ico' \) -print0 \
+            | LC_ALL=C sort -z | xargs -0 sha256sum > /tmp/_man_srv.txt && \
             sed -E 's#^([0-9a-f]{64})\\s+\\./#\\1  pepecapiro/#' /tmp/_man_srv.txt > /tmp/manifest_srv_norm_ci.txt \
           "
           # Normalizar local similar
           sed -E 's#\\s+\\./#  #; s#^([0-9a-f]{64})\\s+pepecapiro/#\\1  pepecapiro/#' _scratch/manifest_local.txt > _scratch/manifest_local_norm_ci.txt
           scp -P "${{ env.SSH_PORT }}" "${{ env.SSH_USER }}@${{ env.SSH_HOST }}:/tmp/manifest_srv_norm_ci.txt" _scratch/manifest_remote_ci.txt
+          # Ordenar determinísticamente ambos manifests normalizados para evitar falsos positivos por orden
+          LC_ALL=C sort _scratch/manifest_local_norm_ci.txt -o _scratch/manifest_local_norm_ci.txt
+          LC_ALL=C sort _scratch/manifest_remote_ci.txt -o _scratch/manifest_remote_ci.txt
           echo "[i] Comparando manifests..." > _scratch/integrity_ci.log
           diff -u _scratch/manifest_local_norm_ci.txt _scratch/manifest_remote_ci.txt >> _scratch/integrity_ci.log || true
           MISM=$(diff -U0 _scratch/manifest_local_norm_ci.txt _scratch/manifest_remote_ci.txt | grep -E '^[+-][0-9a-f]{64}' | wc -l | tr -d ' ')
