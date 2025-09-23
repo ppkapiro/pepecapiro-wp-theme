@@ -42,10 +42,17 @@ jobs:
         run: |
           FILE_PATH="${{ github.event.inputs.urls_file }}"
           if [ -z "${FILE_PATH}" ]; then FILE_PATH="scripts/urls_lighthouse.txt"; fi
-          echo "urls<<EOF" >> "$GITHUB_OUTPUT"
-          # Imprimir solo líneas no vacías
-          grep -v '^\s*$' "$FILE_PATH" >> "$GITHUB_OUTPUT"
-          echo "EOF" >> "$GITHUB_OUTPUT"
+          if [ ! -f "$FILE_PATH" ]; then
+            echo "[warn] No existe $FILE_PATH; continuaré con lista vacía"
+            echo "urls<<EOF" >> "$GITHUB_OUTPUT"
+            echo "" >> "$GITHUB_OUTPUT"
+            echo "EOF" >> "$GITHUB_OUTPUT"
+          else
+            echo "urls<<EOF" >> "$GITHUB_OUTPUT"
+            # Imprimir solo líneas no vacías (sin usar \s)
+            awk 'NF>0' "$FILE_PATH" >> "$GITHUB_OUTPUT"
+            echo "EOF" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Run Lighthouse (Mobile) for URL list
         uses: treosh/lighthouse-ci-action@v10
@@ -72,19 +79,22 @@ jobs:
 
 
       - name: Normalize report filenames and publish HTML
+        if: always()
         run: |
-          python3 scripts/normalize_lighthouse_results.py
+          python3 scripts/normalize_lighthouse_results.py || true
 
       - name: Summarize to Markdown
+        if: always()
         run: |
-          python3 scripts/summarize_lh_to_md.py
+          python3 scripts/summarize_lh_to_md.py || true
 
       - name: Verify thresholds (gates)
+        if: always()
         run: |
-          python3 scripts/check_thresholds.py
+          python3 scripts/check_thresholds.py || exit 2
 
       - name: Ensure failure stub exists
-        if: failure()
+        if: always()
         run: |
           if [ ! -f /tmp/lh_fail.md ]; then
             echo "### Fallo de workflow Lighthouse" > /tmp/lh_fail.md
