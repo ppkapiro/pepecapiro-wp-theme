@@ -19,6 +19,10 @@ on:
         description: 'Asignar plantilla Contacto (bilingüe) a ES'
         required: false
         default: 'true'
+  push:
+    paths:
+      - '.github/content-ops/run.apply'
+      - '.github/content-ops/run.dry'
 
 jobs:
   run:
@@ -45,7 +49,11 @@ jobs:
       - name: Dry-run/apply flags
         id: flags
         run: |
-          APPLY=${{ github.event.inputs.apply }}
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            APPLY=${{ github.event.inputs.apply }}
+          else
+            if [ -f .github/content-ops/run.apply ]; then APPLY=true; else APPLY=false; fi
+          fi
           echo "apply=$APPLY" >> $GITHUB_OUTPUT
 
       - name: Unificar formulario ES (plantilla Contacto)
