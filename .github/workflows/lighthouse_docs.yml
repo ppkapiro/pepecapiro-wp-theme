@@ -41,6 +41,7 @@ jobs:
         id: read_urls
         run: |
           FILE_PATH="${{ github.event.inputs.urls_file }}"
+          if [ -z "${FILE_PATH}" ]; then FILE_PATH="scripts/urls_lighthouse.txt"; fi
           echo "urls<<EOF" >> "$GITHUB_OUTPUT"
           # Imprimir solo líneas no vacías
           grep -v '^\s*$' "$FILE_PATH" >> "$GITHUB_OUTPUT"
@@ -52,6 +53,22 @@ jobs:
           urls: ${{ steps.read_urls.outputs.urls }}
           configPath: lighthouserc.json
           uploadArtifacts: true
+      - name: Echo URLs used
+        if: always()
+        run: |
+          echo "URLs a auditar:" && printf "%s\n" "${{ steps.read_urls.outputs.urls }}"
+
+      - name: Upload raw LHCI artifacts (debug)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lhci_raw
+          path: |
+            .lighthouseci
+            lighthouse_reports
+          if-no-files-found: warn
+          retention-days: 3
+
 
       - name: Normalize report filenames and publish HTML
         run: |
