@@ -20,7 +20,7 @@
       </nav>
     </div>
   </div>
-  <div class="container" style="margin-top:var(--space-3);">
+  <div class="container footer-bottom">
     <p class="muted" style="font-size:var(--step--1);">© <?php echo date('Y'); ?> Pepecapiro</p>
   </div>
 </footer>

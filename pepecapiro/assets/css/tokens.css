@@ -35,7 +35,8 @@ a:hover{text-decoration:underline}
 .site-header{position:sticky; top:0; z-index:100; background:var(--color-surface); border-bottom:1px solid var(--color-border);} 
 .site-header__inner{display:flex; justify-content:space-between; align-items:center; padding:var(--space-2) 0;}
 .brand{color:var(--color-fg); font-weight:700;}
-.site-nav a{color:var(--color-fg);}
+.site-nav{display:flex; align-items:center; gap:16px;}
+.site-nav a{color:var(--color-fg);} 
 .lang-switcher a{color:var(--color-fg-muted);} 
 
 .site-footer{margin-top:var(--space-6); padding:var(--space-4) 0; border-top:1px solid var(--color-border); background:var(--color-surface);} 
@@ -43,6 +44,7 @@ a:hover{text-decoration:underline}
 @media(min-width: 900px){ .footer-grid{ grid-template-columns:2fr 1fr 1fr; } }
 .footer-col h3{margin:0 0 var(--space-2);} 
 .muted{color:var(--color-fg-muted);} 
+.footer-bottom{margin-top:var(--space-3);} 
 
 /* Home mínima */
 .hero{padding:var(--space-6) 0;}

@@ -11,7 +11,7 @@
 <header class="site-header">
   <div class="container site-header__inner">
     <a class="brand" href="<?php echo esc_url(home_url('/')); ?>">Pepecapiro</a>
-    <div class="site-nav" style="display:flex;align-items:center;gap:16px;">
+  <div class="site-nav">
       <nav><?php
         $fallback = function(){ wp_nav_menu(['theme_location'=>'primary','container'=>false]); };
         if (function_exists('pll_current_language')) {
@@ -24,9 +24,9 @@
         } else { $fallback(); }
       ?></nav>
       <?php if (function_exists('pll_the_languages')): ?>
-        <div class="lang-switcher" style="margin-left:12px;"><?php pll_the_languages(['show_flags'=>1,'show_names'=>0]); ?></div>
+  <div class="lang-switcher"><?php pll_the_languages(['show_flags'=>1,'show_names'=>0]); ?></div>
       <?php else: ?>
-        <div class="lang-switcher" style="margin-left:12px;"><a href="<?php echo esc_url(home_url('/')); ?>">ES</a> | <a href="<?php echo esc_url(home_url('/en/')); ?>">EN</a></div>
+  <div class="lang-switcher"><a href="<?php echo esc_url(home_url('/')); ?>">ES</a> | <a href="<?php echo esc_url(home_url('/en/')); ?>">EN</a></div>
       <?php endif; ?>
     </div>
   </div>
