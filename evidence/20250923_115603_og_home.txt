@@ -1,0 +1,19 @@
+2:<html lang="es-ES" prefix="og: https://ogp.me/ns#">
+17:<meta property="og:locale" content="es_ES" />
+18:<meta property="og:type" content="website" />
+19:<meta property="og:title" content="Pepe Capiro — Consultor en IA y Tecnología en Miami" />
+20:<meta property="og:description" content="Optimizo procesos y activo valor con IA aplicada y automatización práctica en Miami. Descubre cómo mejorar tu negocio en menos tiempo." />
+21:<meta property="og:url" content="https://pepecapiro.com/" />
+22:<meta property="og:site_name" content="Pepe Capiro" />
+23:<meta property="og:updated_time" content="2025-09-18T12:06:33-04:00" />
+26:<meta name="twitter:card" content="summary_large_image" />
+27:<meta name="twitter:title" content="Pepe Capiro — Consultor en IA y Tecnología en Miami" />
+28:<meta name="twitter:description" content="Optimizo procesos y activo valor con IA aplicada y automatización práctica en Miami. Descubre cómo mejorar tu negocio en menos tiempo." />
+29:<meta name="twitter:label1" content="Escrito por" />
+30:<meta name="twitter:data1" content="ppcapiro" />
+31:<meta name="twitter:label2" content="Tiempo de lectura" />
+32:<meta name="twitter:data2" content="Menos de un minuto" />
+38:<meta property="og:title" content="Pepe Capiro — Consultor en IA y Tecnología en Miami" />
+39:<meta property="og:type" content="article" />
+40:<meta property="og:url" content="https://pepecapiro.com/" />
+41:<meta name="twitter:card" content="summary_large_image" />

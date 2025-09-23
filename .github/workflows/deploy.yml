@@ -42,12 +42,20 @@ jobs:
           fi
           echo "ver=$VER" >> $GITHUB_OUTPUT
 
-      - name: Preparar SSH
+      - name: Cargar clave en ssh-agent
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.PEPE_SSH_KEY }}
+
+      - name: Preparar known_hosts
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.PEPE_SSH_KEY }}" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -p "${{ env.SSH_PORT }}" "${{ env.SSH_HOST }}" >> ~/.ssh/known_hosts
+          ssh-keyscan -T 5 -p "${{ env.SSH_PORT }}" "${{ env.SSH_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Sanity SSH (CI -> servidor)
+        run: |
+          set -e
+          ssh -o BatchMode=yes -p "${{ env.SSH_PORT }}" "${{ env.SSH_USER }}@${{ env.SSH_HOST }}" "echo OK_CI && uname -a"
 
       - name: Bump style.css a versión (idempotente)
         run: |
@@ -63,8 +71,17 @@ jobs:
       - name: Generar manifest local
         id: manlocal
         run: |
-          chmod +x _scratch/gen_manifest.sh
-          ./_scratch/gen_manifest.sh _scratch/manifest_local.txt
+          set -e
+          mkdir -p _scratch
+          if [ -x _scratch/gen_manifest.sh ]; then
+            echo "[i] Usando _scratch/gen_manifest.sh"
+            ./_scratch/gen_manifest.sh _scratch/manifest_local.txt
+          else
+            echo "[i] _scratch/gen_manifest.sh no encontrado; generando manifest inline..."
+            LC_ALL=C find pepecapiro -type f \
+              \( -name '*.php' -o -name '*.css' -o -name '*.js' -o -name '*.svg' -o -name '*.png' -o -name '*.jpg' -o -name '*.jpeg' -o -name '*.webp' -o -name '*.woff2' -o -name '*.webmanifest' -o -name '*.json' -o -name '*.ico' \) \
+              -print0 | LC_ALL=C sort -z | xargs -0 sha256sum > _scratch/manifest_local.txt
+          fi
           test -s _scratch/manifest_local.txt
 
       - name: Generar artefacto (zip + sha)
@@ -81,12 +98,12 @@ jobs:
 
       - name: Desplegar por rsync
         run: |
-          RSYNC_RSH="ssh -i ~/.ssh/id_ed25519 -p ${{ env.SSH_PORT }}"
+          RSYNC_RSH="ssh -p ${{ env.SSH_PORT }}"
           rsync -avz --delete -e "$RSYNC_RSH" pepecapiro/ "${{ env.SSH_USER }}@${{ env.SSH_HOST }}:${{ env.REMOTE_PATH }}/"
 
       - name: Smoke tests remotos (wp-cli)
         run: |
-          ssh -i ~/.ssh/id_ed25519 -p "${{ env.SSH_PORT }}" "${{ env.SSH_USER }}@${{ env.SSH_HOST }}" "\
+          ssh -p "${{ env.SSH_PORT }}" "${{ env.SSH_USER }}@${{ env.SSH_HOST }}" "\
             cd /home/u525829715/domains/pepecapiro.com/public_html && \
             wp theme list && \
             wp option get permalink_structure && \
@@ -99,17 +116,20 @@ jobs:
           set -e
           if [ ! -f _scratch/manifest_local.txt ]; then echo "Manifest local no existe" >&2; exit 2; fi
           # Subir manifest local temporal
-          scp -i ~/.ssh/id_ed25519 -P "${{ env.SSH_PORT }}" _scratch/manifest_local.txt "${{ env.SSH_USER }}@${{ env.SSH_HOST }}:/tmp/manifest_local_ci.txt"
+          scp -P "${{ env.SSH_PORT }}" _scratch/manifest_local.txt "${{ env.SSH_USER }}@${{ env.SSH_HOST }}:/tmp/manifest_local_ci.txt"
           # Generar manifest remoto
-          ssh -i ~/.ssh/id_ed25519 -p "${{ env.SSH_PORT }}" "${{ env.SSH_USER }}@${{ env.SSH_HOST }}" "\
+          ssh -p "${{ env.SSH_PORT }}" "${{ env.SSH_USER }}@${{ env.SSH_HOST }}" "\
             cd '${{ env.REMOTE_PATH }}' && \
-            find . -type f \( -name '*.php' -o -name '*.css' -o -name '*.js' -o -name '*.svg' -o -name '*.png' -o -name '*.jpg' -o -name '*.jpeg' -o -name '*.webp' -o -name '*.woff2' -o -name '*.webmanifest' -o -name '*.json' -o -name '*.ico' \) -print0 \
-            | sort -z | xargs -0 sha256sum > /tmp/_man_srv.txt && \
+            LC_ALL=C find . -type f \( -name '*.php' -o -name '*.css' -o -name '*.js' -o -name '*.svg' -o -name '*.png' -o -name '*.jpg' -o -name '*.jpeg' -o -name '*.webp' -o -name '*.woff2' -o -name '*.webmanifest' -o -name '*.json' -o -name '*.ico' \) -print0 \
+            | LC_ALL=C sort -z | xargs -0 sha256sum > /tmp/_man_srv.txt && \
             sed -E 's#^([0-9a-f]{64})\\s+\\./#\\1  pepecapiro/#' /tmp/_man_srv.txt > /tmp/manifest_srv_norm_ci.txt \
           "
           # Normalizar local similar
           sed -E 's#\\s+\\./#  #; s#^([0-9a-f]{64})\\s+pepecapiro/#\\1  pepecapiro/#' _scratch/manifest_local.txt > _scratch/manifest_local_norm_ci.txt
-          scp -i ~/.ssh/id_ed25519 -P "${{ env.SSH_PORT }}" "${{ env.SSH_USER }}@${{ env.SSH_HOST }}:/tmp/manifest_srv_norm_ci.txt" _scratch/manifest_remote_ci.txt
+          scp -P "${{ env.SSH_PORT }}" "${{ env.SSH_USER }}@${{ env.SSH_HOST }}:/tmp/manifest_srv_norm_ci.txt" _scratch/manifest_remote_ci.txt
+          # Ordenar determinísticamente ambos manifests normalizados para evitar falsos positivos por orden
+          LC_ALL=C sort _scratch/manifest_local_norm_ci.txt -o _scratch/manifest_local_norm_ci.txt
+          LC_ALL=C sort _scratch/manifest_remote_ci.txt -o _scratch/manifest_remote_ci.txt
           echo "[i] Comparando manifests..." > _scratch/integrity_ci.log
           diff -u _scratch/manifest_local_norm_ci.txt _scratch/manifest_remote_ci.txt >> _scratch/integrity_ci.log || true
           MISM=$(diff -U0 _scratch/manifest_local_norm_ci.txt _scratch/manifest_remote_ci.txt | grep -E '^[+-][0-9a-f]{64}' | wc -l | tr -d ' ')

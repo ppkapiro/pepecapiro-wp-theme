@@ -1,0 +1,41 @@
+== grep -Rin 'og:' . ==
+./scripts/grep_trazas.sh:16:og:
+./scripts/auditoria_pepecapiro.sh:39:grep -iE 'og:|twitter:' "$OUT/${TS}_home.html"    || true
+./scripts/auditoria_pepecapiro.sh:40:grep -iE 'og:|twitter:' "$OUT/${TS}_home_es.html" || true
+./scripts/auditoria_pepecapiro.sh:41:grep -iE 'og:|twitter:' "$OUT/${TS}_home_en.html" || true
+./scripts/get_wp_diagnostico.sh:368:  echo "- Logs wp-content/debug.log:"
+./scripts/resumen_auditoria.py:116:            'og:title': bool(re.search(r'property=[\"\']og:title[\"\']', html, re.I)),
+./scripts/resumen_auditoria.py:117:            'og:description': bool(re.search(r'property=[\"\']og:description[\"\']', html, re.I)),
+./scripts/resumen_auditoria.py:118:            'og:image': bool(re.search(r'property=[\"\']og:image[\"\']', html, re.I)),
+./scripts/resumen_auditoria.py:221:        if shortcodes_log:
+./scripts/resumen_auditoria.py:223:            for ln in shortcodes_log:
+./scripts/resumen_auditoria.py:241:        out.write("- Añadir og:image consistente para ES/EN si falta.\n")
+./evidence/INFORME_AUDITORIA_20250923_114216.md:65:- 20250923_114216_home.html: Faltan: og:image
+./evidence/INFORME_AUDITORIA_20250923_114216.md:66:- 20250923_114216_home_es.html: Faltan: og:title, og:description, og:image, twitter:card
+./evidence/INFORME_AUDITORIA_20250923_114216.md:67:- 20250923_114216_home_en.html: Faltan: og:image
+./evidence/INFORME_AUDITORIA_20250923_114216.md:79:- Añadir og:image consistente para ES/EN si falta.
+./evidence/20250923_114216_home.html:2:<html lang="es-ES" prefix="og: https://ogp.me/ns#">
+./evidence/20250923_114216_home.html:17:<meta property="og:locale" content="es_ES" />
+./evidence/20250923_114216_home.html:18:<meta property="og:type" content="website" />
+./evidence/20250923_114216_home.html:19:<meta property="og:title" content="Pepe Capiro — Consultor en IA y Tecnología en Miami" />
+./evidence/20250923_114216_home.html:20:<meta property="og:description" content="Optimizo procesos y activo valor con IA aplicada y automatización práctica en Miami. Descubre cómo mejorar tu negocio en menos tiempo." />
+./evidence/20250923_114216_home.html:21:<meta property="og:url" content="https://pepecapiro.com/" />
+./evidence/20250923_114216_home.html:22:<meta property="og:site_name" content="Pepe Capiro" />
+./evidence/20250923_114216_home.html:23:<meta property="og:updated_time" content="2025-09-18T12:06:33-04:00" />
+./evidence/20250923_114216_home.html:38:<meta property="og:title" content="Pepe Capiro — Consultor en IA y Tecnología en Miami" />
+./evidence/20250923_114216_home.html:39:<meta property="og:type" content="article" />
+./evidence/20250923_114216_home.html:40:<meta property="og:url" content="https://pepecapiro.com/" />
+./evidence/20250923_114216_home_en.html:2:<html lang="en-US" prefix="og: https://ogp.me/ns#">
+./evidence/20250923_114216_home_en.html:17:<meta property="og:locale" content="en_US" />
+./evidence/20250923_114216_home_en.html:18:<meta property="og:type" content="website" />
+./evidence/20250923_114216_home_en.html:19:<meta property="og:title" content="Pepe Capiro — AI &amp; Technology Consultant in Miami" />
+./evidence/20250923_114216_home_en.html:20:<meta property="og:description" content="I optimize processes and deliver value with applied AI and practical automation in Miami. See how to streamline your business today." />
+./evidence/20250923_114216_home_en.html:21:<meta property="og:url" content="https://pepecapiro.com/" />
+./evidence/20250923_114216_home_en.html:22:<meta property="og:site_name" content="Pepe Capiro" />
+./evidence/20250923_114216_home_en.html:23:<meta property="og:updated_time" content="2025-09-22T16:58:30-04:00" />
+./evidence/20250923_114216_home_en.html:38:<meta property="og:title" content="Pepe Capiro — AI &amp; Technology Consultant in Miami" />
+./evidence/20250923_114216_home_en.html:39:<meta property="og:type" content="article" />
+./evidence/20250923_114216_home_en.html:40:<meta property="og:url" content="https://pepecapiro.com/en/home/" />
+./pepecapiro/functions.php:46:  echo '<meta property="og:title" content="'.esc_attr($title).'" />' . "\n";
+./pepecapiro/functions.php:47:  echo '<meta property="og:type" content="'. (is_singular() ? 'article' : 'website') .'" />' . "\n";
+./pepecapiro/functions.php:48:  echo '<meta property="og:url" content="'.$url.'" />' . "\n";

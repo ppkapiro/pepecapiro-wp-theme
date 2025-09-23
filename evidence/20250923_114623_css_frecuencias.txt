@@ -1,0 +1,4 @@
+# Frecuencias CSS (color, box-shadow, border-radius)
+## color
+\n## box-shadow
+\n## border-radius
