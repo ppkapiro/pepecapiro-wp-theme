@@ -21,3 +21,9 @@ Tema WordPress para pepecapiro.com.
 
 ## CI
 - GitHub Actions: ejecución de Lighthouse (móvil) sobre 10 URLs, artefactos y reportes HTML.
+
+## Estado de validación de rendimiento (etapa cerrada)
+
+- Último workflow: https://github.com/ppkapiro/pepecapiro-wp-theme/actions/workflows/lighthouse_docs.yml
+- Landing de Docs: https://ppkapiro.github.io/pepecapiro-wp-theme/docs/index.html
+- Índice Lighthouse: https://ppkapiro.github.io/pepecapiro-wp-theme/docs/lighthouse/index.html

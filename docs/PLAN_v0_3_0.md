@@ -36,3 +36,10 @@ Umbrales: Perf ≥ 90 en Home ES/EN; LCP ≤ 2.5s global.
 ## 5) Entregables
 - Checklists marcadas en este archivo.
 - Evidencia (capturas/links) pegadas al final.
+
+## Cierre de etapa: Auditoría Lighthouse + PSI
+
+- Estado: **CERRADO**
+- Evidencia final: https://github.com/ppkapiro/pepecapiro-wp-theme/actions/workflows/lighthouse_docs.yml
+- Próximo hito: v0.3.0 (SMTP, primer artículo ES/EN, legales).
+- Fecha de cierre: actualizado al crear la release estable.
