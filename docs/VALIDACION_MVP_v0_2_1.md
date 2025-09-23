@@ -113,5 +113,10 @@ Notas:
 | /contacto/ | n/a | n/a | n/a | n/a | — |
 | /en/contact/ | n/a | n/a | n/a | n/a | — |
 
-
 > **Índice navegable de reportes:** ver `docs/lighthouse/index.html`.
+
+### Historial de auditorías
+
+| Fecha | Estado | Run | Evidencia |
+|-------|--------|-----|-----------|
+| 2025-09-23 14:33:00 UTC | success | [Actions](https://github.com/ppkapiro/pepecapiro-wp-theme/actions/runs/17949492965) | [lh_fail](N/A) |
