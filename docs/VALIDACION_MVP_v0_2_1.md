@@ -115,6 +115,10 @@ Notas:
 
 > **Índice navegable de reportes:** ver `docs/lighthouse/index.html`.
 
+### Nota v0.3.0 — 2025-09-23
+- Se documentaron y prepararon para ejecución los contenidos iniciales (post ES/EN) y legales (Privacidad/Cookies ES/EN).  
+- Tras publicar y purgar caché, repetir mediciones Lighthouse/PSI para Home, Blog ES/EN y páginas legales; adjuntar reportes en `docs/lighthouse/` y actualizar esta tabla con Perf/LCP/TTI/INP.
+
 ### Historial de auditorías
 
 | Fecha | Estado | Run | Evidencia |

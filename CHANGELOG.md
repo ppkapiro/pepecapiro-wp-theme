@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.0 – 20250923
+- Contenido inicial: primer artículo ES/EN definido (título, excerpt, cuerpo, slugs y categorías Guías/Guides) listo para publicar; retirada de “Hello world!” planificada.
+- Legales mínimos: Políticas de Privacidad y Cookies (ES/EN) redactadas y listas para alta; enlazado en footer ES/EN definido.
+- Formularios/SMTP: unificación de formulario ES/EN (campos, validaciones, microcopy, estados); plan de configuración SMTP (Hostinger 587 TLS o proveedor externo) y plan de pruebas (éxito/error/antispam).
+- SEO inicial: sitemaps/robots validados; canónicas/hreflang a revisar con Rank Math al publicar; Search Console pendiente de verificación por propiedad.
+- Documentación: `docs/INFORME_UNICO_RESCATE.md` actualizado con auditorías en vivo, copys finales, planes de validación y checklist; anotación en `docs/VALIDACION_MVP_v0_2_1.md` para v0.3.0.
+
 ## 0.1.2 – 20250917_191856
 - Paleta y tipografías (Montserrat + Open Sans).
 - Home con Hero + 3 cards (front-page.php).
