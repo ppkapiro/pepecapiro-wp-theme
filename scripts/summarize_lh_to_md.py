@@ -6,6 +6,7 @@ from datetime import datetime
 
 REPORT_DIR = os.path.join(os.getcwd(), 'lighthouse_reports')
 DOC_PATH = os.path.join(os.getcwd(), 'docs', 'VALIDACION_MVP_v0_2_1.md')
+DOCS_LH_DIR = os.path.join(os.getcwd(), 'docs', 'lighthouse')
 
 # Map file base name to page path for the table
 # Map file base name to page path for the table
@@ -52,8 +53,10 @@ def extract_top_opportunities(audits: dict):
 def parse_report(path):
     with open(path, 'r', encoding='utf-8') as f:
         data = json.load(f)
-    cats = data.get('categories', {}) or {}
-    audits = data.get('audits', {}) or {}
+    # Soporta JSON de LHCI y PSI (que anida bajo lighthouseResult)
+    root = data.get('lighthouseResult') if 'lighthouseResult' in data else data
+    cats = (root or {}).get('categories', {}) or {}
+    audits = (root or {}).get('audits', {}) or {}
 
     perf_score = cats.get('performance', {}).get('score')
     if isinstance(perf_score, (int, float)):
@@ -105,7 +108,9 @@ def main():
     ]
     for k in ordered_keys:
         page_path = PAGE_MAP[k]
-        link = f"[{page_path}](lighthouse/{k}.html)" if k in name_to_metrics else page_path
+        html_path = os.path.join(DOCS_LH_DIR, f"{k}.html")
+        # Solo enlazar si existe el HTML
+        link = f"[{page_path}](lighthouse/{k}.html)" if (k in name_to_metrics and os.path.isfile(html_path)) else page_path
         perf, lcp, tti, inp, top2 = name_to_metrics.get(k, ('n/a','n/a','n/a','n/a','—'))
         rows.append((link, perf, lcp, tti, inp, top2))
 

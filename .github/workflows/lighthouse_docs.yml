@@ -21,6 +21,7 @@ jobs:
       PERF_HOME_MIN: "90"
       PERF_OTHERS_MIN: "85"
       LCP_MAX: "2.5"
+      PSI_API_KEY: ${{ secrets.PSI_API_KEY }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -77,6 +78,12 @@ jobs:
           if-no-files-found: warn
           retention-days: 3
 
+      - name: List .lighthouseci contents (debug)
+        if: always()
+        run: |
+          echo "--- .lighthouseci ---"; ls -la .lighthouseci || true
+          echo "--- lighthouse_reports (pre) ---"; ls -la lighthouse_reports || true
+
 
       - name: Normalize report filenames and publish HTML
         if: always()
@@ -87,6 +94,18 @@ jobs:
         if: always()
         run: |
           python3 scripts/summarize_lh_to_md.py || true
+
+      - name: Fallback PSI si no hay JSONs
+        if: always()
+        run: |
+          if [ -n "${PSI_API_KEY}" ] && ! ls lighthouse_reports/*.json >/dev/null 2>&1; then
+            echo "[i] No hay JSONs en lighthouse_reports, ejecutando fallback PSI..."
+            python3 scripts/fetch_psi_reports.py || true
+            echo "[i] Recalculando resumen tras PSI"
+            python3 scripts/summarize_lh_to_md.py || true
+          else
+            echo "[i] Saltando fallback PSI (hay JSONs o no hay API key)"
+          fi
 
       - name: Verify thresholds (gates)
         if: always()
