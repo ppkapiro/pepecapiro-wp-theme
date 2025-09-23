@@ -49,6 +49,7 @@ jobs:
 
       - name: Run Lighthouse (Mobile) for URL list
         uses: treosh/lighthouse-ci-action@v10
+        continue-on-error: true
         with:
           urls: ${{ steps.read_urls.outputs.urls }}
           configPath: lighthouserc.json
@@ -81,6 +82,15 @@ jobs:
       - name: Verify thresholds (gates)
         run: |
           python3 scripts/check_thresholds.py
+
+      - name: Ensure failure stub exists
+        if: failure()
+        run: |
+          if [ ! -f /tmp/lh_fail.md ]; then
+            echo "### Fallo de workflow Lighthouse" > /tmp/lh_fail.md
+            echo >> /tmp/lh_fail.md
+            echo "No se generó evidencia previa. Revisa artefactos 'lhci_raw' y logs del job." >> /tmp/lh_fail.md
+          fi
 
       - name: Upload failure evidence
         if: failure()
