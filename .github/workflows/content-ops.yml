@@ -1,0 +1,150 @@
+name: Content Ops (remote WP-CLI)
+
+on:
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: 'Aplicar cambios (true) o dry-run (false)'
+        required: true
+        default: 'false'
+      create_privacy:
+        description: 'Crear páginas de Privacidad/Cookies ES/EN'
+        required: false
+        default: 'true'
+      publish_post:
+        description: 'Publicar primer post ES/EN y eliminar Hello World'
+        required: false
+        default: 'true'
+      unify_contact_es:
+        description: 'Asignar plantilla Contacto (bilingüe) a ES'
+        required: false
+        default: 'true'
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    env:
+      SSH_HOST: ${{ secrets.PEPE_HOST }}
+      SSH_PORT: ${{ secrets.PEPE_PORT }}
+      SSH_USER: ${{ secrets.PEPE_USER }}
+      SITE_ROOT: /home/u525829715/domains/pepecapiro.com/public_html
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cargar clave en ssh-agent
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.PEPE_SSH_KEY }}
+
+      - name: known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -T 5 -p "$SSH_PORT" "$SSH_HOST" >> ~/.ssh/known_hosts
+
+      - name: Dry-run/apply flags
+        id: flags
+        run: |
+          APPLY=${{ github.event.inputs.apply }}
+          echo "apply=$APPLY" >> $GITHUB_OUTPUT
+
+      - name: Unificar formulario ES (plantilla Contacto)
+        if: ${{ github.event.inputs.unify_contact_es != 'false' }}
+        run: |
+          set -e
+          ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "cd '$SITE_ROOT' && wp post list --post_type=page --name=contacto --field=ID" > id.txt || true
+          ID=$(cat id.txt || true)
+          if [ -n "$ID" ]; then
+            echo "Encontrada página Contacto ES ID=$ID"
+            if [ "${{ steps.flags.outputs.apply }}" = "true" ]; then
+              ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "cd '$SITE_ROOT' && wp post meta update $ID _wp_page_template page-contact.php"
+            else
+              echo "DRY-RUN: no se cambia plantilla"
+            fi
+          else
+            echo "No se encontró página /contacto/"
+          fi
+
+      - name: Crear legales ES/EN
+        if: ${{ github.event.inputs.create_privacy != 'false' }}
+        run: |
+          set -e
+          # ES
+          ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "cd '$SITE_ROOT' && wp post list --post_type=page --name=privacidad --field=ID" > p_es.txt || true
+          PID=$(cat p_es.txt || true)
+          if [ -z "$PID" ]; then
+            echo "Crear Privacidad ES"
+            if [ "${{ steps.flags.outputs.apply }}" = "true" ]; then
+              ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "cd '$SITE_ROOT' && wp post create --post_type=page --post_status=publish --post_title='Política de Privacidad' --post_name=privacidad --porcelain"
+            fi
+          fi
+          ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "cd '$SITE_ROOT' && wp post list --post_type=page --name=cookies --field=ID" > c_es.txt || true
+          CID=$(cat c_es.txt || true)
+          if [ -z "$CID" ]; then
+            echo "Crear Cookies ES"
+            if [ "${{ steps.flags.outputs.apply }}" = "true" ]; then
+              ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "cd '$SITE_ROOT' && wp post create --post_type=page --post_status=publish --post_title='Política de Cookies' --post_name=cookies --porcelain"
+            fi
+          fi
+          # EN
+          ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "cd '$SITE_ROOT' && wp post list --post_type=page --name=privacy --field=ID" > p_en.txt || true
+          PID_EN=$(cat p_en.txt || true)
+          if [ -z "$PID_EN" ]; then
+            echo "Create Privacy EN"
+            if [ "${{ steps.flags.outputs.apply }}" = "true" ]; then
+              ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "cd '$SITE_ROOT' && wp post create --post_type=page --post_status=publish --post_title='Privacy Policy' --post_name=privacy --porcelain"
+            fi
+          fi
+          ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "cd '$SITE_ROOT' && wp post list --post_type=page --name=cookies --field=ID --path='$SITE_ROOT/en'" || true
+          ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "cd '$SITE_ROOT' && wp post list --post_type=page --name=cookies --field=ID" > c_en.txt || true
+          CID_EN=$(cat c_en.txt || true)
+          if [ -z "$CID_EN" ]; then
+            echo "Create Cookies EN"
+            if [ "${{ steps.flags.outputs.apply }}" = "true" ]; then
+              ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "cd '$SITE_ROOT' && wp post create --post_type=page --post_status=publish --post_title='Cookies Policy' --post_name=cookies --porcelain"
+            fi
+          fi
+
+      - name: Publicar primer post ES/EN y limpiar Hello World
+        if: ${{ github.event.inputs.publish_post != 'false' }}
+        run: |
+          set -e
+          # Borrar Hello world si existe
+          HW=$(ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "cd '$SITE_ROOT' && wp post list --post_type=post --name=hello-world --field=ID" || true)
+          if [ -n "$HW" ]; then
+            echo "Eliminar Hello world (ID=$HW)"
+            if [ "${{ steps.flags.outputs.apply }}" = "true" ]; then
+              ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "cd '$SITE_ROOT' && wp post delete $HW --force"
+            fi
+          fi
+          # Crear ES si no existe
+          ES_SLUG=checklist-wordpress-produccion-1-dia
+          ES_ID=$(ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "cd '$SITE_ROOT' && wp post list --post_type=post --name=$ES_SLUG --field=ID" || true)
+          if [ -z "$ES_ID" ] && [ "${{ steps.flags.outputs.apply }}" = "true" ]; then
+            ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "cd '$SITE_ROOT' && wp term create category 'Guías' --slug=guias || true"
+            ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "cd '$SITE_ROOT' && wp post create --post_type=post --post_status=publish --post_title='Checklist para poner un WordPress a producir en 1 día' --post_name=$ES_SLUG --post_excerpt='Una guía práctica para pasar de cero a producción en 24 horas: seguridad, rendimiento, SEO, contenido mínimo y verificación.' --post_date='2025-09-23 09:00:00' --porcelain" > es_id.txt
+            NEW_ES_ID=$(cat es_id.txt)
+            ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "cd '$SITE_ROOT' && wp post term add $NEW_ES_ID category guias"
+          fi
+          # Crear EN si no existe
+          EN_SLUG=ship-wordpress-production-in-one-day
+          EN_ID=$(ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "cd '$SITE_ROOT' && wp post list --post_type=post --name=$EN_SLUG --field=ID" || true)
+          if [ -z "$EN_ID" ] && [ "${{ steps.flags.outputs.apply }}" = "true" ]; then
+            ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "cd '$SITE_ROOT' && wp term create category 'Guides' --slug=guides || true"
+            ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "cd '$SITE_ROOT' && wp post create --post_type=post --post_status=publish --post_title='Ship a Production‑Ready WordPress in One Day: A Practical Checklist' --post_name=$EN_SLUG --post_excerpt='A hands‑on guide to go live in 24 hours: security, performance, SEO, minimum content, and final checks.' --post_date='2025-09-23 09:00:00' --porcelain" > en_id.txt
+            NEW_EN_ID=$(cat en_id.txt)
+            ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "cd '$SITE_ROOT' && wp post term add $NEW_EN_ID category guides"
+          fi
+
+      - name: Purga de cachés
+        run: |
+          set -e
+          if [ "${{ steps.flags.outputs.apply }}" = "true" ]; then
+            ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "cd '$SITE_ROOT' && wp cache flush && wp plugin is-installed litespeed-cache && wp litespeed-purge all || true"
+          else
+            echo "DRY-RUN: no se purga"
+          fi
+
+      - name: Salida de verificación
+        run: |
+          ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "cd '$SITE_ROOT' && wp post list --post_type=page --format=ids | wc -w && wp post list --post_type=post --format=ids | wc -w"
