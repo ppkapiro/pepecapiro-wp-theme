@@ -11,11 +11,25 @@
     $t_cookies = 'Cookies';
     $t_cta = $is_en ? "Let's talk" : 'Hablemos';
 
-    $url_home = $is_en ? home_url('/en/home/') : home_url('/');
+    // Helpers para resolver URLs con fallback si la versión EN no existe
+    $resolve_page = function($slug){
+      $p = get_page_by_path($slug);
+      return $p ? get_permalink($p) : '';
+    };
+    $pref = function($prefer, $fallback) use ($resolve_page){
+      $u = $resolve_page($prefer);
+      if ($u) return $u;
+      $u2 = $resolve_page($fallback);
+      return $u2 ?: home_url('/');
+    };
+
+    // Enlaces base
+    $url_home = function_exists('pll_home_url') ? pll_home_url($is_en ? 'en' : 'es') : ($is_en ? home_url('/en/home/') : home_url('/'));
     $url_projects = $is_en ? home_url('/en/projects/') : home_url('/proyectos/');
     $url_blog = $is_en ? home_url('/en/blog-en/') : home_url('/blog/');
-    $url_priv = $is_en ? home_url('/en/privacy/') : home_url('/privacidad/');
-    $url_cookies = $is_en ? home_url('/en/cookies/') : home_url('/cookies/');
+    // Legales: preferir EN si $is_en y existen, si no, fallback a ES
+    $url_priv = $is_en ? $pref('privacy','privacidad') : $pref('privacidad','privacy');
+    $url_cookies = $is_en ? $pref('cookies','cookies') : $pref('cookies','cookies');
     $url_contact = $is_en ? home_url('/en/contact/') : home_url('/contacto/');
     $mailto = $is_en ? 'mailto:contact@pepecapiro.com' : 'mailto:contacto@pepecapiro.com';
     $brand_blurb = $is_en
