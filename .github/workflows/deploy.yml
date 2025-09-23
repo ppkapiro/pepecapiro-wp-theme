@@ -63,8 +63,17 @@ jobs:
       - name: Generar manifest local
         id: manlocal
         run: |
-          chmod +x _scratch/gen_manifest.sh
-          ./_scratch/gen_manifest.sh _scratch/manifest_local.txt
+          set -e
+          mkdir -p _scratch
+          if [ -x _scratch/gen_manifest.sh ]; then
+            echo "[i] Usando _scratch/gen_manifest.sh"
+            ./_scratch/gen_manifest.sh _scratch/manifest_local.txt
+          else
+            echo "[i] _scratch/gen_manifest.sh no encontrado; generando manifest inline..."
+            find pepecapiro -type f \
+              \( -name '*.php' -o -name '*.css' -o -name '*.js' -o -name '*.svg' -o -name '*.png' -o -name '*.jpg' -o -name '*.jpeg' -o -name '*.webp' -o -name '*.woff2' -o -name '*.webmanifest' -o -name '*.json' -o -name '*.ico' \) \
+              -print0 | sort -z | xargs -0 sha256sum > _scratch/manifest_local.txt
+          fi
           test -s _scratch/manifest_local.txt
 
       - name: Generar artefacto (zip + sha)
