@@ -1,0 +1,8 @@
+ES sizes:
+15982 /home/pepe/work/pepecapiro-wp-theme/evidence/20250923_122234_home_es.html
+15992 /home/pepe/work/pepecapiro-wp-theme/evidence/20250923_122234_home_es_nocache.html
+31974 total
+EN sizes:
+15996 /home/pepe/work/pepecapiro-wp-theme/evidence/20250923_122234_home_en.html
+16006 /home/pepe/work/pepecapiro-wp-theme/evidence/20250923_122234_home_en_nocache.html
+32002 total

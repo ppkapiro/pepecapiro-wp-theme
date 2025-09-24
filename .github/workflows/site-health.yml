@@ -1,0 +1,60 @@
+name: Site Health & Auto-Remediation
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+env:
+  SSH_HOST: ${{ secrets.PEPE_HOST }}
+  SSH_PORT: ${{ secrets.PEPE_PORT }}
+  SSH_USER: ${{ secrets.PEPE_USER }}
+  SITE_ROOT: /home/u525829715/domains/pepecapiro.com/public_html
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cargar clave en ssh-agent
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.PEPE_SSH_KEY }}
+
+      - name: known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -T 5 -p "$SSH_PORT" "$SSH_HOST" >> ~/.ssh/known_hosts
+
+      - name: Verificar salud
+        id: check
+        run: |
+          set -e
+          urls=(
+            https://pepecapiro.com/privacidad/
+            https://pepecapiro.com/cookies/
+            https://pepecapiro.com/en/privacy/
+            https://pepecapiro.com/en/cookies/
+          )
+          pass=1
+          for u in "${urls[@]}"; do
+            code=$(curl -s -L -o /tmp/_hb -w '%{http_code}' "$u" || echo 000)
+            if [ "$code" != "200" ] || grep -qiE 'Página no encontrada|Page not found' /tmp/_hb; then pass=0; fi
+          done
+          sm_code=$(curl -s -L -o /tmp/_hsm https://pepecapiro.com/post-sitemap.xml -w '%{http_code}' || echo 000)
+          if [ "$sm_code" != "200" ] || grep -qi 'hello-world' /tmp/_hsm; then pass=0; fi
+          echo "ok=$pass" >> $GITHUB_OUTPUT
+
+      - name: Remediation (ligera)
+        if: ${{ steps.check.outputs.ok == '0' }}
+        run: |
+          set -e
+          ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "cd '$SITE_ROOT' && wp rewrite flush --hard && wp cache flush && (wp plugin is-installed litespeed-cache && wp litespeed-purge all || true)" || true
+          ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "cd '$SITE_ROOT' && wp transient delete --all && PREFIX=\$(wp db prefix) && wp db query \"DELETE FROM \\\${PREFIX}options WHERE option_name LIKE 'rank_math_sitemap_%';\"" || true
+          curl -sS https://pepecapiro.com/sitemap_index.xml >/dev/null || true
+          curl -sS https://pepecapiro.com/post-sitemap.xml >/dev/null || true
+
+      - name: Resultado
+        run: echo "Health checked; remediation attempted if needed."

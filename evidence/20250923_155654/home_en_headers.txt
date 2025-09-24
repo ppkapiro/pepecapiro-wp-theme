@@ -1,0 +1,36 @@
+HTTP/2 301 
+date: Tue, 23 Sep 2025 19:58:20 GMT
+content-type: text/html; charset=UTF-8
+content-length: 0
+location: https://pepecapiro.com/en/home/
+x-powered-by: PHP/8.2.28
+x-redirect-by: WordPress
+x-litespeed-cache: hit
+platform: hostinger
+panel: hpanel
+content-security-policy: upgrade-insecure-requests
+age: 77
+server: hcdn
+alt-svc: h3=":443"; ma=86400
+x-hcdn-request-id: d2110a1fdb439a1e0c20f4fe3185043c-bos-edge1
+x-hcdn-cache-status: HIT
+
+HTTP/2 200 
+date: Tue, 23 Sep 2025 19:58:20 GMT
+content-type: text/html; charset=UTF-8
+vary: Accept-Encoding
+x-powered-by: PHP/8.2.28
+link: <https://pepecapiro.com/wp-json/>; rel="https://api.w.org/"
+link: <https://pepecapiro.com/wp-json/wp/v2/pages/10>; rel="alternate"; title="JSON"; type="application/json"
+link: <https://pepecapiro.com/>; rel=shortlink
+etag: W/"340-1758656734;gz"
+x-litespeed-cache: hit
+platform: hostinger
+panel: hpanel
+content-security-policy: upgrade-insecure-requests
+server: hcdn
+alt-svc: h3=":443"; ma=86400
+x-hcdn-request-id: 8526db9f151b95e3c923304e75f13d5a-bos-edge1
+x-hcdn-cache-status: MISS
+x-hcdn-upstream-rt: 0.009
+

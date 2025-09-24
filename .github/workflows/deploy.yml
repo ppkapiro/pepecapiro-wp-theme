@@ -23,6 +23,9 @@ env:
 
 jobs:
   deploy:
+    concurrency:
+      group: deploy-${{ github.ref }}
+      cancel-in-progress: true
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -109,6 +112,87 @@ jobs:
             wp option get permalink_structure && \
             wp plugin is-installed litespeed-cache && wp litespeed-purge all || true \
           "
+
+      - name: Content Ops (WP-CLI remoto)
+        run: |
+          set -e
+          ROOT="/home/u525829715/domains/pepecapiro.com/public_html"
+          SSH="ssh -p \"${{ env.SSH_PORT }}\" \"${{ env.SSH_USER }}@${{ env.SSH_HOST }}\""
+          LOG="/tmp/content_ops_$(date +%s).log"
+          # Unificar Contacto ES con plantilla bilingüe
+          $SSH "cd '$ROOT' && ID=\$(wp post list --post_type=page --name=contacto --field=ID || true) && if [ -n \"$ID\" ]; then wp post meta update \"$ID\" _wp_page_template page-contact.php | tee -a '$LOG'; fi"
+          # Crear legales ES (con idioma)
+          $SSH "cd '$ROOT' && P=\$(wp post list --post_type=page --name=privacidad --field=ID || true); if [ -z \"$P\" ]; then NEW=\$(wp post create --post_type=page --post_status=publish --post_title='Política de Privacidad' --post_name=privacidad --porcelain); wp eval \"if(function_exists('pll_set_post_language')){pll_set_post_language((int)$NEW,'es'); echo 'set es';}\" 2>/dev/null | tee -a '$LOG'; else wp eval \"if(function_exists('pll_set_post_language')){pll_set_post_language((int)$P,'es'); echo 'ensure es';}\" 2>/dev/null | tee -a '$LOG'; fi"
+          $SSH "cd '$ROOT' && C=\$(wp post list --post_type=page --name=cookies --field=ID || true); if [ -z \"$C\" ]; then NEW=\$(wp post create --post_type=page --post_status=publish --post_title='Política de Cookies' --post_name=cookies --porcelain); wp eval \"if(function_exists('pll_set_post_language')){pll_set_post_language((int)$NEW,'es'); echo 'set es';}\" 2>/dev/null | tee -a '$LOG'; else wp eval \"if(function_exists('pll_set_post_language')){pll_set_post_language((int)$C,'es'); echo 'ensure es';}\" 2>/dev/null | tee -a '$LOG'; fi"
+          # Crear legales EN (con idioma)
+          $SSH "cd '$ROOT' && P=\$(wp post list --post_type=page --name=privacy --field=ID || true); if [ -z \"$P\" ]; then NEW=\$(wp post create --post_type=page --post_status=publish --post_title='Privacy Policy' --post_name=privacy --porcelain); wp eval \"if(function_exists('pll_set_post_language')){pll_set_post_language((int)$NEW,'en'); echo 'set en';}\" 2>/dev/null | tee -a '$LOG'; else wp eval \"if(function_exists('pll_set_post_language')){pll_set_post_language((int)$P,'en'); echo 'ensure en';}\" 2>/dev/null | tee -a '$LOG'; fi"
+          $SSH "cd '$ROOT' && CE=\$(wp post list --post_type=page --name=cookies --field=ID || true); if [ -z \"$CE\" ]; then NEW=\$(wp post create --post_type=page --post_status=publish --post_title='Cookies Policy' --post_name=cookies --porcelain); wp eval \"if(function_exists('pll_set_post_language')){pll_set_post_language((int)$NEW,'en'); echo 'set en';}\" 2>/dev/null | tee -a '$LOG'; else wp eval \"if(function_exists('pll_set_post_language')){pll_set_post_language((int)$CE,'en'); echo 'ensure en';}\" 2>/dev/null | tee -a '$LOG'; fi"
+          # Enlazar traducciones ES/EN de Cookies (por título para evitar ambigüedad de slug)
+          $SSH "cd '$ROOT' && ES_CID=\$(wp post list --post_type=page --title='Política de Cookies' --field=ID || true); EN_CID=\$(wp post list --post_type=page --title='Cookies Policy' --field=ID || true); if [ -n \"$ES_CID\" ] && [ -n \"$EN_CID\" ]; then wp eval \"if(function_exists('pll_save_post_translations')){pll_save_post_translations(['es'=>$ES_CID,'en'=>$EN_CID]); echo 'linked cookies';}\" | tee -a '$LOG'; fi"
+          # Enlazar traducciones ES/EN de privacidad
+          $SSH "cd '$ROOT' && ES_PRIV=\$(wp post list --post_type=page --name=privacidad --field=ID || true); EN_PRIV=\$(wp post list --post_type=page --name=privacy --field=ID || true); if [ -n \"$ES_PRIV\" ] && [ -n \"$EN_PRIV\" ]; then wp eval \"if(function_exists('pll_save_post_translations')){pll_save_post_translations(['es'=>$ES_PRIV,'en'=>$EN_PRIV]); echo 'linked privacy';}\" | tee -a '$LOG'; fi"
+          # Publicar primer post ES/EN y eliminar Hello world
+          # Eliminar cualquier variante de Hello World por slug y títulos comunes (ES/EN)
+          $SSH "cd '$ROOT' && for ID in \$(wp post list --post_type=post --name=hello-world --field=ID || true); do wp post delete \"$ID\" --force | tee -a '$LOG'; done || true"
+          $SSH "cd '$ROOT' && for ID in \$(wp post list --post_type=post --title='Hello world!' --field=ID || true) \$(wp post list --post_type=post --title='Hello world' --field=ID || true) \$(wp post list --post_type=post --title='Hola mundo!' --field=ID || true) \$(wp post list --post_type=post --title='Hola mundo' --field=ID || true); do [ -n \"$ID\" ] && wp post delete \"$ID\" --force | tee -a '$LOG'; done || true"
+          $SSH "cd '$ROOT' && wp term create category 'Guías' --slug=guias | tee -a '$LOG' || true"
+          $SSH "cd '$ROOT' && ES=\$(wp post list --post_type=post --name=checklist-wordpress-produccion-1-dia --field=ID || true); if [ -z \"$ES\" ]; then NEW=\$(wp post create --post_type=post --post_status=publish --post_title='Checklist para poner un WordPress a producir en 1 día' --post_name=checklist-wordpress-produccion-1-dia --post_excerpt='Una guía práctica para pasar de cero a producción en 24 horas: seguridad, rendimiento, SEO, contenido mínimo y verificación.' --post_date='2025-09-23 09:00:00' --porcelain); wp eval \"if(function_exists('pll_set_post_language')){pll_set_post_language((int)$NEW,'es'); echo 'set es';}\" 2>/dev/null | tee -a '$LOG'; wp post term add \"$NEW\" category guias | tee -a '$LOG'; else wp eval \"if(function_exists('pll_set_post_language')){pll_set_post_language((int)$ES,'es'); echo 'ensure es';}\" 2>/dev/null | tee -a '$LOG'; fi || true"
+          $SSH "cd '$ROOT' && wp term create category 'Guides' --slug=guides | tee -a '$LOG' || true"
+          $SSH "cd '$ROOT' && EN=\$(wp post list --post_type=post --name=ship-wordpress-production-in-one-day --field=ID || true); if [ -z \"$EN\" ]; then NEW=\$(wp post create --post_type=post --post_status=publish --post_title='Ship a Production‑Ready WordPress in One Day: A Practical Checklist' --post_name=ship-wordpress-production-in-one-day --post_excerpt='A hands‑on guide to go live in 24 hours: security, performance, SEO, minimum content, and final checks.' --post_date='2025-09-23 09:00:00' --porcelain); wp eval \"if(function_exists('pll_set_post_language')){pll_set_post_language((int)$NEW,'en'); echo 'set en';}\" 2>/dev/null | tee -a '$LOG'; wp post term add \"$NEW\" category guides | tee -a '$LOG'; else wp eval \"if(function_exists('pll_set_post_language')){pll_set_post_language((int)$EN,'en'); echo 'ensure en';}\" 2>/dev/null | tee -a '$LOG'; fi || true"
+          # Guardar reglas de reescritura y purga final
+          $SSH "cd '$ROOT' && wp rewrite flush --hard | tee -a '$LOG' && wp cache flush | tee -a '$LOG' && (wp plugin is-installed litespeed-cache && wp litespeed-purge all | tee -a '$LOG' || true)"
+          # Limpiar transients y caché de sitemaps de Rank Math; recalentar sitemaps
+          $SSH "cd '$ROOT' && wp transient delete --all | tee -a '$LOG' || true"
+          $SSH "cd '$ROOT' && PREFIX=\$(wp db prefix) && wp db query \"DELETE FROM \\\${PREFIX}options WHERE option_name LIKE 'rank_math_sitemap_%';\" | tee -a '$LOG' || true"
+          $SSH "cd '$ROOT' && curl -sS https://pepecapiro.com/sitemap_index.xml >/dev/null && curl -sS https://pepecapiro.com/post-sitemap.xml >/dev/null || true"
+          # Estado final útil para depuración
+          $SSH "cd '$ROOT' && echo 'PAGES:' >> '$LOG' && wp post list --post_type=page --fields=ID,post_name,post_title,post_status --format=table >> '$LOG' && echo 'POSTS:' >> '$LOG' && wp post list --post_type=post --fields=ID,post_name,post_title,post_status --format=table >> '$LOG'"
+
+      - name: Recuperar log remoto Content Ops
+        run: |
+          mkdir -p content_ops_logs
+          scp -P "${{ env.SSH_PORT }}" "${{ env.SSH_USER }}@${{ env.SSH_HOST }}:/tmp/content_ops_*.log" content_ops_logs/ || true
+
+      - name: Subir log Content Ops
+        uses: actions/upload-artifact@v4
+        with:
+          name: content-ops-log
+          path: content_ops_logs/*.log
+
+      - name: Monitorizar endpoints clave (hasta 3 min)
+        run: |
+          set -e
+          urls=(
+            https://pepecapiro.com/privacidad/
+            https://pepecapiro.com/cookies/
+            https://pepecapiro.com/en/privacy/
+            https://pepecapiro.com/en/cookies/
+          )
+          ok=false
+          for i in $(seq 1 18); do
+            echo "[Try $i] Verificando páginas legales…"
+            pass=1
+            for u in "${urls[@]}"; do
+              code=$(curl -s -L -o /tmp/_b -w '%{http_code}' "$u" || echo 000)
+              if [ "$code" != "200" ] || grep -qiE 'Página no encontrada|Page not found' /tmp/_b; then
+                echo "  - $u => $code (no OK)"; pass=0
+              else
+                echo "  - $u => $code OK"
+              fi
+            done
+            sm_code=$(curl -s -L -o /tmp/_psm https://pepecapiro.com/post-sitemap.xml -w '%{http_code}' || echo 000)
+            if [ "$sm_code" = "200" ] && ! grep -qi 'hello-world' /tmp/_psm; then
+              echo "  - post-sitemap.xml OK (sin hello-world)"
+            else
+              echo "  - post-sitemap.xml pendiente (code=$sm_code)"; pass=0
+            fi
+            if [ $pass -eq 1 ]; then ok=true; break; fi
+            sleep 10
+          done
+          if [ "$ok" != true ]; then
+            echo "❌ Endpoints no estabilizados tras Content Ops" >&2
+            exit 1
+          fi
 
       - name: Verificación de integridad (manifest remoto vs local)
         id: verify

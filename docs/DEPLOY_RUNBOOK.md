@@ -70,3 +70,26 @@ Acciones:
 
 - HEAD 200: `wp-content/themes/pepecapiro/assets/css/tokens.css`
 - Home ES/EN: títulos y `og:image` correctos; héroe visible.
+
+## 8) Listado de Blog Bilingüe (v0.3.10)
+
+Contexto: Se introdujo `page-blog.php` como plantilla dedicada para listar entradas sin depender de `page_for_posts`, aplicando filtrado por idioma (Polylang) y añadiendo un marcador HTML para verificación automatizada.
+
+Detalles clave:
+- Plantilla: `pepecapiro/page-blog.php` (Template Name: "Blog Listing").
+- Marcador comentario: `<!-- posts_found:X lang:YY -->` se inserta siempre al inicio del loop.
+- Marcador alternativo (no eliminado por minifiers que quitan comentarios): `<div id="blog-query-info" data-posts="X" data-lang="YY" style="display:none"></div>`.
+- Paginación: usa `paged` + `paginate_links()`; `posts_per_page=10`.
+- Slugs finales: ES `/blog`, EN `/en/blog-en` (decisión operativa tras conflictos previos con slugs huérfanos).
+
+Health check script (local, carpeta `_scratch/`): `blog_health_check.sh`
+- Valida HTTP 200 de ambos listados.
+- Extrae marcador `posts_found` y compara >0.
+- Comprueba que la plantilla activa para la página es `page-blog.php` vía `wp post get`.
+- Retorna código !=0 sólo si falla una condición crítica (el warning de Polylang se ignora).
+
+Integración futura (sugerido): añadir un paso opcional en el workflow de deploy que haga curl a `/blog` y `/en/blog-en` y grep del atributo `data-posts` para asegurar >0 antes de marcar success.
+
+Notas operativas:
+- Si se renombra el slug EN a simplemente `/en/blog`, actualizar enlaces internos y purgar cache + sitemap.
+- En caso de 0 posts en un idioma, el marcador aún aparecerá (`posts_found:0`) facilitando detección temprana.
