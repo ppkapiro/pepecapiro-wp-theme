@@ -194,6 +194,11 @@ jobs:
             exit 1
           fi
 
+      - name: Blog listing health
+        run: |
+          set -e
+          bash scripts/blog_health_ci.sh || (echo "❌ Blog listing health failed" >&2; exit 1)
+
       - name: Verificación de integridad (manifest remoto vs local)
         id: verify
         run: |

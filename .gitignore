@@ -4,6 +4,10 @@ node_modules/
 docker/db_data/
 # Logs
 _scratch/
+# Artifacts locales de releases (no versionar)
+_releases/
+*.zip
+*.sha256
 # Versionamos .vscode porque contiene sftp.json
 # WordPress: solo el tema; nada del core
 !pepecapiro/

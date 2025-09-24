@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.11 – 20250924 (Release)
+- CI reforzado: script `scripts/blog_health_ci.sh` para validar listados de blog ES/EN (HTTP 200, markers `posts_found` o `#blog-query-info`).
+- Workflow `deploy.yml`: paso "Blog listing health" posterior a content ops y antes de integridad.
+- Workflow `site-health.yml`: verificación periódica de markers de blog añadida.
+- Housekeeping: `_releases/` y artifacts `.zip/.sha256` ignorados en git.
+- Documentación: README (último release), Runbook sección 8 ampliada con nota de integración CI.
+- Bump versión a 0.3.11 en `style.css`.
+
 ## 0.3.10 – 20250924 (Release)
 - Blog bilingüe operativo: plantilla `page-blog.php` independiente de `page_for_posts`, query filtrada por idioma (Polylang) y paginación.
 - Normalización de slugs Blog: resolución de conflicto (`blog`, `blog-en`, `blog-2`, `blog-es`) mediante scripts idempotentes (`normalize_blog_slug.sh`, `finalize_blog_slugs.sh`).

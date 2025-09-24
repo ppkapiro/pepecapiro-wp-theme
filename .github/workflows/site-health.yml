@@ -47,6 +47,11 @@ jobs:
           if [ "$sm_code" != "200" ] || grep -qi 'hello-world' /tmp/_hsm; then pass=0; fi
           echo "ok=$pass" >> $GITHUB_OUTPUT
 
+      - name: Blog listing markers
+        run: |
+          set -e
+          bash scripts/blog_health_ci.sh || (echo "❌ Blog blog_health_ci.sh failed" >&2; exit 1)
+
       - name: Remediation (ligera)
         if: ${{ steps.check.outputs.ok == '0' }}
         run: |

@@ -88,7 +88,12 @@ Health check script (local, carpeta `_scratch/`): `blog_health_check.sh`
 - Comprueba que la plantilla activa para la página es `page-blog.php` vía `wp post get`.
 - Retorna código !=0 sólo si falla una condición crítica (el warning de Polylang se ignora).
 
-Integración futura (sugerido): añadir un paso opcional en el workflow de deploy que haga curl a `/blog` y `/en/blog-en` y grep del atributo `data-posts` para asegurar >0 antes de marcar success.
+Integración CI:
+- `deploy.yml`: paso "Blog listing health" ejecuta `scripts/blog_health_ci.sh` (falla si no hay marker o count<1).
+- `site-health.yml`: verificación periódica reutiliza el script para detección temprana.
+  
+Script incorporado:
+- `scripts/blog_health_ci.sh` (invocable local/CI; soporta `ALLOW_ZERO=1`).
 
 Notas operativas:
 - Si se renombra el slug EN a simplemente `/en/blog`, actualizar enlaces internos y purgar cache + sitemap.
