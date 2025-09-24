@@ -1,10 +1,20 @@
 # Changelog
 
+## 0.3.10 – 20250924 (Release)
+- Blog bilingüe operativo: plantilla `page-blog.php` independiente de `page_for_posts`, query filtrada por idioma (Polylang) y paginación.
+- Normalización de slugs Blog: resolución de conflicto (`blog`, `blog-en`, `blog-2`, `blog-es`) mediante scripts idempotentes (`normalize_blog_slug.sh`, `finalize_blog_slugs.sh`).
+- Health check específico (`_scratch/blog_health_check.sh`): valida slugs, plantilla, HTTP 200, marker `posts_found` y conteo por idioma.
+- Marker de depuración en HTML (`<!-- posts_found:X lang:YY -->`) para observabilidad remota.
+- Ajustes de documentación pendientes: sección Blog bilingüe añadida al informe único; preparación de próximos pasos SEO (breadcrumbs, bloque "Últimas entradas").
+- Housekeeping pendiente: consolidar scripts de migración de slugs (se documentan antes de archivarlos / limpieza futura).
+
+
 ## 0.3.0 – 20250923 (Release)
 - Contenido inicial: primer artículo ES/EN definido (título, excerpt, cuerpo, slugs y categorías Guías/Guides) listo para publicar; retirada de “Hello world!” planificada.
 - Legales mínimos: Políticas de Privacidad y Cookies (ES/EN) redactadas y listas para alta; enlazado en footer ES/EN definido.
 - Formularios/SMTP: unificación de formulario ES/EN (campos, validaciones, microcopy, estados); plan de configuración SMTP (Hostinger 587 TLS o proveedor externo) y plan de pruebas (éxito/error/antispam).
 - SEO inicial: sitemaps/robots validados; canónicas/hreflang a revisar con Rank Math al publicar; Search Console pendiente de verificación por propiedad.
+- Limpieza de sitemap: retirada efectiva de `hello-world` tras limpiar caché de Rank Math (DB+FS), purgar LiteSpeed y recalentar sitemaps (script remoto + mu-plugin temporal).
 - Documentación: `docs/INFORME_UNICO_RESCATE.md` actualizado (sección “Deployment v0.3.0”) con auditoría, pasos, validaciones y checklist; anotación en `docs/VALIDACION_MVP_v0_2_1.md` para v0.3.0.
 
 ## 0.1.2 – 20250917_191856

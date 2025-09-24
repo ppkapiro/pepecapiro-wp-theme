@@ -1,6 +1,6 @@
 # INFORME ÚNICO DE RESCATE
 
-Última actualización: 2025-09-23
+Última actualización: 2025-09-24
 
 ## 1) Portada & Resumen ejecutivo
 
@@ -220,11 +220,18 @@ Ruta remota: `/home/u525829715/domains/pepecapiro.com/public_html/wp-content/the
 5) Content Ops: asignación de idioma Polylang a legales ES/EN, enlace de traducciones, eliminación de `Hello world` (todas variantes), creación de categorías y primer post ES/EN si no existían, limpieza de caché de sitemaps Rank Math y recalentado de sitemaps.  
 6) Monitorización de endpoints hasta estabilizar (legales ES/EN 200 sin contenido 404; `post-sitemap.xml` sin `hello-world`).
 
+Notas adicionales (sitemap y cache):
+- Se ejecutó el script remoto `_remote_sitemap_fix.sh` para limpiar caché de Rank Math (DB + FS), purgar LiteSpeed y recalentar sitemaps, evitando problemas de quoting/TTY.
+- Se dejó un mu‑plugin temporal `wp-content/mu-plugins/disable-rm-sitemap-cache.php` que desactiva la caché de sitemaps en Rank Math para garantizar estabilidad. Retirar en 24–48h tras estabilidad.
+- Logs en servidor:
+  - `/home/u525829715/domains/pepecapiro.com/public_html/_remote_sitemap_fix.log`
+  - `/home/u525829715/domains/pepecapiro.com/public_html/_remote_wp_smoke.log`
+
 ### Resultados de validación
 - Páginas: Home, About, Contacto/Contact, Blog y Legales — todas 200 OK, sin contenido 404.  
 - Sitemap: `post-sitemap.xml` 200 OK y sin `hello-world`.  
 - Robots: accesible y correcto.  
-- WP-CLI smoke: `wp theme list` ok, `wp option get permalink_structure` ok, `wp plugin` muestra LiteSpeed/Rank Math activos.  
+- WP-CLI smoke: `wp --version` 2.12.0, core 6.8.2; tema activo `pepecapiro`; `permalink_structure` = `/%postname%/`; `show_on_front` = `page` con Home ID=10.  
 - Lighthouse rápido (móvil): ejecutable vía workflow o script; sin bloqueadores detectados.  
 - SMTP: configuración por entorno presente en `functions.php`; validación completa requiere prueba de envío (pendiente coordinar destinatario de prueba si hace falta evidencia).
 
@@ -236,6 +243,38 @@ Ruta remota: `/home/u525829715/domains/pepecapiro.com/public_html/wp-content/the
 - [x] Smoke tests WP-CLI  
 - [ ] SMTP confirmado con envío real (opcional, coordinar prueba)  
 - [x] Rollback listo (backup Hostinger + tag previo estable)  
+
+### Rollback (guía rápida)
+
+Escenario A — Solo revertir el tema a la versión anterior (v0.2.1 o tag estable):
+1. Subir el ZIP del tema de la versión previa a `wp-content/themes/` (o mantener la carpeta `pepecapiro` con el contenido del tag anterior).
+2. Opcional (si hay dos carpetas): renombrar la actual a `pepecapiro.bak` y colocar la del tag anterior como `pepecapiro`.
+3. Purgar cachés: `wp cache flush` y purga completa en LiteSpeed.
+4. Validar páginas clave y sitemap.
+
+Escenario B — Restaurar snapshot/backup completo en Hostinger:
+1. Entrar a hPanel → Backups → seleccionar fecha anterior inmediata al deploy.
+2. Restaurar archivos y base de datos (si procede). Confirmar que el dominio apunta al docroot correcto.
+3. Purgar cachés de LiteSpeed y validar Home, Legales y sitemap.
+
+Notas:
+- Mantener un ZIP/tag del tema previo en `_releases/` agiliza reversiones.
+- Validar que `permalink_structure` se conserva; si no, ejecutar `wp rewrite flush --hard` y purgar cachés.
+
+### Estabilización post-24h (2025-09-24)
+
+Acciones:
+- Retirado mu-plugin temporal `disable-rm-sitemap-cache.php` (desactivación de caché Rank Math ya no necesaria tras ver estabilidad y ausencia de entradas fantasma).
+- Purga de cachés (WP + LiteSpeed) y recalentado manual de `sitemap_index.xml` y `post-sitemap.xml`.
+
+Verificaciones:
+- `post-sitemap.xml`: sigue sin `hello-world`.
+- `/hello-world/`: responde con plantilla 404 (contenido "Page Not Found" presente).
+- `sitemap_index.xml`: estructura correcta; timestamps no inconsistentes.
+
+Evidencia de comandos y salida guardada en conversación y terminal local (fecha 2025-09-24 UTC).
+
+Conclusión: El estado del sitemap permanece consistente tras la retirada del mu-plugin. Se considera cerrada la incidencia de caché de Rank Math para v0.3.0.
 
 Observaciones: Se deja jobs programados y/o scripts de remediación para auto-verificar y limpiar cachés/sitemaps en caso de ser necesario.
 
@@ -377,6 +416,24 @@ Recursos
 - Publicar un primer artículo canónico (ES/EN) y retirar “Hello world!”.  
 - Definir taxonomías base (categorías) y slugs coherentes por idioma.  
 - Listado con excerpt y fecha; paginación estándar.
+
+### Publicación primer post (2025-09-24)
+
+Script usado: `_publish_first_post.sh` (idempotente) — crea/actualiza posts ES/EN, fija idioma (Polylang), asigna categorías `guias/guides`, vincula traducciones y recarga sitemap.
+
+Posts:
+- ES: slug `checklist-wordpress-produccion-1-dia` (ID=68) — título “Checklist para poner un WordPress a producir en 1 día”.
+- EN: slug `ship-wordpress-production-in-one-day` (ID=69) — título “Ship a Production‑Ready WordPress in One Day: A Practical Checklist”.
+
+Contenido verificado (fragmentos):
+- ES incluye `<h2>1. Preparación y entorno`.
+- EN incluye `<h2>1. Environment & setup`.
+
+Sitemap (`post-sitemap.xml`): ambos slugs presentes; ausencia confirmada de `hello-world`.
+
+Logs: `/home/u525829715/domains/pepecapiro.com/public_html/_publish_first_post.log`.
+
+Estado final: Primer post bilingüe visible en producción y enlazado como traducciones.
 
 ### Validaciones & evidencias
 
@@ -975,6 +1032,45 @@ Observación
 - Para completar la fase al 100%, se requiere una ventana breve en WP‑Admin/WP‑CLI (≈30–45 min) para ejecutar las altas (post/legales), enlazado en footer y pruebas SMTP.
 
 ## 6) Registro de cambios del informe
+
+### Ejecución operativa — Blog bilingüe (v0.3.10)
+
+Resumen
+- Objetivo: disponer de índice de entradas en ES y EN sin depender de `page_for_posts`, con slugs estables y verificables por script.
+- Slugs finales: ES `/blog` (ID=7), EN `/en/blog-en` (ID=13). Eliminados conflictos previos (`blog-2`, `blog-es`).
+- Plantilla dedicada: `page-blog.php` (query por idioma vía `pll_current_language()` + marker `<!-- posts_found:X lang:YY -->`).
+
+Scripts clave
+- `_scratch/fix_blog_pages.sh`: asignación inicial de plantilla y saneo básico.
+- `_scratch/normalize_blog_slug.sh` / `_scratch/finalize_blog_slugs.sh`: normalización progresiva de slugs (histórico, a consolidar).
+- `_scratch/check_blog_state.sh`: verificación puntual (intermedio).
+- `_scratch/blog_health_check.sh`: health definitivo (slugs, plantilla, HTTP, marker, conteo posts/lang).
+
+Health check (salida relevante)
+```
+[OK] Página ES slug=blog ID=7
+[OK] Página EN slug=blog-en ID=13
+[OK] Template ES correcto
+[OK] Template EN correcto
+[OK] Marker idioma es en /blog
+[OK] Marker idioma en en /en/blog-en
+[WARN] Polylang no disponible para conteo por idioma (warning benigno)
+```
+
+Riesgos / pendientes
+- Breadcrumbs aún no muestran enlace específico por idioma (mejora menor).
+- No existe bloque "Últimas entradas" en Home (diferido hasta haber ≥2–3 posts).
+- Scripts de migración de slugs duplicados: consolidar o archivar.
+
+Acciones siguientes recomendadas
+1. Consolidar `normalize_*/finalize_*` en un archivo histórico y mantener sólo `blog_health_check.sh`.
+2. Añadir test de salud blog al pipeline CI (post-deploy).
+3. Añadir bloque "Últimas entradas" cuando haya más posts.
+4. Ajustar breadcrumbs multilingües si se requiere consistencia UX.
+
+Impacto
+- Mayor observabilidad (marker y script health) y estabilidad de URL para futuros enlaces externos y SEO.
+
 
 - 2025-09-23: Creación del informe único; auditoría UI base, definición de tokens, layout, header/footer y accesibilidad mínima; validaciones, riesgos y checklist completados.
 - 2025-09-23: Fase Home documentada (auditoría, hero, servicios, proyectos, testimonio/logos, CTA final, validaciones y riesgos); añadido “Tareas diferidas (radar)”.

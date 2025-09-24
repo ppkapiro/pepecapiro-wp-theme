@@ -13,8 +13,10 @@ set -euo pipefail
 APPLY=0
 if [[ "${1:-}" == "--apply" ]]; then APPLY=1; fi
 
-SSH_ALIAS="pepecapiro"
-SSH_PORT="65002"
+SSH_HOST="${PEPE_HOST:-157.173.214.43}"
+SSH_PORT="${PEPE_PORT:-65002}"
+SSH_USER="${PEPE_USER:-u525829715}"
+SSH_KEY="${PEPE_SSH_KEY:-}"
 SITE_ROOT="/home/u525829715/domains/pepecapiro.com/public_html"
 THEME_SLUG="pepecapiro"
 
@@ -22,7 +24,9 @@ log(){ echo "[remediate] $*"; }
 err(){ echo "[error] $*" >&2; }
 run_ssh(){
   local cmd="$*"
-  ssh -p "$SSH_PORT" "$SSH_ALIAS" "$cmd"
+  local SSH_OPTS=("-p" "$SSH_PORT" "-o" "StrictHostKeyChecking=no" "-o" "UserKnownHostsFile=/dev/null")
+  if [[ -n "$SSH_KEY" ]]; then SSH_OPTS+=("-i" "$SSH_KEY"); fi
+  ssh "${SSH_OPTS[@]}" "$SSH_USER@$SSH_HOST" "$cmd"
 }
 wp(){
   local cmd="$*"
