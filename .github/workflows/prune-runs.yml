@@ -34,6 +34,10 @@ jobs:
           echo "wf_name=$WF_NAME" >> $GITHUB_OUTPUT
           echo "keep=$KEEP" >> $GITHUB_OUTPUT
           echo "dry_run=$DRY_RUN" >> $GITHUB_OUTPUT
+      - name: Checkout (necesario para gh run list sin 404)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
       - name: Prune runs
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -44,27 +48,13 @@ jobs:
           DRY_RUN="${{ steps.params.outputs.dry_run }}"
           echo "[INFO] Manteniendo las últimas $KEEP ejecuciones (dry_run=$DRY_RUN)" >&2
           [ -n "$WF_NAME" ] && echo "[INFO] Filtro por nombre: $WF_NAME" >&2
-          # Recuperar todos los runs (paginado) - primer intento (endpoint repos/... con slash inicial y headers explícitos)
-          API_OK=true
-          if ! gh api \
-              -H "Accept: application/vnd.github+json" \
-              -H "X-GitHub-Api-Version: 2022-11-28" \
-              /repos/${{ github.repository }}/actions/runs \
-              --paginate -F per_page=100 -q '.workflow_runs[]' | jq -s '.' > _all_raw.json; then
-            API_OK=false
-            echo "[WARN] Primer intento a /repos/.../actions/runs falló (posible 404 o permisos). Intentando fallback..." >&2
-          fi
-          if [ "$API_OK" = false ]; then
-            # Fallback: usar 'gh run list' (limite alto) y reconstruir JSON compatible
-            if gh run list --limit 200 --json databaseId,workflowName,createdAt,status,conclusion,number > _fallback_runs.json 2> _fallback_err.log; then
-              jq '[ .[] | {id:.databaseId, name:.workflowName, run_number:.number, created_at:.createdAt, status:.status, conclusion:.conclusion}]' _fallback_runs.json > _all_raw.json || echo '[]' > _all_raw.json
-              echo "[INFO] Fallback gh run list usado (200 máx)." >&2
-            else
-              echo '[]' > _all_raw.json
-              echo "[ERROR] Fallback gh run list también falló" >&2
-              echo "--- STDERR fallback ---" >&2
-              sed -e 's/^/[fallback-stderr] /' _fallback_err.log >&2 || true
-            fi
+          # Recuperar runs usando gh run list directamente (evita endpoint 404 en algunos entornos)
+          if gh run list --repo $GITHUB_REPOSITORY --limit 400 --json databaseId,workflowName,createdAt,status,conclusion,number > _runs_list.json 2> _runs_list_err.log; then
+            jq '[ .[] | {id:.databaseId, name:.workflowName, run_number:.number, created_at:.createdAt, status:.status, conclusion:.conclusion}]' _runs_list.json > _all_raw.json || echo '[]' > _all_raw.json
+          else
+            echo '[]' > _all_raw.json
+            echo "[ERROR] gh run list falló" >&2
+            sed -e 's/^/[gh-run-list-stderr] /' _runs_list_err.log >&2 || true
           fi
           if [ -n "$WF_NAME" ]; then
             jq --arg NAME "$WF_NAME" '[ .[] | select(.name==$NAME) | {id, name, run_number, created_at, status, conclusion}]' _all_raw.json > runs_all.json
