@@ -45,13 +45,19 @@ jobs:
           echo "[INFO] Manteniendo las últimas $KEEP ejecuciones (dry_run=$DRY_RUN)" >&2
           [ -n "$WF_NAME" ] && echo "[INFO] Filtro por nombre: $WF_NAME" >&2
           # Recuperar todos los runs (paginado)
-          gh api repos/${{ github.repository }}/actions/runs --paginate -F per_page=100 -q '.workflow_runs[]' | jq -s '.' > _all_raw.json || echo '[]' > _all_raw.json
+          if ! gh api repos/${{ github.repository }}/actions/runs --paginate -F per_page=100 -q '.workflow_runs[]' | jq -s '.' > _all_raw.json; then
+            echo '[]' > _all_raw.json
+            echo "[WARN] gh api falló; lista vacía" >&2
+          fi
           if [ -n "$WF_NAME" ]; then
             jq --arg NAME "$WF_NAME" '[ .[] | select(.name==$NAME) | {id, name, run_number, created_at, status, conclusion}]' _all_raw.json > runs_all.json
           else
             jq '[ .[] | {id, name, run_number, created_at, status, conclusion}]' _all_raw.json > runs_all.json
           fi
           total=$(jq 'length' runs_all.json)
+          if [ "$total" -eq 0 ]; then
+            echo "[WARN] Total=0. Guardando _all_raw.json para inspección" >&2
+          fi
           echo "[INFO] Total consideradas: $total" >&2
           if [ $total -le $KEEP ]; then
             echo "[INFO] No hay candidatas (total <= keep)" >&2

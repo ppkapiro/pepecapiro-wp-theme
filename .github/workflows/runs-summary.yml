@@ -21,6 +21,8 @@ jobs:
     steps:
       - name: Generar resumen
         shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           WF_NAME="${{ github.event.inputs.workflow }}"
@@ -30,9 +32,12 @@ jobs:
           echo "[INFO] Filtro workflow: '${WF_NAME:-*}' (vacío=todos)" >&2
           echo "[INFO] Límite por workflow: ${LIMIT}" >&2
           # Obtener todas las runs (paginación) y consolidar en un único array
-          gh api -X GET \
+          if ! gh api -X GET \
             "/repos/${GITHUB_REPOSITORY}/actions/runs" \
-            --paginate -F per_page=100 -q '.workflow_runs[]' | jq -s '.' > runs_all.json
+            --paginate -F per_page=100 -q '.workflow_runs[]' | jq -s '.' > runs_all.json; then
+            echo "[]" > runs_all.json
+            echo "[WARN] gh api falló o sin datos; se genera lista vacía" >&2
+          fi
           # Filtrar por nombre si se proporcionó
           if [ -n "$WF_NAME" ]; then
             jq --arg N "$WF_NAME" '[ .[] | select(.name==$N) ]' runs_all.json > runs_filtered.json
