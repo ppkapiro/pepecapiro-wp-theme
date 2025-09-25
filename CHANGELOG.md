@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.12 – 20250925 (Release)
+- Automatización de contenido inicial vía script `scripts/publish_content.py` (posts bilingües + legales + linking básico Polylang).
+- Idempotencia: re-ejecutar no duplica posts/páginas; actualiza título/excerpt/content si cambian.
+- Preparado para integrar textos completos desde fuentes externas.
+
 ## 0.3.11 – 20250924 (Release)
 - CI reforzado: script `scripts/blog_health_ci.sh` para validar listados de blog ES/EN (HTTP 200, markers `posts_found` o `#blog-query-info`).
 - Workflow `deploy.yml`: paso "Blog listing health" posterior a content ops y antes de integridad.
