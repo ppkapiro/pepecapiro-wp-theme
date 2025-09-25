@@ -11,6 +11,10 @@ on:
         description: 'Número de ejecuciones más recientes a conservar'
         required: true
         default: '10'
+      dry_run:
+        description: 'true = solo mostrar qué se borraría, false = borrar de verdad'
+        required: false
+        default: 'true'
 
 jobs:
   prune:
@@ -24,49 +28,72 @@ jobs:
         run: |
           WF_NAME="${{ github.event.inputs.workflow }}"
           KEEP=${{ github.event.inputs.keep }}
+          DRY_RUN="${{ github.event.inputs.dry_run }}"
           if [ -z "$KEEP" ]; then KEEP=10; fi
+          if [ -z "$DRY_RUN" ]; then DRY_RUN=true; fi
           echo "wf_name=$WF_NAME" >> $GITHUB_OUTPUT
           echo "keep=$KEEP" >> $GITHUB_OUTPUT
+          echo "dry_run=$DRY_RUN" >> $GITHUB_OUTPUT
       - name: Prune runs
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set -e
+          set -euo pipefail
           WF_NAME="${{ steps.params.outputs.wf_name }}"
           KEEP=${{ steps.params.outputs.keep }}
-          echo "Manteniendo las últimas $KEEP ejecuciones"
-          # Obtener lista de workflows
+          DRY_RUN="${{ steps.params.outputs.dry_run }}"
+          echo "[INFO] Manteniendo las últimas $KEEP ejecuciones (dry_run=$DRY_RUN)" >&2
+          [ -n "$WF_NAME" ] && echo "[INFO] Filtro por nombre: $WF_NAME" >&2
+          # Recuperar todos los runs (paginado)
+          gh api repos/${{ github.repository }}/actions/runs --paginate -F per_page=100 -q '.workflow_runs[]' | jq -s '.' > _all_raw.json || echo '[]' > _all_raw.json
           if [ -n "$WF_NAME" ]; then
-            echo "Filtrando por nombre: $WF_NAME"
+            jq --arg NAME "$WF_NAME" '[ .[] | select(.name==$NAME) | {id, name, run_number, created_at, status, conclusion}]' _all_raw.json > runs_all.json
+          else
+            jq '[ .[] | {id, name, run_number, created_at, status, conclusion}]' _all_raw.json > runs_all.json
           fi
-          page=1
-          ids_json="[]"
-          while true; do
-            resp=$(gh api repos/${{ github.repository }}/actions/runs --paginate -F per_page=100 -F page=$page || true)
-            count=$(echo "$resp" | jq '.workflow_runs | length')
-            if [ "$count" = "0" ]; then break; fi
-            # Filtrar si se especifica nombre
-            if [ -n "$WF_NAME" ]; then
-              part=$(echo "$resp" | jq --arg NAME "$WF_NAME" '[.workflow_runs[] | select(.name==$NAME) | {id: .id, name: .name, run_number: .run_number, created_at: .created_at}]')
-            else
-              part=$(echo "$resp" | jq '[.workflow_runs[] | {id: .id, name: .name, run_number: .run_number, created_at: .created_at}]')
-            fi
-            ids_json=$(jq -s 'add' <(echo "$ids_json") <(echo "$part"))
-            page=$((page+1))
-            if [ $page -gt 10 ]; then break; fi
-          done
-          total=$(echo "$ids_json" | jq 'length')
-          echo "Total seleccionadas: $total"
+          total=$(jq 'length' runs_all.json)
+          echo "[INFO] Total consideradas: $total" >&2
           if [ $total -le $KEEP ]; then
-            echo "No hay nada que borrar (total <= keep)."
-            exit 0
+            echo "[INFO] No hay candidatas (total <= keep)" >&2
+            jq -n '[]' > runs_candidates.json
+            ACTION="none"
+          else
+            jq --argjson K $KEEP 'sort_by(.created_at) | reverse | .[$K:]' runs_all.json > runs_candidates.json
+            ACTION="prune"
           fi
-          # Ordenar por created_at desc y cortar
-          to_delete=$(echo "$ids_json" | jq -r --argjson KEEP $KEEP 'sort_by(.created_at) | reverse | .[$KEEP:] | .[].id')
+          cand_count=$(jq 'length' runs_candidates.json)
+          echo "[INFO] Candidatas: $cand_count" >&2
           del_count=0
-          for rid in $to_delete; do
-            echo "Borrando run $rid" || true
-            gh api repos/${{ github.repository }}/actions/runs/$rid -X DELETE || true
-            del_count=$((del_count+1))
-          done
-          echo "Borradas $del_count ejecuciones antiguas."
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "[INFO] Dry-run: no se ejecutan borrados" >&2
+          else
+            if [ "$ACTION" = "prune" ] && [ $cand_count -gt 0 ]; then
+              for rid in $(jq -r '.[] | select(.status!="in_progress" and .status!="queued") | .id' runs_candidates.json); do
+                echo "[DEL] run $rid" >&2 || true
+                gh api repos/${{ github.repository }}/actions/runs/$rid -X DELETE || true
+                del_count=$((del_count+1))
+              done
+            fi
+          fi
+          {
+            echo "# Prune Runs Resultado";
+            echo "Repositorio: $GITHUB_REPOSITORY";
+            echo "Fecha: $(date -u +%Y-%m-%dT%H:%M:%SZ)";
+            echo "Filtro workflow: ${WF_NAME:-(todos)}";
+            echo "Keep: $KEEP";
+            echo "Dry-run: $DRY_RUN";
+            echo "Total consideradas: $total";
+            echo "Candidatas: $cand_count";
+            echo "Borradas: $del_count";
+            echo; echo "## Candidatas (primeras 20 para vista rápida)"; 
+            jq -r '.[0:20] | .[] | "- #\(.run_number) id=\(.id) status=\(.status) conclusion=\(.conclusion) created=\(.created_at)"' runs_candidates.json;
+          } > summary.md
+      - name: Subir artefacto pruning
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: prune-runs-output
+          path: |
+            runs_all.json
+            runs_candidates.json
+            summary.md
