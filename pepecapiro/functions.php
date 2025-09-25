@@ -71,6 +71,102 @@ add_action('wp_head', function(){
   echo '<meta property="og:url" content="'.$url.'" />' . "\n";
   echo '<meta name="twitter:card" content="summary_large_image" />' . "\n";
 
+  // Canonical tag (simple). Si Polylang provee canonical, esto es complementario.
+  $canonical = $url;
+  echo '<link rel="canonical" href="'.esc_url($canonical).'" />' . "\n";
+
+  // hreflang alternates si Polylang está activo
+  if (function_exists('pll_the_languages')) {
+    $langs = pll_the_languages(['raw'=>1]); // array con info
+    if (is_array($langs)) {
+      foreach($langs as $code=>$data){
+        if (!empty($data['url'])){
+          // normalizar: pll devuelve slug (es,en). Añadimos region genérica.
+          $hreflang = $code; // se podría mapear a es-ES, en-US si se desea
+          echo '<link rel="alternate" hreflang="'.esc_attr($hreflang).'" href="'.esc_url($data['url']).'" />' . "\n";
+        }
+      }
+      // x-default apuntando a home root
+      $home_default = function_exists('pll_home_url') ? pll_home_url() : home_url('/');
+      echo '<link rel="alternate" hreflang="x-default" href="'.esc_url($home_default).'" />' . "\n";
+    }
+  }
+
+  // JSON-LD: BreadcrumbList + (Article si singular post)
+  $json_ld = [];
+  // Breadcrumbs
+  $breadcrumbs_items = [];
+  $position = 1;
+  $home_url = function_exists('pll_home_url') ? pll_home_url() : home_url('/');
+  $breadcrumbs_items[] = [ 'position'=>$position++, 'name'=> ($is_en ? 'Home' : 'Inicio'), 'item'=>$home_url ];
+  if (is_singular('post')) {
+    $posts_page = get_option('page_for_posts');
+    if ($posts_page) {
+      $breadcrumbs_items[] = [ 'position'=>$position++, 'name'=> ($is_en ? 'Blog' : 'Blog'), 'item'=> get_permalink($posts_page) ];
+    }
+  }
+  if (is_singular()) {
+    $breadcrumbs_items[] = [ 'position'=>$position++, 'name'=> get_the_title(), 'item'=> get_permalink() ];
+  } elseif (is_archive()) {
+    $breadcrumbs_items[] = [ 'position'=>$position++, 'name'=> strip_tags(get_the_archive_title()), 'item'=> $url ];
+  }
+  if (count($breadcrumbs_items) > 1) {
+    $json_ld[] = [
+      '@context' => 'https://schema.org',
+      '@type' => 'BreadcrumbList',
+      'itemListElement' => array_map(function($it){
+        return [
+          '@type' => 'ListItem',
+          'position' => $it['position'],
+          'name' => wp_strip_all_tags($it['name']),
+          'item' => $it['item']
+        ];
+      }, $breadcrumbs_items)
+    ];
+  }
+  // Article schema
+  if (is_singular('post')) {
+    $author_name = get_the_author();
+    $published = get_the_date('c');
+    $modified = get_the_modified_date('c');
+    $article = [
+      '@context' => 'https://schema.org',
+      '@type' => 'Article',
+      'mainEntityOfPage' => [
+        '@type' => 'WebPage',
+        '@id' => get_permalink()
+      ],
+      'headline' => wp_strip_all_tags( get_the_title() ),
+      'datePublished' => $published,
+      'dateModified' => $modified,
+      'author' => [
+        '@type' => 'Person',
+        'name' => $author_name
+      ],
+      'publisher' => [
+        '@type' => 'Organization',
+        'name' => 'Pepecapiro',
+        'logo' => [
+          '@type' => 'ImageObject',
+          'url' => get_stylesheet_directory_uri() . '/assets/og/og-home-es.png'
+        ]
+      ],
+      'inLanguage' => ( $is_en ? 'en' : 'es' ),
+      'url' => get_permalink()
+    ];
+    if (has_post_thumbnail()) {
+      $thumb_id = get_post_thumbnail_id();
+      $img = wp_get_attachment_image_src($thumb_id, 'full');
+      if ($img) {
+        $article['image'] = [$img[0]];
+      }
+    }
+    $json_ld[] = $article;
+  }
+  if (!empty($json_ld)) {
+    echo '<script type="application/ld+json">'.wp_json_encode( count($json_ld)===1 ? $json_ld[0] : $json_ld , JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE ).'</script>' . "\n";
+  }
+
   // Imagen OG para Home
   if ($is_home) {
     $og_img_url  = get_stylesheet_directory_uri() . ( $is_en ? '/assets/og/og-home-en.png' : '/assets/og/og-home-es.png' );

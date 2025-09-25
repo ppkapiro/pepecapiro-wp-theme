@@ -48,4 +48,19 @@
     },
     "status": {"es": "draft", "en": "draft"}
   }
+  ,
+  {
+    "translation_key": "wp-post-7-acciones-post-lanzamiento",
+    "slug": {"es": "acciones-wordpress-post-lanzamiento", "en": "wordpress-post-launch-actions"},
+    "title": {
+      "es": "WordPress Post‑Lanzamiento: 7 Acciones Clave en los Primeros 7 Días",
+      "en": "WordPress Post-Launch: 7 High-Impact Actions in the First 7 Days"
+    },
+    "excerpt": {
+      "es": "Prioriza seguridad, rendimiento, datos y gobernanza: siete acciones concretas para endurecer y acelerar tu WordPress justo después de salir en producción.",
+      "en": "Harden and accelerate a fresh WordPress launch: seven focused actions across security, performance, data and governance in the first week."
+    },
+    "category": {"es": "Guías", "en": "Guides"},
+    "status": {"es": "publish", "en": "publish"}
+  }
 ]

@@ -153,6 +153,22 @@ jobs:
           set -o pipefail
           python scripts/publish_content.py | tee content_sync_output.txt
 
+      - name: Verificar publicación en vivo
+        if: steps.mode.outputs.apply == 'true'
+        env:
+          LIVE_BASE_URL: ${{ secrets.WP_URL }}
+        run: |
+          python scripts/verify_content_live.py || echo 'Verificación detectó errores (marcados en reporte)'
+
+      - name: Artefactos verificación publicación
+        if: always() && steps.mode.outputs.apply == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: publish-verification
+          path: |
+            reports/publish/verify.json
+            reports/publish/verify.md
+
       - name: Subir log
         if: always()
         uses: actions/upload-artifact@v4

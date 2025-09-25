@@ -1,0 +1,12 @@
+{
+  "timeout_seconds": 8,
+  "concurrency": 12,
+  "retry": 1,
+  "failure_threshold_percent": 5,
+  "ignore_patterns": [
+    "mailto:",
+    "tel:",
+    ".*\\.pdf$"
+  ],
+  "internal_domain": "pepecapiro.com"
+}

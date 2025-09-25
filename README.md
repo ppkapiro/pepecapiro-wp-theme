@@ -15,6 +15,8 @@ Versión estable actual: 0.3.18 (ver `CHANGELOG.md`).
 - Métricas & Observabilidad: `docs/PERFORMANCE_METRICS.md`
 - Changelog: `CHANGELOG.md`
 - Reportes Lighthouse / auditorías: `docs/`
+- SEO Técnico: `SEO_TECH.md`
+- Salud de enlaces: `LINKS_HEALTH.md`
 
 ## Flujo Rápido (Publicar Contenido)
 ```
@@ -47,6 +49,17 @@ Si no quieres auto-apply permanente, elimina `.auto_apply` y usa `[publish]` só
 - Health y Lighthouse: workflows en `.github/workflows/`.
 - Content Sync: `.github/workflows/content-sync.yml` (auto-apply condicional).
 - Release automático: `.github/workflows/release.yml` (al crear tag `vX.Y.Z` empaqueta y publica ZIP+SHA256 en GitHub Releases).
+- Auditoría SEO: `.github/workflows/seo_audit.yml` (canonical, hreflang, JSON-LD)
+- Salud enlaces externos: `.github/workflows/external_links.yml` (rotos vs umbral)
+
+### Auto‑publicación y verificación
+Si existe el archivo `.auto_apply`, cualquier cambio en `content/` ejecuta publicación directa (sin necesitar `[publish]`). Tras aplicar, el paso `verify_content_live` consulta las URLs publicadas y genera:
+- `reports/publish/verify.json`
+- `reports/publish/verify.md`
+
+Checks: HTTP 200, fragmento de título esperado y presencia de JSON-LD Article. Si falla, el pipeline refleja el error en el reporte (log no bloqueante de momento — se puede endurecer).
+
+Override temporal: eliminar `.auto_apply` o revertir a borrador cambiando `status` en `posts.json`.
 
 ### Publicar un release
 ```
@@ -69,10 +82,10 @@ Resumen rápido (ver detalle y estado en `docs/PERFORMANCE_METRICS.md`):
 | Lighthouse CLI integrado | Completado |
 | PSI API (LCP/INP campo) | Completado |
 | Quality Gates preflight | Completado |
-| Breadcrumbs JSON-LD | Pendiente |
+| Breadcrumbs JSON-LD | Completado |
 | Últimas Entradas widget | Pendiente |
-| Auditoría hreflang/canonical | Pendiente |
-| Primer post real ES/EN | Pendiente |
+| Auditoría hreflang/canonical | Completado |
+| Primer post real ES/EN | Completado |
 
 Detalle técnico y próximos pasos: `docs/PERFORMANCE_METRICS.md` y sección Roadmap en `docs/PROCESO_AUTOMATIZACION_CONTENIDO.md`.
 

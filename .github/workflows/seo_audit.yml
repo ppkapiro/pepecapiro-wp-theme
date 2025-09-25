@@ -1,0 +1,32 @@
+name: seo_audit
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: '17 3 * * *'
+  push:
+    branches: [ main ]
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run SEO Head Audit
+        run: |
+          python3 scripts/audit_seo_head.py || echo "SEO audit reported errors (non-zero). See artifact/report."
+
+      - name: Archive SEO Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: seo-audit
+          path: reports/seo/

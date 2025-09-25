@@ -1,0 +1,7 @@
+{
+  "base_url": "https://www.pepecapiro.com",
+  "languages": ["es", "en"],
+  "expected_hreflang_map": {"es": "es", "en": "en"},
+  "require_article_jsonld": true,
+  "require_breadcrumb_jsonld": true
+}
