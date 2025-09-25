@@ -133,18 +133,31 @@ Editar `status` en JSON, commit `[publish]`; el hash cambia y se fuerza update.
 5. Archivado avanzado (etiquetar y ocultar vs draft plano) + purga opcional tras retención.
 6. Previsualización local (mini server que renderice markdown con layout WP).
 
-## 19.1 Pipeline Preflight & Quality Gates (Planificado)
-Previo a ejecutar apply (o incluso plan) se ejecutarán scripts de verificación rápida. Objetivo: fallar antes de mutar y mantener estándar mínimo.
+## 19.1 Pipeline Preflight & Quality Gates
 
-| Gate | Script (plan) | Criterio FAIL | Acción |
-|------|---------------|---------------|--------|
-| Links internos | `scripts/preflight_links.py` | ≥1 enlace interno crítico HTTP !=200 | Corregir URL o publicar recurso faltante |
-| Categorías | `scripts/preflight_taxonomies.py` | Categoría declarada inexistente y no creable | Ajustar categoría o crear en WP |
-| Completitud markdown | `scripts/preflight_content_completeness.py` | Falta markdown para idioma con status publish | Añadir markdown o marcar draft |
+(Actualizado)
 
-Salida agregada: `preflight_report.md` (PASS/FAIL + detalles). Workflow aborta si FAIL.
+Los gates se ejecutan ANTES de validar y antes de plan/apply en el workflow `content-sync.yml`.
 
-Integración prevista: paso antes de validadores y antes de plan/apply en `content-sync.yml`.
+| Gate | Script | Salidas | Criterio FAIL | Exit code | Notas |
+|------|--------|---------|---------------|-----------|-------|
+| Links internos | `scripts/preflight_links.py` | `preflight_links.json/md` | ≥1 enlace interno con status HTTP >=400 | 2 | Ignora externos; tolera timeouts aislados como warnings (futuro) |
+| Categorías | `scripts/preflight_taxonomies.py` | `preflight_taxonomies.json/md` | Categorías declaradas inexistentes confirmadas en WP | 2 | Modo `--strict-offline` para fallar si no se alcanza WP; por defecto UNKNOWN_OFFLINE no bloquea |
+| Completitud contenido | `scripts/preflight_content_completeness.py` | `preflight_content.json/md` | Falta slug/title requerido o duplicidad de translation_key/slug | 2 | No bloquea por items disabled |
+
+Consolidación: el workflow sube un artefacto `preflight-quality-gates` con todos los archivos. Si cualquiera devuelve exit code 2 → aborta pipeline antes de publicar.
+
+### 19.1.1 Reporte Unificado
+Implementado: `scripts/generate_preflight_report.py` produce `preflight_report.json` y `preflight_report.md` con resumen y estado global (OK / FAILED / UNKNOWN). El workflow sube este artefacto adicional.
+
+### 19.1.2 Escalado Automático
+Si en el futuro se desea: convertir fallos críticos (p.ej. 2 corridas consecutivas con performance < umbral) en bloqueo de publicación de contenido o en etiqueta adicional del issue ("priority:high"). Actual hoy: sólo creación de issue PSI independiente.
+
+### 19.1.3 Soft Performance Advisory
+Integrado script `performance_advisory.py` en `content-sync` que añade contexto sobre estado de thresholds PSI móvil sin bloquear.
+
+### 19.1.4 Media Reuse Metric
+`media_reuse_report.{json,md}` se genera en la corrida PSI para visibilidad sobre eficacia de deduplicación.
 
 ## 20. Versionado
 Cada mejora funcional → bump en `style.css` + entrada en `CHANGELOG.md`. Versión actual: 0.3.18 (Unreleased). Validadores activos: posts/pages schema, hash idempotencia, drift, media dedup.

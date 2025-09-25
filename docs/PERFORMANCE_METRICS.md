@@ -31,24 +31,55 @@ Script objetivo: `scripts/collect_lighthouse.py`
 - Output por URL: `<slug>.report.html`, `<slug>.report.json`
 - Tabla agregada: `docs/lighthouse/index.html` (generada/actualizada)
 
-Estado: pendiente de implementación.
+Estado: COMPLETADO (script + workflow + ejecuciones; índice generado).
 
 ## 5. Recolección PSI API (Fase 2)
-Script objetivo: `scripts/collect_psi.py`
-- Require env: `PSI_API_KEY`
-- Rate limit: retry exponencial si 429 (máx 3 reintentos)
-- Output bruto: `metrics/psi_raw/<fecha>_<slug>.json`
-- Parser derivado (futuro): consolida en `metrics/derived/psi_summary_<fecha>.json`
+Script: `scripts/collect_psi.py`
+- Usa lista `configs/lh_urls.txt` (misma que Lighthouse)
+- Ejecuta estrategias: mobile y desktop
+- Salida actual: `reports/psi/YYYYMMDD/HHMMSS/` con `summary.json`, `summary.md` + JSON individuales y `reports/psi/index.(json|html)` histórico
+- Retry exponencial simple; errores no rompen CI (exit 0)
+
+### 5.1 Thresholds Evaluados
+Archivo: `configs/perf_thresholds.json`
+Ejemplo:
+```json
+{
+  "psi": {
+    "mobile": {"performance_min": 90, "lcp_max_ms": 2500, "cls_max": 0.1},
+    "desktop": {"performance_min": 95, "lcp_max_ms": 1800, "cls_max": 0.05}
+  }
+}
+```
+El script añade sección `evaluations` en `summary.json` con pass/fail por métrica. No rompe CI (exit 0); futuras fases podrían convertir fallos críticos en issues automáticas.
+
+Estado: IMPLEMENTADO (pendiente observación primeras corridas y ajuste de campos derivados).
+
+### 5.2 Auto‑Issues Thresholds
+Cuando una corrida PSI produce `evaluations.<strategy>.passes = False`, el script `scripts/psi_threshold_issue.py` crea (si no existe) un issue titulado "PSI Thresholds Fallidos en último run" con detalles de checks y promedios. Evita duplicados buscando issues abiertas con mismo título. No rompe CI si falla la creación.
+
+### 5.3 Timeseries & Badge
+El script PSI genera ahora:
+- `reports/psi/timeseries.json` (array acotado últimas 500 corridas)
+- `reports/psi/badge_mobile_performance.json` (schemaVersion=1 consumible por shields.io)
+
+### 5.4 Media Reuse
+`media_reuse_report.{json,md}` (ratio reutilización hashes media) generado en corrida PSI. Fuente: `content/.media_map.json`.
+
+### 5.5 Soft Gating
+`performance_advisory.py` imprime líneas `PERF_ADVISORY:` en `content-sync` (no bloquea). Sirve para visibilidad inmediata antes de publicar contenido.
+
+### 5.6 Escalado Prioritario
+Si hay ≥2 corridas consecutivas fallando thresholds, el issue se crea/actualiza con label `priority:high`.
 
 ## 6. Quality Gates (Fase 3)
-Preflight antes de apply contenido:
-| Gate | Script | Falla si |
-|------|--------|---------|
-| Links internos | `scripts/preflight_links.py` | HTTP !=200 en enlaces locales críticos |
-| Categorías | `scripts/preflight_taxonomies.py` | Categoría declarada no existe y no puede crearse |
-| Integridad Markdown | `scripts/preflight_content_completeness.py` | Falta markdown requerido para idioma activo |
-
-Salida común: `preflight_report.md` (status PASS/FAIL + detalles). El workflow aborta si FAIL.
+Integrados en workflow `content-sync.yml` antes de validaciones de esquema.
+| Gate | Script | Falla si | Salida |
+|------|--------|---------|--------|
+| Links internos | `scripts/preflight_links.py` | HTTP >=400 | `preflight_links.json/md` |
+| Categorías | `scripts/preflight_taxonomies.py` | Categorías declaradas faltantes | `preflight_taxonomies.json/md` |
+| Completitud contenido | `scripts/preflight_content_completeness.py` | Campos obligatorios/duplicados | `preflight_content.json/md` |
+Estado: IMPLEMENTADO (artefacto agregado `preflight-quality-gates`).
 
 ## 7. Umbrales Iniciales
 | Métrica | Umbral | Acción si falla |
@@ -74,10 +105,10 @@ Salida común: `preflight_report.md` (status PASS/FAIL + detalles). El workflow 
 ## 10. Tabla de Estado (Resumen)
 | Item | Estado | Próximo Paso |
 |------|--------|--------------|
-| Release 0.3.18 | Preparación | Cerrar fecha/tag |
-| Lighthouse CLI | Planificado | Implementar script F1 |
-| PSI API | Planificado | Script + clave env |
-| Quality Gates | Planificado | Implementar 3 scripts |
+| Release 0.3.18 | Cerrado | — |
+| Lighthouse CLI | Completado | Ajustar thresholds si cambian patrones |
+| PSI API | Completado | Añadir series derivadas | 
+| Quality Gates | Completado | Posible reporte unificado |
 | Breadcrumbs JSON-LD | Pendiente | Diseño esquema |
 | Últimas Entradas widget | Pendiente | Shortcode o template part |
 | Auditoría hreflang/canonical | Pendiente | Script HEAD + parse DOM |

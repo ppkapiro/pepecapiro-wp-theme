@@ -1,0 +1,71 @@
+name: Build Theme Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extraer versión de style.css
+        id: version
+        run: |
+          VER=$(grep -E '^Version:' pepecapiro/style.css | awk '{print $2}')
+          echo "version=$VER" >> $GITHUB_OUTPUT
+          echo "Detectada versión: $VER"
+
+      - name: Validar coincidencia tag vs style.css
+        run: |
+          TAG=${GITHUB_REF##*/}
+          TAGVER=${TAG#v}
+          FILEVER=$(grep -E '^Version:' pepecapiro/style.css | awk '{print $2}')
+          if [ "$TAGVER" != "$FILEVER" ]; then
+            echo "Tag $TAG != style.css ($FILEVER)" >&2
+            exit 1
+          fi
+
+      - name: Validar CHANGELOG marca Release
+        run: |
+          TAG=${GITHUB_REF##*/}
+          TAGVER=${TAG#v}
+          if ! grep -q "## $TAGVER" CHANGELOG.md || ! grep -q "## $TAGVER .*Release" CHANGELOG.md; then
+            echo "CHANGELOG no marca $TAGVER como Release" >&2
+            exit 1
+          fi
+
+      - name: Empaquetar tema
+        id: package
+        run: |
+          TS=$(date +%Y%m%d_%H%M%S)
+          ZIP="pepecapiro_${TS}_${GITHUB_REF##*/}.zip"
+          zip -r "$ZIP" pepecapiro > /dev/null
+          echo "zip_name=$ZIP" >> $GITHUB_OUTPUT
+          ls -lh "$ZIP"
+
+      - name: Calcular SHA256
+        id: checksum
+        run: |
+          sha256sum "${{ steps.package.outputs.zip_name }}" | tee "${{ steps.package.outputs.zip_name }}.sha256"
+          echo "sha_path=${{ steps.package.outputs.zip_name }}.sha256" >> $GITHUB_OUTPUT
+
+      - name: Publicar release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          body: |
+            Release ${{ github.ref_name }}
+
+            Ver CHANGELOG para detalles completos.
+          files: |
+            ${{ steps.package.outputs.zip_name }}
+            ${{ steps.package.outputs.zip_name }}.sha256

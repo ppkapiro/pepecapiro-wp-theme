@@ -4,6 +4,8 @@
 
 Tema WordPress para pepecapiro.com.
 
+Versión estable actual: 0.3.18 (ver `CHANGELOG.md`).
+
 ## Documentación Clave
 - Índice: `docs/INDEX.md`
 - Arquitectura: `docs/ARCHITECTURE.md`
@@ -33,10 +35,25 @@ Si no quieres auto-apply permanente, elimina `.auto_apply` y usa `[publish]` só
 
 - Tabla resumen (Mobile): `docs/VALIDACION_MVP_v0_2_1.md`.
 - Reportes completos (HTML): `docs/lighthouse/index.html`.
+- PSI histórico: `reports/psi/index.html` (promedios mobile/desktop + enlace a cada run)
+- Timeseries: `reports/psi/timeseries.json` (evolución histórica acotada)
+- Badge performance móvil: `reports/psi/badge_mobile_performance.json`
+- Media reuse: `media_reuse_report.md` / `.json`
+- Preflight unificado: artefacto `preflight_report.md` (CI) antes de publicar contenido.
+- Auto‑issues PSI + escalado `priority:high` tras 2 fallos consecutivos.
+- Soft advisory performance en content-sync (`PERF_ADVISORY:` en logs).
 
 ## CI
 - Health y Lighthouse: workflows en `.github/workflows/`.
 - Content Sync: `.github/workflows/content-sync.yml` (auto-apply condicional).
+- Release automático: `.github/workflows/release.yml` (al crear tag `vX.Y.Z` empaqueta y publica ZIP+SHA256 en GitHub Releases).
+
+### Publicar un release
+```
+git tag v0.3.19
+git push origin v0.3.19
+```
+El workflow valida versión en `style.css`, entrada en `CHANGELOG.md`, empaqueta y sube artefactos.
 
 ## Notas de Desarrollo
 - WP 6.x, PHP 8.2.
@@ -48,10 +65,10 @@ Resumen rápido (ver detalle y estado en `docs/PERFORMANCE_METRICS.md`):
 
 | Item | Estado |
 |------|--------|
-| Release 0.3.18 | Preparación |
-| Lighthouse CLI integrado | Planificado |
-| PSI API (LCP/INP campo) | Planificado |
-| Quality Gates preflight | Planificado |
+| Release 0.3.18 | Cerrado |
+| Lighthouse CLI integrado | Completado |
+| PSI API (LCP/INP campo) | Completado |
+| Quality Gates preflight | Completado |
 | Breadcrumbs JSON-LD | Pendiente |
 | Últimas Entradas widget | Pendiente |
 | Auditoría hreflang/canonical | Pendiente |

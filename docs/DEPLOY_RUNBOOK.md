@@ -27,6 +27,19 @@ Notas:
 2. Crea y empuja un tag: `vX.Y.Z` (p.ej., `v0.3.5`).
 3. El workflow se ejecuta automáticamente y, si todo va bien, termina en success.
 
+### Workflow de Release Automático (Empaquetado)
+Archivo: `.github/workflows/release.yml`
+
+Disparo: cualquier push de tag `vX.Y.Z`.
+Acciones:
+1. Valida que `style.css` tenga `Version: X.Y.Z`.
+2. Verifica que `CHANGELOG.md` marca la versión como (Release).
+3. Empaqueta el directorio `pepecapiro/` generando `pepecapiro_<timestamp>_vX.Y.Z.zip`.
+4. Calcula checksum SHA256 y lo adjunta.
+5. Publica (o actualiza) el Release GitHub con ambos artefactos.
+
+Rollback simplificado: descargar ZIP de un release anterior y redeploy (o re‑tag). No se requiere reconstruir manualmente.
+
 ## 2) Post-deploy remediation (opcional)
 
 Script: `scripts/wp_post_deploy_remediate.sh`

@@ -1,0 +1,14 @@
+{
+  "psi": {
+    "mobile": {
+      "performance_min": 90,
+      "lcp_max_ms": 2500,
+      "cls_max": 0.1
+    },
+    "desktop": {
+      "performance_min": 95,
+      "lcp_max_ms": 1800,
+      "cls_max": 0.05
+    }
+  }
+}

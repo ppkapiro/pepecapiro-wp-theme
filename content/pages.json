@@ -1,0 +1,53 @@
+[
+  {
+    "translation_key": "privacy-policy",
+    "slug": {"es": "privacidad", "en": "privacy"},
+    "title": {"es": "Política de Privacidad", "en": "Privacy Policy"},
+    "excerpt": {"es": "Privacidad del sitio", "en": "Site privacy"},
+    "status": {"es": "publish", "en": "publish"},
+    "disabled": false
+  },
+  {
+    "translation_key": "cookies-policy",
+    "slug": {"es": "cookies", "en": "cookies"},
+    "title": {"es": "Política de Cookies", "en": "Cookies Policy"},
+    "excerpt": {"es": "Uso de cookies", "en": "Cookies usage"},
+    "status": {"es": "publish", "en": "publish"},
+    "disabled": false
+  },
+  {
+    "translation_key": "home-page",
+    "slug": {"es": "inicio", "en": "home"},
+    "title": {"es": "Inicio", "en": "Home"},
+    "excerpt": {"es": "Página principal", "en": "Main landing page"},
+    "status": {"es": "publish", "en": "publish"}
+  },
+  {
+    "translation_key": "about-page",
+    "slug": {"es": "sobre-mi", "en": "about"},
+    "title": {"es": "Sobre mí", "en": "About"},
+    "excerpt": {"es": "Resumen profesional", "en": "Professional summary"},
+    "status": {"es": "publish", "en": "publish"}
+  },
+  {
+    "translation_key": "projects-page",
+    "slug": {"es": "proyectos", "en": "projects"},
+    "title": {"es": "Proyectos", "en": "Projects"},
+    "excerpt": {"es": "Listado de proyectos", "en": "Project listing"},
+    "status": {"es": "publish", "en": "publish"}
+  },
+  {
+    "translation_key": "resources-page",
+    "slug": {"es": "recursos", "en": "resources"},
+    "title": {"es": "Recursos", "en": "Resources"},
+    "excerpt": {"es": "Colección de recursos", "en": "Resource collection"},
+    "status": {"es": "publish", "en": "publish"}
+  },
+  {
+    "translation_key": "contact-page",
+    "slug": {"es": "contacto", "en": "contact"},
+    "title": {"es": "Contacto", "en": "Contact"},
+    "excerpt": {"es": "Formulario de contacto", "en": "Contact form"},
+    "status": {"es": "publish", "en": "publish"}
+  }
+]

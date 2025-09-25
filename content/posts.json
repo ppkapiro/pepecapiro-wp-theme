@@ -1,0 +1,51 @@
+[
+  {
+    "translation_key": "checklist-wp-prod-day",
+    "slug": "checklist-wordpress-produccion-1-dia",
+    "title": {
+      "es": "Checklist para poner un WordPress a producir en 1 día",
+      "en": "Ship a Production-Ready WordPress in One Day: A Practical Checklist"
+    },
+    "excerpt": {
+      "es": "Una guía práctica para pasar de cero a producción en 24 horas: seguridad, rendimiento, SEO, contenido mínimo y verificación.",
+      "en": "A hands-on guide to go live in 24 hours: security, performance, SEO, minimum content, and final checks."
+    },
+    "category": {
+      "es": "Guías",
+      "en": "Guides"
+    }
+  },
+  {
+    "translation_key": "governance-automation-pillars",
+    "slug": "gobernanza-automatizacion-wordpress-pequenos-equipos",
+    "title": {
+      "es": "Gobernanza y Automatización en WordPress para Equipos Pequeños: 5 Pilares Prácticos",
+      "en": "WordPress Governance & Automation for Small Teams: 5 Practical Pillars"
+    },
+    "excerpt": {
+      "es": "Cinco pilares accionables para mantener orden, velocidad y calidad en un sitio WordPress sin sobrecarga operativa.",
+      "en": "Five actionable pillars to keep order, speed and quality without operational fatigue."
+    },
+    "category": {
+      "es": "Guías",
+      "en": "Guides"
+    }
+  },
+  {
+    "translation_key": "wp-audit-basics",
+    "slug": {"es": "auditoria-wordpress-inicial", "en": "wordpress-initial-audit"},
+    "title": {
+      "es": "Auditoría Inicial de WordPress: 12 Chequeos Críticos",
+      "en": "Initial WordPress Audit: 12 Critical Checks"
+    },
+    "excerpt": {
+      "es": "Guía rápida para evaluar salud técnica y base de seguridad antes de iterar sobre un sitio WordPress existente.",
+      "en": "Fast guide to assess technical health and baseline security before iterating on an existing WordPress site."
+    },
+    "category": {
+      "es": "Guías",
+      "en": "Guides"
+    },
+    "status": {"es": "draft", "en": "draft"}
+  }
+]

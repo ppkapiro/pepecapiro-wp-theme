@@ -1,0 +1,175 @@
+name: Content Sync
+
+on:
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: 'Aplicar cambios (true) o solo plan (false)'
+        required: true
+        default: 'false'
+  push:
+    paths:
+      - 'content/**'
+      - 'scripts/publish_content.py'
+      - '.github/workflows/content-sync.yml'
+      - '.auto_apply'
+
+concurrency:
+  group: content-sync-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalar dependencias
+        run: pip install --no-cache-dir requests
+
+      - name: Preflight Quality Gates
+        id: preflight
+        env:
+          WP_URL: ${{ secrets.WP_URL }}
+        run: |
+          set -e
+          echo '== Preflight: links =='
+          python scripts/preflight_links.py || EXIT_LINKS=$?
+          echo '== Preflight: taxonomías =='
+            # Ejecutar sólo si WP_URL disponible para validar remoto; sino modo offline
+          if [ -n "$WP_URL" ]; then
+            python scripts/preflight_taxonomies.py --site-url "$WP_URL" || EXIT_TAX=$?
+          else
+            python scripts/preflight_taxonomies.py --site-url https://example.invalid || EXIT_TAX=$?
+          fi
+          echo '== Preflight: completitud contenido =='
+          python scripts/preflight_content_completeness.py || EXIT_CONTENT=$?
+
+          echo '== Generar reporte unificado ==' 
+          python scripts/generate_preflight_report.py || true
+
+          # Consolidar estado: cualquier exit code 2 -> fallo global
+          FAIL=0
+          for c in $EXIT_LINKS $EXIT_TAX $EXIT_CONTENT; do
+            if [ "$c" = "2" ]; then FAIL=1; fi
+          done
+          if [ $FAIL -eq 1 ]; then
+            echo 'status=FAILED' >> $GITHUB_OUTPUT
+          else
+            echo 'status=OK' >> $GITHUB_OUTPUT
+          fi
+
+      - name: Subir artefactos preflight
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: preflight-quality-gates
+          path: |
+            preflight_links.json
+            preflight_links.md
+            preflight_taxonomies.json
+            preflight_taxonomies.md
+            preflight_content.json
+            preflight_content.md
+            preflight_report.json
+            preflight_report.md
+            media_reuse_report.json
+            media_reuse_report.md
+
+      - name: Abortar por fallo preflight
+        if: steps.preflight.outputs.status == 'FAILED'
+        run: |
+          echo 'Quality Gates fallidos. Abortando pipeline.'
+          exit 1
+
+      - name: Advisory Performance (no bloqueo)
+        if: always()
+        run: |
+          python scripts/performance_advisory.py || echo 'Advisory script fallo (ignorado)'
+
+      - name: Validar posts.json
+        run: python scripts/validate_posts.py
+
+      - name: Validar pages.json
+        run: python scripts/validate_pages.py
+
+      - name: Determinar modo
+        id: mode
+        run: |
+          APPLY=false
+          # 1) Manual dispatch tiene prioridad
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            APPLY='${{ github.event.inputs.apply }}'
+          else
+            # 2) Auto-apply si existe archivo .auto_apply en repo
+            if [ -f .auto_apply ]; then
+              APPLY=true
+            fi
+            # 3) Auto-apply si mensaje de commit contiene [publish] (último commit)
+            LAST_MSG="$(git log -1 --pretty=%B)"
+            if echo "$LAST_MSG" | grep -qi '\[publish\]'; then
+              APPLY=true
+            fi
+          fi
+          echo "apply=$APPLY" >> $GITHUB_OUTPUT
+          if [ "$APPLY" = true ]; then
+            echo 'Auto-apply activado (archivo .auto_apply o commit [publish])'
+          fi
+          echo "Modo: $([ "$APPLY" = true ] && echo APPLY || echo PLAN)"
+
+      - name: Verificar secretos (solo apply)
+        if: steps.mode.outputs.apply == 'true'
+        env:
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+        run: |
+          missing=0
+          for v in WP_URL WP_USER WP_APP_PASSWORD; do
+            if [ -z "${!v}" ]; then echo "[E] Falta secreto $v"; missing=1; fi
+          done
+          if [ $missing -eq 1 ]; then echo 'Se ejecutará en modo dry-run por falta de secretos'; echo "apply=false" >> $GITHUB_OUTPUT; fi
+
+      - name: Ejecutar (plan)
+        if: steps.mode.outputs.apply != 'true'
+        run: |
+          set -o pipefail
+          python scripts/publish_content.py --dry-run | tee content_sync_output.txt
+          if [ -f content/content_plan_summary.md ]; then cp content/content_plan_summary.md plan_summary.md; fi
+
+      - name: Ejecutar (apply)
+        if: steps.mode.outputs.apply == 'true'
+        env:
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+        run: |
+          set -o pipefail
+          python scripts/publish_content.py | tee content_sync_output.txt
+
+      - name: Subir log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: content-sync-log
+          path: content_sync_output.txt
+
+      - name: Subir plan summary
+        if: steps.mode.outputs.apply != 'true' && always() && hashFiles('content/content_plan_summary.md') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: content-plan-summary
+          path: content/content_plan_summary.md
+
+      - name: Subir drift report
+        if: steps.mode.outputs.apply != 'true' && always() && hashFiles('content/drift_report.md') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: content-drift-report
+          path: content/drift_report.md

@@ -1,0 +1,45 @@
+name: Lighthouse CLI Batch
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 3 * * *'
+
+jobs:
+  lh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+            node-version: '20'
+
+      - name: Install Lighthouse
+        run: npm install -g lighthouse@12
+
+      - name: Run batch Lighthouse
+        run: |
+          chmod +x scripts/collect_lighthouse.py
+          ./scripts/collect_lighthouse.py
+
+      - name: Upload artifacts (raw reports)
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-reports-${{ github.run_id }}
+          path: |
+            docs/lighthouse/*/summary.json
+            docs/lighthouse/*/summary.md
+            docs/lighthouse/*/*.report.html
+            docs/lighthouse/*/*.report.json
+          if-no-files-found: ignore
+
+      - name: Publish updated index (optional)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          git config user.email "actions@github.com"
+          git config user.name "github-actions"
+          git add docs/lighthouse/index.html || true
+          git diff --cached --quiet && echo "No changes" || git commit -m "chore(lh): update index" && git push
