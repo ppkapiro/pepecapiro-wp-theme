@@ -30,9 +30,11 @@ import os
 import sys
 import base64
 import json
+import re
+import hashlib
 from typing import Dict, Any, Optional, List
 
-import requests
+import requests  # Dependencia externa: instalar con `pip install requests` si se ejecuta fuera de entorno CI
 
 WP_URL = os.getenv("WP_URL", "https://pepecapiro.com")  # sin slash final
 WP_USER = os.getenv("WP_USER", "ADMIN_USER")
@@ -50,38 +52,86 @@ HEADERS = {
 MD_BASE = os.getenv("CONTENT_DIR", "content")
 
 def md_to_html(md: str) -> str:
-    # Conversión mínima: párrafos y encabezados (# -> h1, ## -> h2, etc.)
-    html_lines: List[str] = []
-    for raw_line in md.splitlines():
-        line_clean = raw_line.strip()
-        if not line_clean:
+    """Conversión Markdown muy ligera a HTML.
+    Soporta:
+      - Encabezados # .. ######
+      - Listas con -, * (un nivel anidado usando indent 2/4 espacios)
+      - Code blocks triple backtick ``` (sin resaltar)
+      - Código inline `code`
+      - Enlaces [texto](url)
+      - Párrafos
+    No pretende ser completo; evita dependencia externa.
+    """
+    lines = md.splitlines()
+    html: List[str] = []
+    in_code = False
+    list_stack: List[int] = []  # niveles de indent
+
+    def close_lists(to_level: int = 0):
+        while list_stack and list_stack[-1] >= to_level:
+            list_stack.pop()
+            html.append('</ul>')
+
+    for raw in lines:
+        # Detectar fenced code
+        if raw.strip().startswith('```'):
+            if not in_code:
+                close_lists(0)
+                in_code = True
+                html.append('<pre><code>')
+            else:
+                in_code = False
+                html.append('</code></pre>')
             continue
-        if line_clean.startswith('###### '):
-            html_lines.append(f"<h6>{line_clean[7:].strip()}</h6>")
-        elif line_clean.startswith('##### '):
-            html_lines.append(f"<h5>{line_clean[6:].strip()}</h5>")
-        elif line_clean.startswith('#### '):
-            html_lines.append(f"<h4>{line_clean[5:].strip()}</h4>")
-        elif line_clean.startswith('### '):
-            html_lines.append(f"<h3>{line_clean[4:].strip()}</h3>")
-        elif line_clean.startswith('## '):
-            html_lines.append(f"<h2>{line_clean[3:].strip()}</h2>")
-        elif line_clean.startswith('# '):
-            html_lines.append(f"<h1>{line_clean[2:].strip()}</h1>")
-        elif line_clean.startswith('- '):
-            # Simple lista: cerramos/abrimos manualmente (no soporta listas anidadas complejas)
-            if not html_lines or not html_lines[-1].startswith('<ul'):
-                html_lines.append('<ul>')
-            html_lines.append(f"<li>{line_clean[2:].strip()}</li>")
-        else:
-            if html_lines and html_lines[-1] == '</ul>':
-                # ensure not appended wrongly (placeholder logic simplified)
-                pass
-            html_lines.append(f"<p>{line_clean}</p>")
-    # Cerrar listas abiertas
-    if any(x.startswith('<li>') for x in html_lines) and not any(x == '</ul>' for x in html_lines):
-        html_lines.append('</ul>')
-    return '\n'.join(html_lines)
+        if in_code:
+            # Escapar mínimo
+            esc = raw.replace('&','&amp;').replace('<','&lt;').replace('>','&gt;')
+            html.append(esc)
+            continue
+
+        line = raw.rstrip()
+        if not line.strip():
+            close_lists(0)
+            continue
+
+        # Encabezados
+        m = re.match(r'^(#{1,6})\s+(.*)$', line.strip())
+        if m:
+            close_lists(0)
+            level = len(m.group(1))
+            html.append(f"<h{level}>{m.group(2).strip()}</h{level}>")
+            continue
+
+        # Listas (indent opcional)
+        lm = re.match(r'^(\s*)([-*])\s+(.*)$', line)
+        if lm:
+            indent_spaces = len(lm.group(1).replace('\t','    '))
+            # Normalizar nivel (cada 2 espacios = 1 nivel simple)
+            level = indent_spaces // 2
+            # Abrir niveles nuevos
+            if not list_stack or level > list_stack[-1]:
+                list_stack.append(level)
+                html.append('<ul>')
+            # Cerrar si retrocedemos
+            while list_stack and level < list_stack[-1]:
+                list_stack.pop()
+                html.append('</ul>')
+            content = lm.group(3).strip()
+            content = re.sub(r'`([^`]+)`', lambda m: f"<code>{m.group(1)}</code>", content)
+            content = re.sub(r'\[([^\]]+)\]\(([^)]+)\)', r'<a href="\2">\1</a>', content)
+            html.append(f"<li>{content}</li>")
+            continue
+
+        # Párrafo / inline code / links
+        txt = line.strip()
+        txt = re.sub(r'`([^`]+)`', lambda m: f"<code>{m.group(1)}</code>", txt)
+        txt = re.sub(r'\[([^\]]+)\]\(([^)]+)\)', r'<a href="\2">\1</a>', txt)
+        html.append(f"<p>{txt}</p>")
+
+    close_lists(0)
+    if in_code:
+        html.append('</code></pre>')
+    return '\n'.join(html)
 
 def load_md(slug: str, lang: str, fallback_html: str) -> str:
     path = os.path.join(MD_BASE, f"{slug}.{lang}.md")
@@ -204,22 +254,20 @@ class WPClient:
         if is_post and category_id:
             payload["categories"] = [category_id]
         if existing:
-            # Update minor fields if changed
-            diff = False
-            for f in ("title","content","excerpt"):
-                # Simple heuristic (not diff HTML deeply)
-                if f == "title" and existing.get("title",{}).get("rendered") != item["title"]:
-                    diff = True
-                if f == "content" and existing.get("content",{}).get("rendered","")[:120] != item["content"][:120]:
-                    diff = True
-                if f == "excerpt" and existing.get("excerpt",{}).get("rendered","")[:80] != item.get("excerpt","")[:80]:
-                    diff = True
-            if diff:
+            # Hash diff para evitar updates innecesarios
+            new_hash = hashlib.sha256((payload["title"] + payload["excerpt"] + payload["content"]).encode('utf-8')).hexdigest()
+            old_title = existing.get("title",{}).get("rendered","")
+            old_excerpt = existing.get("excerpt",{}).get("rendered","")
+            old_content = existing.get("content",{}).get("rendered","")
+            old_hash = hashlib.sha256((old_title + old_excerpt + old_content).encode('utf-8')).hexdigest()
+            if new_hash != old_hash:
                 r = self.post(f"{endpoint}/{existing['id']}", payload)  # WP admite POST para update
                 if r.status_code not in (200,201):
                     print(f"[warn] Update falló {existing['id']}: {r.status_code} {r.text}")
                 else:
                     existing = r.json()
+            else:
+                print(f"[skip] Sin cambios slug={item['slug']} ({new_hash[:8]})")
             return existing
         else:
             r = self.post(endpoint, payload)
@@ -236,6 +284,12 @@ class WPClient:
         r = self.patch(endpoint, payload)
         if r.status_code not in (200,201):
             print(f"[warn] No se enlazaron traducciones {content_type}: {r.status_code} {r.text}")
+            # Fallback sugerido (wp-cli) para ejecutar manualmente si REST no admite meta
+            langs_cli = ' '.join([f"{lang}:{cid}" for lang,cid in mapping.items()])
+            print("[hint] Fallback manual (wp-cli):")
+            print(f"  wp pll translation set {content_type} {langs_cli}")
+            print("[hint] O bien PATCH individual vía curl si meta se habilita:")
+            print(f"  curl -u $WP_USER:$WP_APP_PASSWORD -X PATCH {endpoint} -H 'Content-Type: application/json' --data '{json.dumps(payload)}'")
         else:
             print(f"[ok] Traducciones enlazadas {content_type}: {mapping}")
 

@@ -1,3 +1,11 @@
+## 0.3.14 – 20250925 (Release)
+- Mejoras script contenido:
+	- Parser Markdown ampliado (listas anidadas básicas, enlaces, código inline y bloques ```).
+	- Diff por hash SHA256 (title+excerpt+content) evita updates innecesarios (log [skip]).
+	- Fallback traducciones Polylang: muestra comandos wp-cli y curl si el PATCH meta falla.
+	- README documenta flujo `content/*.md` y extensión multi-post.
+- Bump versión del tema a 0.3.14.
+
 # Changelog
 
 ## 0.3.13 – 20250925 (Release)
