@@ -17,7 +17,7 @@
   },
   {
     "translation_key": "governance-automation-pillars",
-    "slug": "gobernanza-automatizacion-wordpress-pequenos-equipos",
+    "slug": {"es": "gobernanza-automatizacion-wordpress-pequenos-equipos", "en": "wordpress-governance-automation-small-teams"},
     "title": {
       "es": "Gobernanza y Automatización en WordPress para Equipos Pequeños: 5 Pilares Prácticos",
       "en": "WordPress Governance & Automation for Small Teams: 5 Practical Pillars"
