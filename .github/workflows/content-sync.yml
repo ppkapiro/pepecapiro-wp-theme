@@ -169,6 +169,15 @@ jobs:
         run: |
           python scripts/debug_recent_posts.py --limit=6 || echo 'Debug recientes falló'
 
+      - name: Verificar status publish remoto
+        if: steps.mode.outputs.apply == 'true'
+        env:
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+        run: |
+          python scripts/verify_published_status.py || echo 'Desajustes detectados (reportados)'
+
       - name: Artefactos verificación publicación
         if: always() && steps.mode.outputs.apply == 'true'
         uses: actions/upload-artifact@v4
@@ -180,6 +189,8 @@ jobs:
             reports/publish/http_debug.json
             reports/publish/recent_posts.json
             reports/publish/recent_posts.md
+            reports/publish/status_mismatches.json
+            reports/publish/status_mismatches.md
 
       - name: Subir log
         if: always()
