@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.3.13 – 20250925 (Release)
+- Refactor multi‑post: `scripts/publish_content.py` ahora soporta lista `POSTS` (n>1) con `translation_key` para agrupar y enlazar traducciones de forma genérica.
+- Ingesta Markdown: fuentes externas en `content/*.md` convierten a HTML (posts y futuras páginas) de forma idempotente.
+- Añadidos 4 archivos Markdown iniciales:
+	- `checklist-wordpress-produccion-1-dia.es.md` / `ship-wordpress-production-in-one-day.en.md`
+	- `gobernanza-automatizacion-wordpress-pequenos-equipos.es.md` / `wordpress-governance-automation-small-teams.en.md`
+- Segundo post bilingüe (gobernanza y automatización) generado automáticamente (slugs y categorías gestionadas).
+- Idempotencia extendida: comparación y actualización selectiva multi‑post sin duplicados.
+- Estructura preparada para añadir más posts simplemente agregando pares Markdown y entrada en `POSTS`.
+- Housekeeping: directorio `content/` versionado como fuente única de verdad de contenidos.
+
 ## 0.3.12 – 20250925 (Release)
 - Automatización de contenido inicial vía script `scripts/publish_content.py` (posts bilingües + legales + linking básico Polylang).
 - Idempotencia: re-ejecutar no duplica posts/páginas; actualiza título/excerpt/content si cambian.

@@ -28,10 +28,9 @@ NOTA: Ajustar la variable POLY_TRANSLATION_ENDPOINT si existe un endpoint person
 """
 import os
 import sys
-import time
 import base64
 import json
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 
 import requests
 
@@ -47,28 +46,106 @@ HEADERS = {
 }
 
 # Datos de contenido
-POST_ES = {
-    "slug": "checklist-wordpress-produccion-1-dia",
-    "title": "Checklist para poner un WordPress a producir en 1 día",
-    "excerpt": "Una guía práctica para pasar de cero a producción en 24 horas: seguridad, rendimiento, SEO, contenido mínimo y verificación.",
-    "content": "<p>[Contenido largo ES: reemplazar o inyectar desde fuente externa]</p>",
-    "lang": "es",
-    "category_name": "Guías",
-}
-POST_EN = {
-    "slug": "ship-wordpress-production-in-one-day",
-    "title": "Ship a Production-Ready WordPress in One Day: A Practical Checklist",
-    "excerpt": "A hands-on guide to go live in 24 hours: security, performance, SEO, minimum content, and final checks.",
-    "content": "<p>[Long EN content: replace or inject from external source]</p>",
-    "lang": "en",
-    "category_name": "Guides",
-}
-PAGES = [
-    {"slug": "privacidad", "title": "Política de Privacidad", "content": "<p>[Texto legal privacidad ES]</p>", "lang": "es"},
-    {"slug": "cookies", "title": "Política de Cookies", "content": "<p>[Texto legal cookies ES]</p>", "lang": "es"},
-    {"slug": "privacy", "title": "Privacy Policy", "content": "<p>[Legal privacy EN text]</p>", "lang": "en"},
-    {"slug": "cookies", "title": "Cookies Policy", "content": "<p>[Legal cookies EN text]</p>", "lang": "en"},
+# Nuevo: función para cargar markdown y convertirlo muy simple a HTML
+MD_BASE = os.getenv("CONTENT_DIR", "content")
+
+def md_to_html(md: str) -> str:
+    # Conversión mínima: párrafos y encabezados (# -> h1, ## -> h2, etc.)
+    html_lines: List[str] = []
+    for raw_line in md.splitlines():
+        line_clean = raw_line.strip()
+        if not line_clean:
+            continue
+        if line_clean.startswith('###### '):
+            html_lines.append(f"<h6>{line_clean[7:].strip()}</h6>")
+        elif line_clean.startswith('##### '):
+            html_lines.append(f"<h5>{line_clean[6:].strip()}</h5>")
+        elif line_clean.startswith('#### '):
+            html_lines.append(f"<h4>{line_clean[5:].strip()}</h4>")
+        elif line_clean.startswith('### '):
+            html_lines.append(f"<h3>{line_clean[4:].strip()}</h3>")
+        elif line_clean.startswith('## '):
+            html_lines.append(f"<h2>{line_clean[3:].strip()}</h2>")
+        elif line_clean.startswith('# '):
+            html_lines.append(f"<h1>{line_clean[2:].strip()}</h1>")
+        elif line_clean.startswith('- '):
+            # Simple lista: cerramos/abrimos manualmente (no soporta listas anidadas complejas)
+            if not html_lines or not html_lines[-1].startswith('<ul'):
+                html_lines.append('<ul>')
+            html_lines.append(f"<li>{line_clean[2:].strip()}</li>")
+        else:
+            if html_lines and html_lines[-1] == '</ul>':
+                # ensure not appended wrongly (placeholder logic simplified)
+                pass
+            html_lines.append(f"<p>{line_clean}</p>")
+    # Cerrar listas abiertas
+    if any(x.startswith('<li>') for x in html_lines) and not any(x == '</ul>' for x in html_lines):
+        html_lines.append('</ul>')
+    return '\n'.join(html_lines)
+
+def load_md(slug: str, lang: str, fallback_html: str) -> str:
+    path = os.path.join(MD_BASE, f"{slug}.{lang}.md")
+    if os.path.isfile(path):
+        try:
+            with open(path, 'r', encoding='utf-8') as f:
+                return md_to_html(f.read())
+        except Exception as e:
+            print(f"[warn] No se pudo leer {path}: {e}")
+    return fallback_html
+
+# Redefinir estructura: lista de posts con translation_key para agrupar
+POSTS = [
+    {
+        "translation_key": "checklist-wp-prod-day",
+        "slug": "checklist-wordpress-produccion-1-dia",
+        "title": "Checklist para poner un WordPress a producir en 1 día",
+        "excerpt": "Una guía práctica para pasar de cero a producción en 24 horas: seguridad, rendimiento, SEO, contenido mínimo y verificación.",
+        "content_html": "<p>[Contenido largo ES: reemplazar o inyectar desde fuente externa]</p>",
+        "lang": "es",
+        "category_name": "Guías",
+    },
+    {
+        "translation_key": "checklist-wp-prod-day",
+        "slug": "ship-wordpress-production-in-one-day",
+        "title": "Ship a Production-Ready WordPress in One Day: A Practical Checklist",
+        "excerpt": "A hands-on guide to go live in 24 hours: security, performance, SEO, minimum content, and final checks.",
+        "content_html": "<p>[Long EN content: replace or inject from external source]</p>",
+        "lang": "en",
+        "category_name": "Guides",
+    },
+    # Segundo post (nuevo) – tema más estratégico sobre gobernanza y automatización ligera
+    {
+        "translation_key": "governance-automation-pillars",
+        "slug": "gobernanza-automatizacion-wordpress-pequenos-equipos",
+        "title": "Gobernanza y Automatización en WordPress para Equipos Pequeños: 5 Pilares Prácticos",
+        "excerpt": "Cinco pilares accionables para mantener orden, velocidad y calidad en un sitio WordPress sin sobrecarga operativa.",
+        "content_html": "<p>[Borrador ES segundo post: se cargará desde markdown si existe gob-automation.es.md]</p>",
+        "lang": "es",
+        "category_name": "Guías",
+    },
+    {
+        "translation_key": "governance-automation-pillars",
+        "slug": "wordpress-governance-automation-small-teams",
+        "title": "WordPress Governance & Automation for Small Teams: 5 Practical Pillars",
+        "excerpt": "Five actionable pillars to keep order, speed and quality without operational fatigue.",
+        "content_html": "<p>[Draft EN second post: will load from markdown if present]</p>",
+        "lang": "en",
+        "category_name": "Guides",
+    },
 ]
+
+PAGES = [
+    {"slug": "privacidad", "title": "Política de Privacidad", "content_html": "<p>[Texto legal privacidad ES]</p>", "lang": "es"},
+    {"slug": "cookies", "title": "Política de Cookies", "content_html": "<p>[Texto legal cookies ES]</p>", "lang": "es"},
+    {"slug": "privacy", "title": "Privacy Policy", "content_html": "<p>[Legal privacy EN text]</p>", "lang": "en"},
+    {"slug": "cookies", "title": "Cookies Policy", "content_html": "<p>[Legal cookies EN text]</p>", "lang": "en"},
+]
+
+# Cargar markdown dinámicamente si existen archivos content/<slug>.<lang>.md (posts y páginas)
+for p in POSTS:
+    p["content_html"] = load_md(p["slug"], p["lang"], p["content_html"])
+for pg in PAGES:
+    pg["content_html"] = load_md(pg["slug"], pg["lang"], pg["content_html"])
 
 API_POSTS = f"{WP_URL}/wp-json/wp/v2/posts"
 API_PAGES = f"{WP_URL}/wp-json/wp/v2/pages"
@@ -117,7 +194,7 @@ class WPClient:
         existing = self.find_content(item["slug"], is_post=is_post)
         payload = {
             "title": item["title"],
-            "content": item["content"],
+            "content": item.get("content") or item.get("content_html",""),
             "slug": item["slug"],
             "status": "publish",
             "excerpt": item.get("excerpt", ""),
@@ -184,51 +261,84 @@ def main():
 
     client = WPClient(WP_URL, HEADERS)
 
-    # Categorías
-    cat_es_id = client.ensure_category(POST_ES["category_name"], POST_ES["lang"])
-    cat_en_id = client.ensure_category(POST_EN["category_name"], POST_EN["lang"])
-    print(f"[info] cat_es_id={cat_es_id} cat_en_id={cat_en_id}")
+    # Categorías (agrupar por lang => id)
+    cat_ids: Dict[str, Dict[str,int]] = {}
+    for p in POSTS:
+        lang = p["lang"]
+        cname = p["category_name"]
+        if lang not in cat_ids:
+            cat_ids[lang] = {}
+        if cname not in cat_ids[lang]:
+            cid = client.ensure_category(cname, lang)
+            if cid:
+                cat_ids[lang][cname] = cid
+    print(f"[info] cat_ids={cat_ids}")
 
-    post_es = client.create_or_update(POST_ES, is_post=True, category_id=cat_es_id)
-    post_en = client.create_or_update(POST_EN, is_post=True, category_id=cat_en_id)
-    if post_es: print(f"[ok] Post ES id={post_es['id']} url={post_es.get('link')}")
-    if post_en: print(f"[ok] Post EN id={post_en['id']} url={post_en.get('link')}")
+    created_posts: Dict[str, Dict[str, Any]] = {}
+    # Crear/actualizar posts
+    for p in POSTS:
+        cid = cat_ids.get(p["lang"], {}).get(p["category_name"]) if p.get("category_name") else None
+        obj = client.create_or_update(p, is_post=True, category_id=cid)
+        if obj:
+            created_posts[p["slug"]] = obj
+            print(f"[ok] Post {p['lang']} slug={p['slug']} id={obj['id']}")
 
-    # Páginas
-    pages_created = []
-    for p in PAGES:
-        pg = client.create_or_update(p, is_post=False)
-        if pg:
-            pages_created.append(pg)
-            print(f"[ok] Página {p['slug']} id={pg['id']} lang={p['lang']}")
+    # Link traducciones por translation_key
+    translation_groups: Dict[str, Dict[str,int]] = {}
+    for p in POSTS:
+        slug = p["slug"]
+        obj = created_posts.get(slug)
+        if not obj:
+            continue
+        key = p["translation_key"]
+        translation_groups.setdefault(key, {})[p["lang"]] = obj["id"]
+    for key, mapping in translation_groups.items():
+        if len(mapping) > 1:  # sólo enlazar si hay al menos dos idiomas
+            client.link_translations(mapping, 'posts')
 
-    # Intentar enlazar traducciones posts
-    if post_es and post_en:
-        client.link_translations({"es": post_es['id'], "en": post_en['id']}, 'posts')
+    # Páginas legales
+    created_pages: Dict[str, Any] = {}
+    for page in PAGES:
+        obj = client.create_or_update({
+            "title": page["title"],
+            "slug": page["slug"],
+            "content_html": page["content_html"],
+            "lang": page["lang"],
+        }, is_post=False)
+        if obj:
+            key = f"{page['slug']}:{page['lang']}"
+            created_pages[key] = obj
+            print(f"[ok] Página {page['lang']} slug={page['slug']} id={obj['id']}")
 
-    # Enlazar páginas legales por slug agrupado
-    def find_page_id(slug: str) -> Optional[int]:
-        pg = client.find_content(slug, is_post=False)
+    # Enlazar traducciones legales (privacidad/privacy y cookies/cookies si difieren IDs)
+    def find_page(slug: str, lang: str) -> Optional[int]:
+        pg = created_pages.get(f"{slug}:{lang}")
         return pg.get('id') if pg else None
-    priv_es = find_page_id('privacidad')
-    priv_en = find_page_id('privacy')
-    cook_es = find_page_id('cookies')  # mismo slug, se desambiguará por idioma interno
-    cook_en = find_page_id('cookies')
+    priv_es = find_page('privacidad','es')
+    priv_en = find_page('privacy','en')
+    cook_es = find_page('cookies','es')
+    cook_en = find_page('cookies','en')
     if priv_es and priv_en:
         client.link_translations({"es": priv_es, "en": priv_en}, 'pages')
-    if cook_es and cook_en and cook_es != cook_en:  # si Polylang separa, IDs diferentes
+    if cook_es and cook_en and cook_es != cook_en:
         client.link_translations({"es": cook_es, "en": cook_en}, 'pages')
 
     # Validaciones HTTP básicas
-    urls = []
-    if post_es: urls.append(post_es.get('link'))
-    if post_en: urls.append(post_en.get('link'))
-    for slug in ('privacidad','privacy','cookies'):
-        urls.append(f"{WP_URL}/{('en/' if slug=='privacy' else '')}{slug}/")
+    urls: List[str] = []
+    for obj in created_posts.values():
+        urls.append(obj.get('link'))
+    # Comprobar legales según slugs base
+    urls.extend([
+        f"{WP_URL}/privacidad/",
+        f"{WP_URL}/cookies/",
+        f"{WP_URL}/en/privacy/",
+        f"{WP_URL}/en/cookies/",
+    ])
 
     health = True
     for u in urls:
-        if not u: continue
+        if not u:
+            continue
         ok = validate_http(u)
         print(f"[check] {u} => {'OK' if ok else 'FAIL'}")
         health = health and ok
