@@ -1,3 +1,42 @@
+## 0.3.18 – 20250925 (Release)
+- Modo `--drift-only`: genera `content/drift_report.md` sin realizar mutaciones (comprueba existencia y hash de contenido remoto vs local).
+- Resumen de plan en dry-run: crea `content/content_plan_summary.md` listando acciones (create/update/skip/removed).
+- Soft delete declarativo: campo `removed: true` en posts/páginas fuerza estado `draft` remoto sin recrear.
+- Deduplicación de media: `.media_map.json` (hash SHA256 -> URL remota) evita subidas repetidas de la misma imagen.
+- Enlazado de traducciones refactorizado tras creación para posts y páginas (agrupado por `translation_key`).
+- Mejora hash drift interno para reportes (título+excerpt+content+status).
+- Documentación pendiente de ampliación (se actualizará en este mismo release antes de cerrar la etiqueta).
+
+## 0.3.17 – 20250925 (Release)
+- Pages as code: nuevo `content/pages.json` para páginas estáticas (privacidad, cookies, etc.) con misma semántica de `translation_key`, slugs multi‑idioma, status y disabled.
+- Publicación unificada posts + páginas en `scripts/publish_content.py` (lógica compartida de hash, creación/actualización y linking Polylang).
+- Subida automática de media local: detección de referencias `<img src="media/...">` o `![alt](media/...)`, POST a endpoint `/media` y reemplazo de URLs en HTML final (sólo en apply).
+- Parser markdown extendido: soporte de imágenes y blockquotes (`>`).
+- Validación de páginas (`scripts/validate_pages.py`) añadida al flujo CI (plan + apply).
+- Documentación: consolidación en `docs/PROCESO_AUTOMATIZACION_CONTENIDO.md` (archivo maestro). `CONTENT_AUTOMATION.md` pasa a ser stub.
+- Auto-apply condicional: archivo `.auto_apply` o commit con `[publish]` activa apply automático.
+- Changelog reorganizado: entrada 0.3.16 se convierte en release anterior; 0.3.17 agrupa nuevas capacidades.
+
+## 0.3.16 – 20250925 (Release)
+- Slugs multi‑idioma: `slug` acepta objeto `{es,en}` (retrocompatible con string).
+- Campos opcionales `status` (global o por idioma) y `disabled` (bool / dict) en `posts.json`.
+- Filtro `--key=lista` para sincronizar sólo ciertos `translation_key`.
+- Validación ampliada (`validate_posts.py`) soporta nuevo esquema.
+- Hash de idempotencia ahora incluye `status` y categorías para detectar cambios.
+- Salto explícito si falta markdown por idioma (`[skip-md]`).
+- Documentación `CONTENT_AUTOMATION.md` actualizada (esquema 0.3.16+, subconjuntos, disabled parcial).
+
+## 0.3.15 – 20250925 (Release)
+- Pipeline "Contenido como código" consolidado:
+	- `content/posts.json` como fuente única de metadata de posts.
+	- Markdown por idioma (`*.es.md` / `*.en.md`) ingeridos dinámicamente.
+	- Modo `--dry-run` / hash SHA256 (title+excerpt+content) para idempotencia y planificación.
+- Nuevo workflow CI `content-sync.yml` (plan automático en push, apply manual con `apply=true`).
+- Validación estructural previa (`scripts/validate_posts.py`).
+- Documentación dedicada: `CONTENT_AUTOMATION.md`.
+- Preparado terreno para slugs por idioma e imágenes (no implementado aún).
+- Bump versión tema a 0.3.15.
+
 ## 0.3.14 – 20250925 (Release)
 - Mejoras script contenido:
 	- Parser Markdown ampliado (listas anidadas básicas, enlaces, código inline y bloques ```).
@@ -7,6 +46,11 @@
 - Bump versión del tema a 0.3.14.
 
 # Changelog
+
+### Notas complementarias 0.3.18
+- Limpieza documental final: eliminación de archivos históricos (`INFORME_UNICO_RESCATE.md`, `PLAN_v0_3_0.md`, documento maestro previo y gobernanza inicial) tras migrar checklists operativas.
+- Consolidación de índice (`docs/INDEX.md`) sin sección de archivo; referencia a historial vía Git.
+- Documentación ampliada: métricas y observabilidad (`docs/PERFORMANCE_METRICS.md`), quality gates planificados.
 
 ## 0.3.13 – 20250925 (Release)
 - Refactor multi‑post: `scripts/publish_content.py` ahora soporta lista `POSTS` (n>1) con `translation_key` para agrupar y enlazar traducciones de forma genérica.
@@ -39,7 +83,6 @@
 - Marker de depuración en HTML (`<!-- posts_found:X lang:YY -->`) para observabilidad remota.
 - Ajustes de documentación pendientes: sección Blog bilingüe añadida al informe único; preparación de próximos pasos SEO (breadcrumbs, bloque "Últimas entradas").
 - Housekeeping pendiente: consolidar scripts de migración de slugs (se documentan antes de archivarlos / limpieza futura).
-
 
 ## 0.3.0 – 20250923 (Release)
 - Contenido inicial: primer artículo ES/EN definido (título, excerpt, cuerpo, slugs y categorías Guías/Guides) listo para publicar; retirada de “Hello world!” planificada.

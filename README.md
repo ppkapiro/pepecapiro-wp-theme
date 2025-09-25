@@ -4,73 +4,61 @@
 
 Tema WordPress para pepecapiro.com.
 
-## Métricas & Demo
+## Documentación Clave
+- Índice: `docs/INDEX.md`
+- Arquitectura: `docs/ARCHITECTURE.md`
+- Automatización de contenido: `docs/PROCESO_AUTOMATIZACION_CONTENIDO.md`
+- Operaciones/Gobernanza: `docs/OPERATIONS_OVERVIEW.md`
+- Runbook de despliegue: `docs/DEPLOY_RUNBOOK.md`
+- Métricas & Observabilidad: `docs/PERFORMANCE_METRICS.md`
+- Changelog: `CHANGELOG.md`
+- Reportes Lighthouse / auditorías: `docs/`
 
+## Flujo Rápido (Publicar Contenido)
+```
+1. Editar content/posts.json o pages.json
+2. Añadir markdown ES/EN (content/<slug>.<lang>.md)
+3. Commit con [publish] en el mensaje (o tener .auto_apply)
+4. Push a main → CI valida y publica (auto-apply) / si no, plan
+```
+Outputs generados:
+- `content/content_plan_summary.md` (plan dry-run)
+- `content/drift_report.md` (modo `--drift-only`)
+- `content/.media_map.json` (deduplicación media)
+
+Si no quieres auto-apply permanente, elimina `.auto_apply` y usa `[publish]` sólo cuando proceda.
+
+## Métricas & Demo
 [![GitHub Pages](https://img.shields.io/badge/Pages-online-brightgreen)](https://ppkapiro.github.io/pepecapiro-wp-theme/docs/index.html)
 
 - Tabla resumen (Mobile): `docs/VALIDACION_MVP_v0_2_1.md`.
 - Reportes completos (HTML): `docs/lighthouse/index.html`.
-- Landing de Docs: `docs/index.html`.
-
-> GitHub Pages (modo /docs): https://ppkapiro.github.io/pepecapiro-wp-theme/docs/index.html
-
-## Desarrollo rápido
-- WP 6.8.2 (Hostinger), PHP 8.2.28
-- Tema: `pepecapiro` (plantillas MVP: `page-home.php`, `page-about.php`)
-- Optimización: fuentes WOFF2 con `font-display: swap`; se desregistran CSS globales de bloques.
 
 ## CI
-- GitHub Actions: Lighthouse móvil (10 URLs) + verificación periódica de salud (`site-health.yml`).
-- Health blog: `scripts/blog_health_ci.sh` usado en deploy y health schedule.
+- Health y Lighthouse: workflows en `.github/workflows/`.
+- Content Sync: `.github/workflows/content-sync.yml` (auto-apply condicional).
 
-## CI/CD & Deploy (importante)
+## Notas de Desarrollo
+- WP 6.x, PHP 8.2.
+- Tema versión actual: ver `style.css`.
+- Parser markdown interno (sin dependencias externas) para contenido.
 
-- Runbook de despliegue por tags y troubleshooting:
-  - `docs/DEPLOY_RUNBOOK.md`
-- Workflow principal de deploy (Actions):
-  - `.github/workflows/deploy.yml`
-- Releases (tags v*):
-  - https://github.com/ppkapiro/pepecapiro-wp-theme/releases
-- Último release: https://github.com/ppkapiro/pepecapiro-wp-theme/releases/tag/v0.3.13
-- Artifacts y logs de integridad: ver pestaña “Actions” del run correspondiente.
+## Roadmap (extracto)
+Resumen rápido (ver detalle y estado en `docs/PERFORMANCE_METRICS.md`):
 
-## Estado de validación de rendimiento (etapa cerrada)
-## Contenido Automatizado (Markdown -> WP)
+| Item | Estado |
+|------|--------|
+| Release 0.3.18 | Preparación |
+| Lighthouse CLI integrado | Planificado |
+| PSI API (LCP/INP campo) | Planificado |
+| Quality Gates preflight | Planificado |
+| Breadcrumbs JSON-LD | Pendiente |
+| Últimas Entradas widget | Pendiente |
+| Auditoría hreflang/canonical | Pendiente |
+| Primer post real ES/EN | Pendiente |
 
-El script `scripts/publish_content.py` ahora soporta múltiples posts y páginas usando archivos Markdown fuente:
-
-Estructura:
-```
-content/
-  <slug>.es.md
-  <slug>.en.md
-```
-
-Flujo:
-1. Añadir nueva entrada en la lista `POSTS` (clave `translation_key`, slugs, títulos, excerpts, categoría).
-2. Crear archivos `content/<slug>.<lang>.md` con el cuerpo en Markdown.
-3. Ejecutar el script exportando credenciales:
-   ```bash
-   export WP_URL=https://pepecapiro.com
-   export WP_USER=admin
-   export WP_APP_PASSWORD=xxxxx
-   python3 scripts/publish_content.py
-   ```
-4. El script convierte Markdown (encabezados, listas, enlaces, código) a HTML ligero e **idempotente**: sólo actualiza si cambia el hash (`title+excerpt+content`).
-
-Traducciones:
-- Agrupa por `translation_key` y enlaza con Polylang (vía meta REST si disponible) o muestra fallback wp-cli.
-
-Extender:
-- Añadir más posts = añadir objetos a `POSTS` + Markdown. No requiere tocar lógica central.
-
-Limitaciones parser ligero:
-- No soporta tablas complejas ni imágenes Markdown todavía.
-- Listas anidadas: un nivel adicional (indent 2+ espacios) soportado.
-
-Mejoras futuras sugeridas: soporte imágenes, bloques de cita y tablas.
+Detalle técnico y próximos pasos: `docs/PERFORMANCE_METRICS.md` y sección Roadmap en `docs/PROCESO_AUTOMATIZACION_CONTENIDO.md`.
 
 
-- Último workflow: https://github.com/ppkapiro/pepecapiro-wp-theme/actions/workflows/lighthouse_docs.yml
-- Landing de Docs: https://ppkapiro.github.io/pepecapiro-wp-theme/docs/index.html
-- Índice Lighthouse: https://ppkapiro.github.io/pepecapiro-wp-theme/docs/lighthouse/index.html
+---
+Para cualquier modificación estructural, actualizar primero el documento maestro.
