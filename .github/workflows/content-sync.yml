@@ -160,6 +160,15 @@ jobs:
         run: |
           python scripts/verify_content_live.py || echo 'Verificación detectó errores (marcados en reporte)'
 
+      - name: Debug recientes (posts)
+        if: steps.mode.outputs.apply == 'true'
+        env:
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+        run: |
+          python scripts/debug_recent_posts.py --limit=6 || echo 'Debug recientes falló'
+
       - name: Artefactos verificación publicación
         if: always() && steps.mode.outputs.apply == 'true'
         uses: actions/upload-artifact@v4
@@ -168,6 +177,9 @@ jobs:
           path: |
             reports/publish/verify.json
             reports/publish/verify.md
+            reports/publish/http_debug.json
+            reports/publish/recent_posts.json
+            reports/publish/recent_posts.md
 
       - name: Subir log
         if: always()

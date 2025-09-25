@@ -32,6 +32,9 @@ from datetime import datetime
 
 import requests  # Dependencia externa: instalar con `pip install requests` si se ejecuta fuera de entorno CI
 
+# Buffer de depuración HTTP (se volcará a reports/publish/http_debug.json).
+HTTP_DEBUG: List[Dict[str, Any]] = []
+
 WP_URL = os.getenv("WP_URL", "https://pepecapiro.com")  # sin slash final
 WP_USER = os.getenv("WP_USER", "ADMIN_USER")
 WP_APP_PASSWORD = os.getenv("WP_APP_PASSWORD", "APP_PASSWORD")
@@ -317,13 +320,52 @@ class WPClient:
         self.headers = headers
 
     def get(self, url: str, params=None) -> requests.Response:
-        return requests.get(url, headers=self.headers, params=params, timeout=TIMEOUT)
+        r = requests.get(url, headers=self.headers, params=params, timeout=TIMEOUT)
+        try:
+            HTTP_DEBUG.append({
+                'ts': datetime.utcnow().isoformat()+'Z',
+                'method': 'GET',
+                'url': url,
+                'params': params,
+                'status': r.status_code,
+                'ok': r.ok,
+                'resp_excerpt': (r.text[:300] if r.text else ''),
+            })
+        except Exception:
+            pass
+        return r
 
     def post(self, url: str, data: Dict[str, Any]) -> requests.Response:
-        return requests.post(url, headers=self.headers, data=json.dumps(data), timeout=TIMEOUT)
+        r = requests.post(url, headers=self.headers, data=json.dumps(data), timeout=TIMEOUT)
+        try:
+            HTTP_DEBUG.append({
+                'ts': datetime.utcnow().isoformat()+'Z',
+                'method': 'POST',
+                'url': url,
+                'payload_keys': list(data.keys()) if isinstance(data, dict) else None,
+                'status': r.status_code,
+                'ok': r.ok,
+                'resp_excerpt': (r.text[:300] if r.text else ''),
+            })
+        except Exception:
+            pass
+        return r
 
     def patch(self, url: str, data: Dict[str, Any]) -> requests.Response:
-        return requests.patch(url, headers=self.headers, data=json.dumps(data), timeout=TIMEOUT)
+        r = requests.patch(url, headers=self.headers, data=json.dumps(data), timeout=TIMEOUT)
+        try:
+            HTTP_DEBUG.append({
+                'ts': datetime.utcnow().isoformat()+'Z',
+                'method': 'PATCH',
+                'url': url,
+                'payload_keys': list(data.keys()) if isinstance(data, dict) else None,
+                'status': r.status_code,
+                'ok': r.ok,
+                'resp_excerpt': (r.text[:300] if r.text else ''),
+            })
+        except Exception:
+            pass
+        return r
 
     def upload_media(self, filepath: str, filename: str, mime: str) -> Optional[str]:
         try:
@@ -410,17 +452,21 @@ class WPClient:
                 existing_cats = ','.join(str(c) for c in existing_obj.get('categories',[]))
             old_hash = hashlib.sha256((old_title + old_excerpt + old_content + existing_status + existing_cats).encode('utf-8')).hexdigest()
             if new_hash != old_hash:
+                print(f"[update] slug={item['slug']} lang={item.get('lang')} id={existing_obj['id']} status_from={existing_status}->{payload['status']}")
                 r = self.post(f"{endpoint}/{existing_obj['id']}", payload)
                 if r.status_code in (200,201):
+                    print(f"[update-ok] id={existing_obj['id']} slug={item['slug']} status={payload['status']}")
                     return r.json()
-                print(f"[warn] Update falló {existing_obj['id']}: {r.status_code}")
+                print(f"[warn] Update falló {existing_obj['id']}: {r.status_code} body_excerpt={r.text[:160]}")
                 return existing_obj
-            print(f"[skip] Sin cambios slug={item['slug']} ({new_hash[:8]})")
+            print(f"[skip] Sin cambios slug={item['slug']} ({new_hash[:8]}) status={existing_status}")
             return existing_obj
         r = self.post(endpoint, payload)
         if r.status_code in (200,201):
-            return r.json()
-        print(f"[error] Creación falló {item['slug']}: {r.status_code}")
+            robj = r.json()
+            print(f"[create-ok] slug={item['slug']} lang={item.get('lang')} id={robj.get('id')} status={robj.get('status')} link={robj.get('link')}")
+            return robj
+        print(f"[error] Creación falló {item['slug']}: {r.status_code} body_excerpt={r.text[:200]}")
         return None
 
     def link_translations(self, mapping: Dict[str,int], content_type: str):
@@ -723,6 +769,15 @@ def main():
             ok = validate_http(u)
             print(f"[check] {u} => {'OK' if ok else 'FAIL'}")
             health = health and ok
+    # Volcar debug HTTP
+    try:
+        debug_dir = os.path.join('reports','publish')
+        os.makedirs(debug_dir, exist_ok=True)
+        with open(os.path.join(debug_dir,'http_debug.json'),'w',encoding='utf-8') as fdbg:
+            json.dump({'generated': datetime.utcnow().isoformat()+'Z', 'entries': HTTP_DEBUG}, fdbg, ensure_ascii=False, indent=2)
+        print('[debug] http_debug.json generado')
+    except Exception as e:
+        print(f"[warn] No se pudo escribir http_debug.json: {e}")
         print("[result] Éxito global" if health else "[result] Con incidencias (revisar logs)")
         return 0 if health else 1
 
