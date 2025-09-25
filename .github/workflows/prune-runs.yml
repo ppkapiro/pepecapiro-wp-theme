@@ -1,0 +1,72 @@
+name: Prune Old Workflow Runs
+
+on:
+  workflow_dispatch:
+    inputs:
+      workflow:
+        description: 'Nombre (name) del workflow a podar (ej: Content Sync). Vacío = todos.'
+        required: false
+        default: ''
+      keep:
+        description: 'Número de ejecuciones más recientes a conservar'
+        required: true
+        default: '10'
+
+jobs:
+  prune:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: read
+    steps:
+      - name: Determinar parámetros
+        id: params
+        run: |
+          WF_NAME="${{ github.event.inputs.workflow }}"
+          KEEP=${{ github.event.inputs.keep }}
+          if [ -z "$KEEP" ]; then KEEP=10; fi
+          echo "wf_name=$WF_NAME" >> $GITHUB_OUTPUT
+          echo "keep=$KEEP" >> $GITHUB_OUTPUT
+      - name: Prune runs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          WF_NAME="${{ steps.params.outputs.wf_name }}"
+          KEEP=${{ steps.params.outputs.keep }}
+          echo "Manteniendo las últimas $KEEP ejecuciones"
+          # Obtener lista de workflows
+          if [ -n "$WF_NAME" ]; then
+            echo "Filtrando por nombre: $WF_NAME"
+          fi
+          page=1
+          ids_json="[]"
+          while true; do
+            resp=$(gh api repos/${{ github.repository }}/actions/runs --paginate -F per_page=100 -F page=$page || true)
+            count=$(echo "$resp" | jq '.workflow_runs | length')
+            if [ "$count" = "0" ]; then break; fi
+            # Filtrar si se especifica nombre
+            if [ -n "$WF_NAME" ]; then
+              part=$(echo "$resp" | jq --arg NAME "$WF_NAME" '[.workflow_runs[] | select(.name==$NAME) | {id: .id, name: .name, run_number: .run_number, created_at: .created_at}]')
+            else
+              part=$(echo "$resp" | jq '[.workflow_runs[] | {id: .id, name: .name, run_number: .run_number, created_at: .created_at}]')
+            fi
+            ids_json=$(jq -s 'add' <(echo "$ids_json") <(echo "$part"))
+            page=$((page+1))
+            if [ $page -gt 10 ]; then break; fi
+          done
+          total=$(echo "$ids_json" | jq 'length')
+          echo "Total seleccionadas: $total"
+          if [ $total -le $KEEP ]; then
+            echo "No hay nada que borrar (total <= keep)."
+            exit 0
+          fi
+          # Ordenar por created_at desc y cortar
+          to_delete=$(echo "$ids_json" | jq -r --argjson KEEP $KEEP 'sort_by(.created_at) | reverse | .[$KEEP:] | .[].id')
+          del_count=0
+          for rid in $to_delete; do
+            echo "Borrando run $rid" || true
+            gh api repos/${{ github.repository }}/actions/runs/$rid -X DELETE || true
+            del_count=$((del_count+1))
+          done
+          echo "Borradas $del_count ejecuciones antiguas."

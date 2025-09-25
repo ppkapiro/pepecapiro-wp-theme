@@ -92,3 +92,27 @@ Detalle técnico y próximos pasos: `docs/PERFORMANCE_METRICS.md` y sección Roa
 
 ---
 Para cualquier modificación estructural, actualizar primero el documento maestro.
+
+## Mantenimiento: Limpieza de ejecuciones CI
+
+Con el uso continuo se acumulan muchos workflow runs (p.ej. >100) ocupando espacio y ruido visual.
+
+Opciones de limpieza:
+
+1. Workflow manual: `Prune Old Workflow Runs`
+	 - Inputs:
+		 - `workflow`: nombre exacto (ej: `Content Sync`) o vacío para todos.
+		 - `keep`: número de ejecuciones más recientes a conservar.
+	 - Ejecuta paginando y borra el resto (usa GitHub API con token del repo).
+2. Script local: `scripts/prune_runs_local.sh`
+	 - Requiere `gh` y `jq` instalados y autenticación `gh auth login`.
+	 - Ejemplos:
+		 - `./scripts/prune_runs_local.sh "Content Sync" 25`
+		 - `./scripts/prune_runs_local.sh "" 50` (todos los workflows, conserva 50)
+
+Relanzar sincronización de contenido tras limpieza:
+```
+git commit --allow-empty -m "chore: retrigger content sync [publish]"
+git push
+```
+O vía Actions → `Content Sync` → `Run workflow` con `apply=true`.
