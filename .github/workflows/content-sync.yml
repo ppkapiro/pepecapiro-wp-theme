@@ -101,6 +101,10 @@ jobs:
 
       - name: Determinar modo
         id: mode
+        env:
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
         run: |
           APPLY=false
           # 1) Manual dispatch tiene prioridad
@@ -117,24 +121,25 @@ jobs:
               APPLY=true
             fi
           fi
+
+          # 4) Verificación de secretos: si falta alguno, degradamos a PLAN de forma segura
+          if [ "$APPLY" = true ]; then
+            MISSING=0
+            for v in WP_URL WP_USER WP_APP_PASSWORD; do
+              if [ -z "${!v}" ]; then
+                echo "[WARN] Falta secreto $v. Se forzará modo PLAN." >&2
+                MISSING=1
+              fi
+            done
+            if [ $MISSING -eq 1 ]; then
+              APPLY=false
+            fi
+          fi
           echo "apply=$APPLY" >> $GITHUB_OUTPUT
           if [ "$APPLY" = true ]; then
             echo 'Auto-apply activado (archivo .auto_apply o commit [publish])'
           fi
           echo "Modo: $([ "$APPLY" = true ] && echo APPLY || echo PLAN)"
-
-      - name: Verificar secretos (solo apply)
-        if: steps.mode.outputs.apply == 'true'
-        env:
-          WP_URL: ${{ secrets.WP_URL }}
-          WP_USER: ${{ secrets.WP_USER }}
-          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
-        run: |
-          missing=0
-          for v in WP_URL WP_USER WP_APP_PASSWORD; do
-            if [ -z "${!v}" ]; then echo "[E] Falta secreto $v"; missing=1; fi
-          done
-          if [ $missing -eq 1 ]; then echo 'Se ejecutará en modo dry-run por falta de secretos'; echo "apply=false" >> $GITHUB_OUTPUT; fi
 
       - name: Ejecutar (plan)
         if: steps.mode.outputs.apply != 'true'
