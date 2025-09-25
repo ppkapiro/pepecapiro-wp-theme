@@ -98,29 +98,18 @@ Notas:
 - Cambio en plantillas: las imágenes temporales del tema (about-temp.jpg, hero-temp.jpg) se reemplazaron por placeholders SVG inline para evitar bloqueos 403 del host sobre /wp-content/themes/*/assets/img.
 - Verificación posterior: 0 errores 404/5xx en las 10 URLs; conteo de assets por página=4 en todas (About ES/EN incluido); HTML ~15–16 KB en Home; ~15 KB en About.
 
-## Lighthouse móvil (métricas reales) — 2025-09-23 14:34:32
+## Lighthouse móvil (métricas reales) — 2025-09-25 18:54:28
 
 | Página | Perf | LCP | TTI | INP | Top 2 oportunidades |
 |--------|------|-----|-----|-----|----------------------|
-| [/](lighthouse/home.html) | 100 | 1.1s | 863ms | n/a | — |
-| /en/ | n/a | n/a | n/a | n/a | — |
-| /sobre-mi/ | n/a | n/a | n/a | n/a | — |
-| /en/about/ | n/a | n/a | n/a | n/a | — |
-| /proyectos/ | n/a | n/a | n/a | n/a | — |
-| /en/projects/ | n/a | n/a | n/a | n/a | — |
-| /recursos/ | n/a | n/a | n/a | n/a | — |
-| /en/resources/ | n/a | n/a | n/a | n/a | — |
-| /contacto/ | n/a | n/a | n/a | n/a | — |
-| /en/contact/ | n/a | n/a | n/a | n/a | — |
+| [/](lighthouse/home.html) | 99 | 1.6s | 1.6s | n/a | — |
+| [/en/](lighthouse/en-home.html) | 96 | 2.2s | 2.2s | n/a | — |
+| [/sobre-mi/](lighthouse/sobre-mi.html) | 99 | 1.6s | 1.6s | n/a | — |
+| [/en/about/](lighthouse/en-about.html) | 99 | 1.6s | 1.6s | n/a | — |
+| [/proyectos/](lighthouse/proyectos.html) | 100 | 1.5s | 1.5s | n/a | — |
+| [/en/projects/](lighthouse/en-projects.html) | 99 | 1.6s | 1.6s | n/a | — |
+| [/recursos/](lighthouse/recursos.html) | 99 | 1.6s | 1.6s | n/a | — |
+| [/en/resources/](lighthouse/en-resources.html) | 100 | 1.5s | 1.5s | n/a | — |
+| [/contacto/](lighthouse/contacto.html) | 100 | 1.4s | 1.4s | n/a | — |
+| [/en/contact/](lighthouse/en-contact.html) | 100 | 1.5s | 1.5s | n/a | — |
 
-> **Índice navegable de reportes:** ver `docs/lighthouse/index.html`.
-
-### Nota v0.3.0 — 2025-09-23
-- Se documentaron y prepararon para ejecución los contenidos iniciales (post ES/EN) y legales (Privacidad/Cookies ES/EN).  
-- Tras publicar y purgar caché, repetir mediciones Lighthouse/PSI para Home, Blog ES/EN y páginas legales; adjuntar reportes en `docs/lighthouse/` y actualizar esta tabla con Perf/LCP/TTI/INP.
-
-### Historial de auditorías
-
-| Fecha | Estado | Run | Evidencia |
-|-------|--------|-----|-----------|
-| 2025-09-23 14:33:00 UTC | success | [Actions](https://github.com/ppkapiro/pepecapiro-wp-theme/actions/runs/17949492965) | [lh_fail](N/A) |
