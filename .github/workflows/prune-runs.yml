@@ -56,7 +56,8 @@ jobs:
             echo "[ERROR] gh run list falló" >&2
             sed -e 's/^/[gh-run-list-stderr] /' _runs_list_err.log >&2 || true
           fi
-          if [ -n "$WF_NAME" ]; then
+          # Interpretar 'all' o '*' como sin filtro
+          if [ -n "$WF_NAME" ] && [ "$WF_NAME" != "all" ] && [ "$WF_NAME" != "*" ]; then
             jq --arg NAME "$WF_NAME" '[ .[] | select(.name==$NAME) | {id, name, run_number, created_at, status, conclusion}]' _all_raw.json > runs_all.json
           else
             jq '[ .[] | {id, name, run_number, created_at, status, conclusion}]' _all_raw.json > runs_all.json
