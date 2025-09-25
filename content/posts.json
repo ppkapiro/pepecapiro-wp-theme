@@ -63,4 +63,18 @@
     "category": {"es": "Guías", "en": "Guides"},
     "status": {"es": "publish", "en": "publish"}
   }
+  ,
+  {
+    "translation_key": "wp-hardening-week-two",
+    "slug": {"es": "endurecimiento-wordpress-segunda-semana", "en": "wordpress-hardening-second-week"},
+    "title": {
+      "es": "WordPress Segunda Semana: Endurecimiento y Estabilización Prioritaria",
+      "en": "WordPress Second Week: Priority Hardening & Stabilization"
+    },
+    "excerpt": {
+      "es": "Checklist accionable para la segunda semana: bloqueo de superficie, monitoreo mínimo, limpieza táctica y rendimiento estable.",
+      "en": "Actionable second-week checklist: surface lock-down, minimal monitoring, tactical cleanup and stabilized performance."},
+    "category": {"es": "Guías", "en": "Guides"},
+    "status": {"es": "publish", "en": "publish"}
+  }
 ]
