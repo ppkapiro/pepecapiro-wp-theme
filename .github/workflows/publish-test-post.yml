@@ -55,19 +55,68 @@ jobs:
           fi
           echo "Auth: OK"
 
+      - name: Detectar plugin de idiomas
+        id: i18n
+        env:
+          WP_URL: ${{ secrets.WP_URL }}
+        run: |
+          set -euo pipefail
+          ROOT="${WP_URL%/}/wp-json/"
+          json=$(curl -sS "$ROOT" || echo '{}')
+          has_pll=$(printf '%s' "$json" | jq -r '.namespaces[]? | select(test("^pll/"))' | head -n1 || true)
+          has_wpml=$(printf '%s' "$json" | jq -r '.namespaces[]? | select(test("wpml"))' | head -n1 || true)
+          plugin="none"
+          if [ -n "$has_pll" ]; then plugin="polylang"; fi
+          if [ -n "$has_wpml" ]; then plugin="wpml"; fi
+          echo "plugin=$plugin" >> $GITHUB_OUTPUT
+
+      - name: Limpieza posts de prueba (IDs 74,75)
+        id: cleanup
+        env:
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          API="${WP_URL%/}/wp-json/wp/v2/posts"
+          clean_one() {
+            local id="$1"
+            local resp code body
+            resp=$(curl -sS -u "$WP_USER:$WP_APP_PASSWORD" -X DELETE "$API/$id" -w " HTTP_STATUS:%{http_code}" || true)
+            code="${resp##* HTTP_STATUS:}"
+            body="${resp% HTTP_STATUS:*}"
+            if [ "$code" = "200" ] || [ "$code" = "410" ]; then
+              echo "$id: ok (papelera/eliminado)"
+              echo "ok_$id=ok" >> $GITHUB_OUTPUT
+            else
+              echo "$id: no encontrado o sin permisos (HTTP $code)"
+              echo "ok_$id=ko" >> $GITHUB_OUTPUT
+            fi
+          }
+          clean_one 74
+          clean_one 75
+
       - name: Generar contenido de prueba
         id: gen
         run: |
           set -euo pipefail
           TS=$(date -u +"%Y%m%d-%H%M%S")
           RAND=$(printf "%04d" $((RANDOM%10000)))
-          TITLE="Auto Test Post ${TS} #${RAND}"
-          CONTENT="<p>Post de prueba generado automáticamente.</p><p>UTC: ${TS}</p><p>Nonce: ${RAND}</p>"
-          jq -n --arg t "$TITLE" --arg c "$CONTENT" --arg s "private" '{title:$t, content:$c, status:$s}' > test_post_payload.json
-          echo "title=$TITLE" >> $GITHUB_OUTPUT
+          TITLE_ES="Auto Test Post ES ${TS} #${RAND}"
+          TITLE_EN="Auto Test Post EN ${TS} #${RAND}"
+          CONTENT_ES="<p>Entrada (ES) de prueba generada automáticamente.</p><p>UTC: ${TS}</p><p>Nonce: ${RAND}</p>"
+          CONTENT_EN="<p>Post (EN) auto-generated for testing.</p><p>UTC: ${TS}</p><p>Nonce: ${RAND}</p>"
+          SLUG_ES="auto-test-es-${TS}-${RAND}"
+          SLUG_EN="auto-test-en-${TS}-${RAND}"
+          jq -n --arg t "$TITLE_ES" --arg c "$CONTENT_ES" --arg s "private" --arg g "$SLUG_ES" '{title:$t, content:$c, status:$s, slug:$g}' > test_post_es.json
+          jq -n --arg t "$TITLE_EN" --arg c "$CONTENT_EN" --arg s "private" --arg g "$SLUG_EN" '{title:$t, content:$c, status:$s, slug:$g}' > test_post_en.json
+          echo "title_es=$TITLE_ES" >> $GITHUB_OUTPUT
+          echo "title_en=$TITLE_EN" >> $GITHUB_OUTPUT
+          echo "slug_es=$SLUG_ES" >> $GITHUB_OUTPUT
+          echo "slug_en=$SLUG_EN" >> $GITHUB_OUTPUT
 
-      - name: Añadir categorías existentes (opcional, no bloquea)
-        id: cats
+      - name: Añadir categorías ES (opcional)
+        id: cats_es
         env:
           WP_URL: ${{ secrets.WP_URL }}
           WP_USER: ${{ secrets.WP_USER }}
@@ -87,36 +136,67 @@ jobs:
           done
           if [ ${#IDS[@]} -gt 0 ]; then
             ids_json=$(printf '%s\n' "${IDS[@]}" | jq -Rsc 'split("\n")[:-1] | map(tonumber)')
-            jq --argjson ids "$ids_json" '. + {categories: $ids}' test_post_payload.json > tmp && mv tmp test_post_payload.json
-            echo "cats_count=${#IDS[@]}" >> $GITHUB_OUTPUT
+            jq --argjson ids "$ids_json" '. + {categories: $ids}' test_post_es.json > tmp && mv tmp test_post_es.json
+            echo "cats_es=${#IDS[@]}" >> $GITHUB_OUTPUT
           else
-            echo "cats_count=0" >> $GITHUB_OUTPUT
+            echo "cats_es=0" >> $GITHUB_OUTPUT
           fi
 
-      - name: Publicar post (REST)
-        id: publish
+      - name: Añadir categorías EN (opcional)
+        id: cats_en
         env:
           WP_URL: ${{ secrets.WP_URL }}
           WP_USER: ${{ secrets.WP_USER }}
           WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
-          TITLE: ${{ steps.gen.outputs.title }}
+        run: |
+          set -euo pipefail
+          CANDIDATES=("Blog" "Guides" "audit")
+          IDS=()
+          API="${WP_URL%/}/wp-json/wp/v2/categories"
+          for name in "${CANDIDATES[@]}"; do
+            enc=$(printf '%s' "$name" | jq -sRr @uri)
+            resp=$(curl -sS -u "$WP_USER:$WP_APP_PASSWORD" "$API?search=$enc&per_page=1" || true)
+            [ -z "$resp" ] && resp="[]"
+            id=$(printf '%s' "$resp" | jq -r '.[0].id // empty')
+            if [ -n "$id" ] && [ "$id" != "null" ]; then IDS+=("$id"); fi
+          done
+          if [ ${#IDS[@]} -gt 0 ]; then
+            ids_json=$(printf '%s\n' "${IDS[@]}" | jq -Rsc 'split("\n")[:-1] | map(tonumber)')
+            jq --argjson ids "$ids_json" '. + {categories: $ids}' test_post_en.json > tmp && mv tmp test_post_en.json
+            echo "cats_en=${#IDS[@]}" >> $GITHUB_OUTPUT
+          else
+            echo "cats_en=0" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Publicar ES (REST)
+        id: publish_es
+        env:
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+          TITLE: ${{ steps.gen.outputs.title_es }}
+          PLUGIN: ${{ steps.i18n.outputs.plugin }}
         run: |
           set -euo pipefail
           API="${WP_URL%/}/wp-json/wp/v2/posts"
-          # Idempotencia: buscar por título y actualizar si ya existe
+          # Idempotencia: buscar por título y actualizar si ya existe (ES)
           title_q=$(printf '%s' "$TITLE" | jq -sRr @uri)
           found=$(curl -sS -u "$WP_USER:$WP_APP_PASSWORD" "$API?search=$title_q&per_page=5" || echo "[]")
           upd_id=$(printf '%s' "$found" | jq -r '.[0].id // empty')
           MODE="create"
           if [ -n "$upd_id" ]; then
             MODE="update"
-            RESP=$(curl -sS -u "$WP_USER:$WP_APP_PASSWORD" -X POST -H "Content-Type: application/json" -d @test_post_payload.json -w " HTTP_STATUS:%{http_code}" "$API/$upd_id")
+            url="$API/$upd_id"
+            RESP=$(curl -sS -u "$WP_USER:$WP_APP_PASSWORD" -X POST -H "Content-Type: application/json" -d @test_post_es.json -w " HTTP_STATUS:%{http_code}" "$url")
           else
-            RESP=$(curl -sS -u "$WP_USER:$WP_APP_PASSWORD" -H "Content-Type: application/json" -d @test_post_payload.json -w " HTTP_STATUS:%{http_code}" "$API")
+            url="$API"
+            # si hay plugin i18n, intenta fijar idioma via query param
+            if [ "$PLUGIN" = "polylang" ] || [ "$PLUGIN" = "wpml" ]; then url="$url?lang=es"; fi
+            RESP=$(curl -sS -u "$WP_USER:$WP_APP_PASSWORD" -H "Content-Type: application/json" -d @test_post_es.json -w " HTTP_STATUS:%{http_code}" "$url")
           fi
           HTTP_CODE="${RESP##* HTTP_STATUS:}"
           BODY="${RESP% HTTP_STATUS:*}"
-          echo "$BODY" > /tmp/post.json
+          echo "$BODY" > /tmp/post_es.json
           if [ "$HTTP_CODE" != "201" ] && [ "$HTTP_CODE" != "200" ]; then
             if [ "$HTTP_CODE" = "401" ] || [ "$HTTP_CODE" = "403" ]; then
               echo "Creación: KO (auth). Verificar WP_USER/WP_APP_PASSWORD/rol"
@@ -128,32 +208,104 @@ jobs:
             echo "$BODY" | head -c 400 || true
             exit 3
           fi
-          ID=$(jq -r '.id' /tmp/post.json)
-          STATUS=$(jq -r '.status' /tmp/post.json)
-          LINK=$(jq -r '.link' /tmp/post.json)
+          ID=$(jq -r '.id' /tmp/post_es.json)
+          STATUS=$(jq -r '.status' /tmp/post_es.json)
+          LINK=$(jq -r '.link' /tmp/post_es.json)
           if [ "$MODE" = "update" ]; then
-            echo "[update-ok] ID: $ID"
+            echo "[update-ok] ID_ES: $ID"
           else
-            echo "[create-ok] ID: $ID"
+            echo "[create-ok] ID_ES: $ID"
           fi
-          echo "Estado: $STATUS"
-          echo "Link: $LINK"
-          echo "id=$ID" >> $GITHUB_OUTPUT
-          echo "status=$STATUS" >> $GITHUB_OUTPUT
-          echo "link=$LINK" >> $GITHUB_OUTPUT
+          echo "id_es=$ID" >> $GITHUB_OUTPUT
+          echo "status_es=$STATUS" >> $GITHUB_OUTPUT
+          echo "link_es=$LINK" >> $GITHUB_OUTPUT
+      - name: Publicar EN (REST)
+        id: publish_en
+        env:
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+          TITLE: ${{ steps.gen.outputs.title_en }}
+          PLUGIN: ${{ steps.i18n.outputs.plugin }}
+        run: |
+          set -euo pipefail
+          API="${WP_URL%/}/wp-json/wp/v2/posts"
+          # Idempotencia: buscar por título y actualizar si ya existe (EN)
+          title_q=$(printf '%s' "$TITLE" | jq -sRr @uri)
+          found=$(curl -sS -u "$WP_USER:$WP_APP_PASSWORD" "$API?search=$title_q&per_page=5" || echo "[]")
+          upd_id=$(printf '%s' "$found" | jq -r '.[0].id // empty')
+          MODE="create"
+          if [ -n "$upd_id" ]; then
+            MODE="update"
+            url="$API/$upd_id"
+            RESP=$(curl -sS -u "$WP_USER:$WP_APP_PASSWORD" -X POST -H "Content-Type: application/json" -d @test_post_en.json -w " HTTP_STATUS:%{http_code}" "$url")
+          else
+            url="$API"
+            if [ "$PLUGIN" = "polylang" ] || [ "$PLUGIN" = "wpml" ]; then url="$url?lang=en"; fi
+            RESP=$(curl -sS -u "$WP_USER:$WP_APP_PASSWORD" -H "Content-Type: application/json" -d @test_post_en.json -w " HTTP_STATUS:%{http_code}" "$url")
+          fi
+          HTTP_CODE="${RESP##* HTTP_STATUS:}"
+          BODY="${RESP% HTTP_STATUS:*}"
+          echo "$BODY" > /tmp/post_en.json
+          if [ "$HTTP_CODE" != "201" ] && [ "$HTTP_CODE" != "200" ]; then
+            if [ "$HTTP_CODE" = "401" ] || [ "$HTTP_CODE" = "403" ]; then
+              echo "Creación: KO (auth). Verificar WP_USER/WP_APP_PASSWORD/rol"
+            elif [ "$HTTP_CODE" = "422" ]; then
+              echo "Creación: KO (datos). Falta campo requerido (título/contenido)."
+            else
+              echo "Creación: KO (error servidor o validación)."
+            fi
+            echo "$BODY" | head -c 400 || true
+            exit 3
+          fi
+          ID=$(jq -r '.id' /tmp/post_en.json)
+          STATUS=$(jq -r '.status' /tmp/post_en.json)
+          LINK=$(jq -r '.link' /tmp/post_en.json)
+          if [ "$MODE" = "update" ]; then
+            echo "[update-ok] ID_EN: $ID"
+          else
+            echo "[create-ok] ID_EN: $ID"
+          fi
+          echo "id_en=$ID" >> $GITHUB_OUTPUT
+          echo "status_en=$STATUS" >> $GITHUB_OUTPUT
+          echo "link_en=$LINK" >> $GITHUB_OUTPUT
 
+      - name: Vincular traducciones (best-effort)
+        id: link
+        env:
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+          PLUGIN: ${{ steps.i18n.outputs.plugin }}
+          ID_ES: ${{ steps.publish_es.outputs.id_es }}
+          ID_EN: ${{ steps.publish_en.outputs.id_en }}
+        run: |
+          set -euo pipefail
+          linked="no"
+          plugin="$PLUGIN"
+          if [ -n "${ID_ES:-}" ] && [ -n "${ID_EN:-}" ]; then
+            if [ "$plugin" = "polylang" ]; then
+              # Intento via meta pll_translations (puede que no esté permitido; no fallar si 4xx)
+              API_BASE="${WP_URL%/}/wp-json/wp/v2/posts"
+              payload=$(jq -n --arg es "$ID_ES" --arg en "$ID_EN" '{meta:{pll_translations:{es: ($es|tonumber), en: ($en|tonumber)}}}')
+              RESP=$(curl -sS -u "$WP_USER:$WP_APP_PASSWORD" -X PATCH -H "Content-Type: application/json" -d "$payload" -w " HTTP_STATUS:%{http_code}" "$API_BASE/$ID_ES" || true)
+              CODE="${RESP##* HTTP_STATUS:}"
+              if [ "$CODE" = "200" ]; then linked="si"; fi
+            elif [ "$plugin" = "wpml" ]; then
+              # WPML: no se implementa endpoint específico aquí; reportar no vinculado
+              linked="no"
+            fi
+          fi
+          echo "linked=$linked" >> $GITHUB_OUTPUT
       - name: Resumen final
         if: always()
         run: |
           {
             echo "--- Resumen Publish Test Post ---"
             echo "Auth: $([[ '${{ steps.auth.outcome }}' == 'success' ]] && echo OK || echo KO)"
-            if [[ '${{ steps.publish.outcome }}' == 'success' ]]; then
-              echo "Creación: OK"
-              echo "ID: ${{ steps.publish.outputs.id }}"
-              echo "Estado: ${{ steps.publish.outputs.status }}"
-              echo "Link: ${{ steps.publish.outputs.link }}"
-            else
-              echo "Creación: KO"
-            fi
+              echo "Limpieza: [74: ${{ steps.cleanup.outputs.ok_74 || 'ko' }}], [75: ${{ steps.cleanup.outputs.ok_75 || 'ko' }}]"
+              echo "Creación ES: $([[ '${{ steps.publish_es.outcome }}' == 'success' ]] && echo OK || echo KO) — ID_ES=${{ steps.publish_es.outputs.id_es }} — link_ES=${{ steps.publish_es.outputs.link_es }}"
+              echo "Creación EN: $([[ '${{ steps.publish_en.outcome }}' == 'success' ]] && echo OK || echo KO) — ID_EN=${{ steps.publish_en.outputs.id_en }} — link_EN=${{ steps.publish_en.outputs.link_en }}"
+              echo "Traducciones vinculadas: ${{ steps.link.outputs.linked || 'no' }} (plugin=${{ steps.i18n.outputs.plugin || 'none' }})"
+              echo "Estado: ES=${{ steps.publish_es.outputs.status_es || 'n/a' }}, EN=${{ steps.publish_en.outputs.status_en || 'n/a' }}"
           } >> "$GITHUB_STEP_SUMMARY"
