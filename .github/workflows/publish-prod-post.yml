@@ -242,4 +242,4 @@ jobs:
             echo "ES: ID=${{ steps.publish_es.outputs.id_es }} link=${{ steps.publish_es.outputs.link_es }} estado=${{ steps.publish_es.outputs.status_es }}"
             echo "EN: ID=${{ steps.publish_en.outputs.id_en }} link=${{ steps.publish_en.outputs.link_en }} estado=${{ steps.publish_en.outputs.status_en }}"
             echo "Traducciones vinculadas: $([[ '${{ steps.link.outputs.linked }}' == 'si' ]] && echo Sí || echo No) (Polylang)"
-          } >> "$GITHUB_STEP_SUMMARY"
+          } | tee -a "$GITHUB_STEP_SUMMARY"
