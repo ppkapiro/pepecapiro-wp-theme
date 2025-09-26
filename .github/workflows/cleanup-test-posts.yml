@@ -66,4 +66,4 @@ jobs:
       - name: Summary
         if: always()
         run: |
-          echo "Eliminados: ${{ steps.purge.outputs.deleted || '0' }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "Eliminados: ${{ steps.purge.outputs.deleted || '0' }}" | tee -a "$GITHUB_STEP_SUMMARY"
