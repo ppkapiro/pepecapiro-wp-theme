@@ -1,0 +1,69 @@
+name: Cleanup Test Posts
+
+on:
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: cleanup-test-posts
+  cancel-in-progress: true
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ensure jq
+        run: |
+          sudo apt-get update -y >/dev/null 2>&1 || true
+          sudo apt-get install -y jq >/dev/null 2>&1 || true
+
+      - name: Auth fail-fast
+        id: auth
+        env:
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -z "${WP_URL:-}" ] || [ -z "${WP_USER:-}" ] || [ -z "${WP_APP_PASSWORD:-}" ]; then
+            echo "Auth: KO (faltan secrets)"; exit 2; fi
+          URL="${WP_URL%/}/wp-json/wp/v2/users/me"
+          CODE=$(curl -sS -o /tmp/auth.json -w "%{http_code}" -u "$WP_USER:$WP_APP_PASSWORD" "$URL")
+          if [ "$CODE" != "200" ]; then echo "Auth: KO ($CODE)"; exit 2; fi
+          echo "Auth: OK"
+
+      - name: Delete old 'Auto Test Post' (>7d)
+        id: purge
+        env:
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          API="${WP_URL%/}/wp-json/wp/v2/posts"
+          # Buscar por "Auto Test Post" y paginar (hasta 10 páginas x 100 = 1000)
+          total=0
+          cutoff=$(date -u -d '7 days ago' +%s)
+          for page in $(seq 1 10); do
+            resp=$(curl -sS -u "$WP_USER:$WP_APP_PASSWORD" "$API?search=Auto%20Test%20Post&per_page=100&page=$page" || echo '[]')
+            cnt=$(printf '%s' "$resp" | jq 'length')
+            [ "$cnt" = "0" ] && break
+            # filtrar por fecha
+            ids=$(printf '%s' "$resp" | jq -r --argjson cutoff "$cutoff" '.[] | select((.title.rendered | startswith("Auto Test Post"))) | select((.date_gmt | fromdateiso8601) < $cutoff) | .id')
+            if [ -n "$ids" ]; then
+              while IFS= read -r id; do
+                [ -z "$id" ] && continue
+                code=$(curl -sS -o /dev/null -w "%{http_code}" -u "$WP_USER:$WP_APP_PASSWORD" -X DELETE "$API/$id")
+                if [ "$code" = "200" ] || [ "$code" = "410" ]; then
+                  total=$((total+1))
+                fi
+              done < <(printf '%s\n' "$ids")
+            fi
+          done
+          echo "deleted=$total" >> $GITHUB_OUTPUT
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "Eliminados: ${{ steps.purge.outputs.deleted || '0' }}" >> "$GITHUB_STEP_SUMMARY"
