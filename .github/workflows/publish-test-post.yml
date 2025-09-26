@@ -1,4 +1,4 @@
-name: Publish Test Post (auto)
+name: Publish Test Post
 
 # Publica un post de prueba en WordPress mediante REST, sin intervención manual.
 # Disparadores:
@@ -8,9 +8,10 @@ name: Publish Test Post (auto)
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
     paths:
-      - ".github/auto/publish_test_post.flag"
+      - .github/auto/publish_test_post.flag
   workflow_dispatch:
 
 concurrency:
@@ -63,7 +64,7 @@ jobs:
           TITLE="Auto Test Post ${TS} #${RAND}"
           CONTENT="<p>Post de prueba generado automáticamente.</p><p>UTC: ${TS}</p><p>Nonce: ${RAND}</p>"
           jq -n --arg t "$TITLE" --arg c "$CONTENT" --arg s "private" '{title:$t, content:$c, status:$s}' > test_post_payload.json
-          echo "TITLE::$TITLE"
+          echo "title=$TITLE" >> $GITHUB_OUTPUT
 
       - name: Publicar post (REST)
         id: publish
@@ -77,42 +78,42 @@ jobs:
           RESP=$(curl -sS -u "$WP_USER:$WP_APP_PASSWORD" -H "Content-Type: application/json" -d @test_post_payload.json -w " HTTP_STATUS:%{http_code}" "$URL")
           HTTP_CODE="${RESP##* HTTP_STATUS:}"
           BODY="${RESP% HTTP_STATUS:*}"
-          echo "$BODY" > test_post_result_raw.json
-          if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "201" ]; then
-            ID=$(jq -r '.id' test_post_result_raw.json)
-            STATUS=$(jq -r '.status' test_post_result_raw.json)
-            LINK=$(jq -r '.link' test_post_result_raw.json)
-            printf '{"id":%s,"status":"%s","link":"%s"}\n' "$ID" "$STATUS" "$LINK" > test_post_result.json
-            echo "CREATE_OK id=$ID status=$STATUS link=$LINK"
-          elif [ "$HTTP_CODE" = "422" ]; then
-            echo "CREATE_KO http=422 causa=datos inválidos (título/contenido)"
-            exit 3
-          elif [ "$HTTP_CODE" = "401" ] || [ "$HTTP_CODE" = "403" ]; then
-            echo "CREATE_KO http=$HTTP_CODE causa=autenticación/permiso"
-            exit 3
-          elif [ "${HTTP_CODE%%[!0-9]*}" -ge 500 ] 2>/dev/null; then
-            echo "CREATE_KO http=$HTTP_CODE causa=error servidor (reintente)"
-            exit 3
-          else
-            EXCERPT=$(head -c 200 test_post_result_raw.json | tr '\n' ' ')
-            echo "CREATE_KO http=$HTTP_CODE detalle=$EXCERPT"
+          echo "$BODY" > /tmp/post.json
+          if [ "$HTTP_CODE" != "201" ] && [ "$HTTP_CODE" != "200" ]; then
+            if [ "$HTTP_CODE" = "401" ] || [ "$HTTP_CODE" = "403" ]; then
+              echo "Creación: KO (auth). Verificar WP_USER/WP_APP_PASSWORD/rol"
+            elif [ "$HTTP_CODE" = "422" ]; then
+              echo "Creación: KO (datos). Falta campo requerido (título/contenido)."
+            else
+              echo "Creación: KO (error servidor o validación)."
+            fi
+            echo "$BODY" | head -c 400 || true
             exit 3
           fi
+          ID=$(jq -r '.id' /tmp/post.json)
+          STATUS=$(jq -r '.status' /tmp/post.json)
+          LINK=$(jq -r '.link' /tmp/post.json)
+          echo "Creación: OK"
+          echo "ID: $ID"
+          echo "Estado: $STATUS"
+          echo "Link: $LINK"
+          echo "id=$ID" >> $GITHUB_OUTPUT
+          echo "status=$STATUS" >> $GITHUB_OUTPUT
+          echo "link=$LINK" >> $GITHUB_OUTPUT
 
       - name: Resumen final
         if: always()
         run: |
-          echo "--- Summary (Publish Test Post) ---"
-          if [ -f test_post_result.json ]; then
-            ID=$(jq -r '.id' test_post_result.json)
-            STATUS=$(jq -r '.status' test_post_result.json)
-            LINK=$(jq -r '.link' test_post_result.json)
-            echo "Auth: OK"
-            echo "Creación: OK"
-            echo "ID: $ID"
-            echo "Estado: $STATUS"
-            echo "Link: $LINK"
-          else
-            echo "Auth: KO/Indeterminado (ver paso de autenticación)"
-            echo "Creación: KO (ver paso Publicar post)"
-          fi
+          {
+            echo "--- Resumen Publish Test Post ---"
+            echo "Auth: $([[ '${{ steps.auth.outcome }}' == 'success' ]] && echo OK || echo KO)"
+            if [[ '${{ steps.publish.outcome }}' == 'success' ]]; then
+              echo "Creación: OK"
+              echo "ID: ${{ steps.publish.outputs.id }}"
+              echo "Estado: ${{ steps.publish.outputs.status }}"
+              echo "Link: ${{ steps.publish.outputs.link }}"
+            else
+              echo "Creación: KO"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+          } >> "$GITHUB_STEP_SUMMARY"

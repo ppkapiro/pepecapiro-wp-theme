@@ -1,2 +1,3 @@
 # Modifica este archivo y haz push a main para disparar el workflow Publish Test Post (auto)
 # El contenido es irrelevante; cualquier cambio con commit en este archivo activará el job.
+# updated: $(date -u)
