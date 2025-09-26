@@ -4,7 +4,7 @@
 
 Tema WordPress para pepecapiro.com.
 
-Versión estable actual: 0.3.18 (ver `CHANGELOG.md`).
+Versión estable actual: 0.3.20 (ver `CHANGELOG.md`).
 
 ## Documentación Clave
 - Índice: `docs/INDEX.md`
@@ -17,6 +17,8 @@ Versión estable actual: 0.3.18 (ver `CHANGELOG.md`).
 - Reportes Lighthouse / auditorías: `docs/`
 - SEO Técnico: `SEO_TECH.md`
 - Salud de enlaces: `LINKS_HEALTH.md`
+- Troubleshooting publicación: `docs/TROUBLESHOOTING_PUBLICACION.md`
+- Snapshot estado (25 Sep 2025): `docs/STATUS_SNAPSHOT_2025-09-25.md`
 
 ## Flujo Rápido (Publicar Contenido)
 ```
@@ -60,6 +62,118 @@ Si existe el archivo `.auto_apply`, cualquier cambio en `content/` ejecuta publi
 Checks: HTTP 200, fragmento de título esperado y presencia de JSON-LD Article. Si falla, el pipeline refleja el error en el reporte (log no bloqueante de momento — se puede endurecer).
 
 Override temporal: eliminar `.auto_apply` o revertir a borrador cambiando `status` en `posts.json`.
+
+## Estado Actual de la Automatización de Contenido (Sept 2025)
+
+| Aspecto | Estado | Notas |
+|---------|--------|-------|
+| Infra CI (plan/apply) | OK | Fallback a PLAN si faltan secretos |
+| Autenticación REST | PENDIENTE VALIDACIÓN | Se requieren 201 en POST /wp/v2/posts (actualmente 401) |
+| Segundo post (governance-automation-pillars) | BLOQUEADO | Contenido listo, falla creación/update por 401 rest_cannot_create/rest_cannot_edit |
+| Traducciones enlazadas | PENDIENTE | Se completará tras primer 201 exitoso |
+| Próximos contenidos | En cola | Ver sección Roadmap y próximos posts |
+
+Bloqueador actual: ausencia (o uso incorrecto) de un Application Password válido para el usuario publicador → respuestas 401. Una vez resuelto y verificado `/users/me` con 200, re‑ejecutar pipeline con `[publish]`.
+
+### Requisitos de Credenciales (Secrets GitHub)
+
+| Secret | Descripción | Ejemplo |
+|--------|-------------|---------|
+| `WP_URL` | URL base HTTPS del sitio | `https://pepecapiro.com` |
+| `WP_USER` | Usuario WP con rol capaz de crear/editar posts (author/editor) | `ppcapiro` |
+| `WP_APP_PASSWORD` | Application Password creado para `WP_USER` | `XXXX XXXX XXXX XXXX` |
+
+Cómo generar `WP_APP_PASSWORD`:
+1. Ingresar a WP Admin con `WP_USER`.
+2. Ir a Perfil (Users > Profile / Tu perfil).
+3. Sección "Application Passwords": introducir etiqueta (ej: `ci-content-sync`).
+4. Click "Add New Application Password".
+5. Copiar el valor COMPLETO exactamente (incluye espacios). No se vuelve a mostrar.
+6. Guardarlo como secret `WP_APP_PASSWORD` en el repositorio.
+7. Si se expone, revocar y regenerar (rotación).
+
+Errores comunes:
+- Usar la contraseña normal del usuario en lugar de un Application Password.
+- Copiar con espacios iniciales/finales o saltos de línea.
+- Usuario sin capacidad `publish_posts` / `edit_posts`.
+
+### Verificación Rápida Local (antes de relanzar CI)
+
+Configurar variables (NO commit, sólo en tu shell):
+
+```bash
+export WP_URL="https://pepecapiro.com"
+export WP_USER="ppcapiro"
+export WP_APP_PASSWORD="<application_password_exacto>"
+AUTH_TOKEN=$(printf "%s:%s" "$WP_USER" "$WP_APP_PASSWORD" | base64)
+
+echo "Token listo (no se muestra)"  # sanity
+```
+
+1. Comprobar raíz REST:
+```bash
+curl -i "$WP_URL/wp-json/"
+```
+Debe devolver 200 y listar namespaces (`wp/v2`, etc.).
+
+2. Comprobar identidad autenticada:
+```bash
+curl -i -H "Authorization: Basic $AUTH_TOKEN" "$WP_URL/wp-json/wp/v2/users/me"
+```
+Esperado: 200 y JSON con `slug":"ppcapiro"` y un `id` (anótalo si lo necesitas para debugging futuro).
+
+3. Prueba de creación de borrador mínima (opcional, sólo si quieres aislar antes de CI):
+```bash
+curl -i -X POST \
+	-H "Authorization: Basic $AUTH_TOKEN" \
+	-H "Content-Type: application/json" \
+	-d '{"title":"diag-ci","status":"draft","content":"temp"}' \
+	"$WP_URL/wp-json/wp/v2/posts"
+```
+Resultado esperado: 201 Created. Si obtienes 401/403 revisar sección Troubleshooting.
+
+4. (Limpieza) Eliminar el draft de prueba (sustituye <ID>):
+```bash
+curl -i -X DELETE -H "Authorization: Basic $AUTH_TOKEN" "$WP_URL/wp-json/wp/v2/posts/<ID>?force=true"
+```
+
+### Disparar Publicación (apply)
+
+Tras verificar autenticación:
+```bash
+git commit --allow-empty -m "chore: retry publish governance post [publish]"
+git push
+```
+O mantener `.auto_apply` para aplicar automáticamente cada cambio en `content/`.
+
+### Troubleshooting 401/403 Rápido
+
+| Síntoma | Causa Probable | Acción |
+|---------|----------------|--------|
+| 401 rest_cannot_create | Application Password incorrecto o header no llega | Regenerar password, verificar paso curl /users/me |
+| 403 rest_cannot_edit | Usuario sin permisos sobre el post existente | Usar rol editor/author propietario o cambiar autor | 
+| 401 sólo en POST pero /users/me 200 | Falta capability específica | Revisar rol / plugins de seguridad |
+| 0 (vacío) / bloqueo | ModSecurity / WAF filtrando | Revisar logs servidor / desactivar regla |
+| 404 en endpoint posts | Reescrituras / permalinks rotos | Guardar permalinks WP Admin de nuevo |
+
+Más detalle y flujo completo: ver `docs/TROUBLESHOOTING_PUBLICACION.md`.
+
+
+### Automatización WordPress (bilingüe)
+Resumen de workflows:
+- Publish Test Post: crea entradas ES/EN en estado `private`, intenta vincular traducciones (Polylang) y muestra resumen (Auth, IDs, links, vínculo, categorías). Para pruebas.
+- Publish Prod Post: publica ES/EN en `publish`, idempotente por slug por idioma; vincula y asigna categorías si existen (ES: Blog/Guías; EN: Blog/Guides). Disparo por flag y/o workflow_dispatch.
+- Cleanup Test Posts: elimina posts de prueba antiguos (cron diario) y puede lanzarse manualmente.
+- Content Sync: no cambia en esta etapa (sólo catálogo; ver `content-sync.yml`).
+
+Cómo dispararlos:
+- Flags: modifica `.github/auto/publish_test_post.flag` o `.github/auto/publish_prod.flag` y haz push a `main`.
+- Manual: desde Actions → "Run workflow".
+
+Multilenguaje y vinculación:
+- Los workflows detectan Polylang (o WPML) y establecen `?lang=es|en` al crear; luego intentan vincular mediante meta `pll_translations` (best‑effort, sin exponer secretos en logs).
+
+Guía de flags: `.github/auto/README.flags.md`.
 
 ### Publicar un release
 ```
