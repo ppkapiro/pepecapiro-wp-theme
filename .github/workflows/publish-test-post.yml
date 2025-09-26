@@ -66,16 +66,54 @@ jobs:
           jq -n --arg t "$TITLE" --arg c "$CONTENT" --arg s "private" '{title:$t, content:$c, status:$s}' > test_post_payload.json
           echo "title=$TITLE" >> $GITHUB_OUTPUT
 
-      - name: Publicar post (REST)
-        id: publish
+      - name: Añadir categorías existentes (opcional, no bloquea)
+        id: cats
         env:
           WP_URL: ${{ secrets.WP_URL }}
           WP_USER: ${{ secrets.WP_USER }}
           WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
         run: |
           set -euo pipefail
-          URL="${WP_URL%/}/wp-json/wp/v2/posts"
-          RESP=$(curl -sS -u "$WP_USER:$WP_APP_PASSWORD" -H "Content-Type: application/json" -d @test_post_payload.json -w " HTTP_STATUS:%{http_code}" "$URL")
+          # Intentar mapear categorías si ya existen. No crear ni fallar si faltan.
+          CANDIDATES=("Blog" "Guías" "audit")
+          IDS=()
+          API="${WP_URL%/}/wp-json/wp/v2/categories"
+          for name in "${CANDIDATES[@]}"; do
+            enc=$(printf '%s' "$name" | jq -sRr @uri)
+            resp=$(curl -sS -u "$WP_USER:$WP_APP_PASSWORD" "$API?search=$enc&per_page=1" || true)
+            [ -z "$resp" ] && resp="[]"
+            id=$(printf '%s' "$resp" | jq -r '.[0].id // empty')
+            if [ -n "$id" ] && [ "$id" != "null" ]; then IDS+=("$id"); fi
+          done
+          if [ ${#IDS[@]} -gt 0 ]; then
+            ids_json=$(printf '%s\n' "${IDS[@]}" | jq -Rsc 'split("\n")[:-1] | map(tonumber)')
+            jq --argjson ids "$ids_json" '. + {categories: $ids}' test_post_payload.json > tmp && mv tmp test_post_payload.json
+            echo "cats_count=${#IDS[@]}" >> $GITHUB_OUTPUT
+          else
+            echo "cats_count=0" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Publicar post (REST)
+        id: publish
+        env:
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+          TITLE: ${{ steps.gen.outputs.title }}
+        run: |
+          set -euo pipefail
+          API="${WP_URL%/}/wp-json/wp/v2/posts"
+          # Idempotencia: buscar por título y actualizar si ya existe
+          title_q=$(printf '%s' "$TITLE" | jq -sRr @uri)
+          found=$(curl -sS -u "$WP_USER:$WP_APP_PASSWORD" "$API?search=$title_q&per_page=5" || echo "[]")
+          upd_id=$(printf '%s' "$found" | jq -r '.[0].id // empty')
+          MODE="create"
+          if [ -n "$upd_id" ]; then
+            MODE="update"
+            RESP=$(curl -sS -u "$WP_USER:$WP_APP_PASSWORD" -X POST -H "Content-Type: application/json" -d @test_post_payload.json -w " HTTP_STATUS:%{http_code}" "$API/$upd_id")
+          else
+            RESP=$(curl -sS -u "$WP_USER:$WP_APP_PASSWORD" -H "Content-Type: application/json" -d @test_post_payload.json -w " HTTP_STATUS:%{http_code}" "$API")
+          fi
           HTTP_CODE="${RESP##* HTTP_STATUS:}"
           BODY="${RESP% HTTP_STATUS:*}"
           echo "$BODY" > /tmp/post.json
@@ -93,8 +131,11 @@ jobs:
           ID=$(jq -r '.id' /tmp/post.json)
           STATUS=$(jq -r '.status' /tmp/post.json)
           LINK=$(jq -r '.link' /tmp/post.json)
-          echo "Creación: OK"
-          echo "ID: $ID"
+          if [ "$MODE" = "update" ]; then
+            echo "[update-ok] ID: $ID"
+          else
+            echo "[create-ok] ID: $ID"
+          fi
           echo "Estado: $STATUS"
           echo "Link: $LINK"
           echo "id=$ID" >> $GITHUB_OUTPUT
@@ -115,5 +156,4 @@ jobs:
             else
               echo "Creación: KO"
             fi
-          } >> "$GITHUB_STEP_SUMMARY"
           } >> "$GITHUB_STEP_SUMMARY"
