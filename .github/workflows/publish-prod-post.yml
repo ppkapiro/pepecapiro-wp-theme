@@ -106,6 +106,24 @@ jobs:
           jq -n --arg t "$TITLE_EN" --arg c "$CONTENT_EN" --arg s "publish" --arg g "$SLUG_EN" '{title:$t, content:$c, status:$s, slug:$g}' > prod_post_en.json
           echo "title_es=$TITLE_ES" >> $GITHUB_OUTPUT
           echo "title_en=$TITLE_EN" >> $GITHUB_OUTPUT
+          echo "slug_es=$SLUG_ES" >> $GITHUB_OUTPUT
+          echo "slug_en=$SLUG_EN" >> $GITHUB_OUTPUT
+          echo "content_es_ok=si" >> $GITHUB_OUTPUT
+          echo "content_en_ok=si" >> $GITHUB_OUTPUT
+
+      - name: Papelera posts privados de prueba (IDs 78,79)
+        if: steps.guard.outputs.go == 'yes'
+        env:
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          API="${WP_URL%/}/wp-json/wp/v2/posts"
+          for id in 78 79; do
+            code=$(curl -sS -o /dev/null -w "%{http_code}" -u "$WP_USER:$WP_APP_PASSWORD" -X DELETE "$API/$id" || true)
+            echo "del_$id=$code" >> $GITHUB_OUTPUT || true
+          done
 
       - name: Publicar ES (publish)
         if: steps.guard.outputs.go == 'yes'
@@ -115,12 +133,14 @@ jobs:
           WP_USER: ${{ secrets.WP_USER }}
           WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
           TITLE: ${{ steps.gen.outputs.title_es }}
+          SLUG: ${{ steps.gen.outputs.slug_es }}
           PLUGIN: ${{ steps.i18n.outputs.plugin }}
         run: |
           set -euo pipefail
           API="${WP_URL%/}/wp-json/wp/v2/posts"
-          title_q=$(printf '%s' "$TITLE" | jq -sRr @uri)
-          found=$(curl -sS -u "$WP_USER:$WP_APP_PASSWORD" "$API?search=$title_q&per_page=5" || echo "[]")
+          # Buscar por slug exacto para idempotencia
+          slug_q=$(printf '%s' "$SLUG" | jq -sRr @uri)
+          found=$(curl -sS -u "$WP_USER:$WP_APP_PASSWORD" "$API?slug=$slug_q" || echo "[]")
           upd_id=$(printf '%s' "$found" | jq -r '.[0].id // empty')
           MODE="create"
           if [ -n "$upd_id" ]; then
@@ -148,12 +168,14 @@ jobs:
           WP_USER: ${{ secrets.WP_USER }}
           WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
           TITLE: ${{ steps.gen.outputs.title_en }}
+          SLUG: ${{ steps.gen.outputs.slug_en }}
           PLUGIN: ${{ steps.i18n.outputs.plugin }}
         run: |
           set -euo pipefail
           API="${WP_URL%/}/wp-json/wp/v2/posts"
-          title_q=$(printf '%s' "$TITLE" | jq -sRr @uri)
-          found=$(curl -sS -u "$WP_USER:$WP_APP_PASSWORD" "$API?search=$title_q&per_page=5" || echo "[]")
+          # Buscar por slug exacto para idempotencia
+          slug_q=$(printf '%s' "$SLUG" | jq -sRr @uri)
+          found=$(curl -sS -u "$WP_USER:$WP_APP_PASSWORD" "$API?slug=$slug_q" || echo "[]")
           upd_id=$(printf '%s' "$found" | jq -r '.[0].id // empty')
           MODE="create"
           if [ -n "$upd_id" ]; then
@@ -197,6 +219,7 @@ jobs:
 
       - name: Asignar categorías ES (opcional)
         if: steps.guard.outputs.go == 'yes'
+        id: cats_es
         env:
           WP_URL: ${{ secrets.WP_URL }}
           WP_USER: ${{ secrets.WP_USER }}
@@ -208,14 +231,17 @@ jobs:
           API_CATS="${WP_URL%/}/wp-json/wp/v2/categories"
           get_id() { local name="$1"; enc=$(printf '%s' "$name" | jq -sRr @uri); resp=$(curl -sS -u "$WP_USER:$WP_APP_PASSWORD" "$API_CATS?search=$enc&per_page=1" || echo '[]'); printf '%s' "$resp" | jq -r '.[0].id // empty'; }
           IDS=()
-          for n in "Blog" "Guías"; do id=$(get_id "$n"); [ -n "$id" ] && IDS+=("$id"); done
+          NAMES=()
+          for n in "Blog" "Guías"; do id=$(get_id "$n"); [ -n "$id" ] && IDS+=("$id") && NAMES+=("$n"); done
           [ ${#IDS[@]} -eq 0 ] && exit 0
           ids_json=$(printf '%s\n' "${IDS[@]}" | jq -Rsc 'split("\n")[:-1] | map(tonumber)')
           payload=$(jq -n --argjson ids "$ids_json" '{categories:$ids}')
           curl -sS -u "$WP_USER:$WP_APP_PASSWORD" -X POST -H "Content-Type: application/json" -d "$payload" "${WP_URL%/}/wp-json/wp/v2/posts/${POST_ID}" >/dev/null || true
+          echo "cats_es=$(printf '%s,' "${NAMES[@]}" | sed 's/,$//')" >> $GITHUB_OUTPUT
 
       - name: Asignar categorías EN (opcional)
         if: steps.guard.outputs.go == 'yes'
+        id: cats_en
         env:
           WP_URL: ${{ secrets.WP_URL }}
           WP_USER: ${{ secrets.WP_USER }}
@@ -227,11 +253,13 @@ jobs:
           API_CATS="${WP_URL%/}/wp-json/wp/v2/categories"
           get_id() { local name="$1"; enc=$(printf '%s' "$name" | jq -sRr @uri); resp=$(curl -sS -u "$WP_USER:$WP_APP_PASSWORD" "$API_CATS?search=$enc&per_page=1" || echo '[]'); printf '%s' "$resp" | jq -r '.[0].id // empty'; }
           IDS=()
-          for n in "Blog" "Guides"; do id=$(get_id "$n"); [ -n "$id" ] && IDS+=("$id"); done
+          NAMES=()
+          for n in "Blog" "Guides"; do id=$(get_id "$n"); [ -n "$id" ] && IDS+=("$id") && NAMES+=("$n"); done
           [ ${#IDS[@]} -eq 0 ] && exit 0
           ids_json=$(printf '%s\n' "${IDS[@]}" | jq -Rsc 'split("\n")[:-1] | map(tonumber)')
           payload=$(jq -n --argjson ids "$ids_json" '{categories:$ids}')
           curl -sS -u "$WP_USER:$WP_APP_PASSWORD" -X POST -H "Content-Type: application/json" -d "$payload" "${WP_URL%/}/wp-json/wp/v2/posts/${POST_ID}" >/dev/null || true
+          echo "cats_en=$(printf '%s,' "${NAMES[@]}" | sed 's/,$//')" >> $GITHUB_OUTPUT
 
       - name: Resumen final
         if: always()
@@ -239,7 +267,8 @@ jobs:
           {
             echo "--- Resumen Publish Prod Post ---"
             echo "Auth: $([[ '${{ steps.auth.outcome }}' == 'success' ]] && echo OK || echo KO)"
-            echo "ES: ID=${{ steps.publish_es.outputs.id_es }} link=${{ steps.publish_es.outputs.link_es }} estado=${{ steps.publish_es.outputs.status_es }}"
-            echo "EN: ID=${{ steps.publish_en.outputs.id_en }} link=${{ steps.publish_en.outputs.link_en }} estado=${{ steps.publish_en.outputs.status_en }}"
+            echo "ES: ID=${{ steps.publish_es.outputs.id_es }} link=${{ steps.publish_es.outputs.link_es }} estado=${{ steps.publish_es.outputs.status_es }} contenido=español categorías=${{ steps.cats_es.outputs.cats_es || '' }}"
+            echo "EN: ID=${{ steps.publish_en.outputs.id_en }} link=${{ steps.publish_en.outputs.link_en }} estado=${{ steps.publish_en.outputs.status_en }} contenido=inglés categorías=${{ steps.cats_en.outputs.cats_en || '' }}"
+            if [ "${{ steps.publish_es.outputs.id_es }}" = "${{ steps.publish_en.outputs.id_en }}" ]; then echo "WARNING: IDs iguales, revisar paso de creación/vínculo"; fi
             echo "Traducciones vinculadas: $([[ '${{ steps.link.outputs.linked }}' == 'si' ]] && echo Sí || echo No) (Polylang)"
           } | tee -a "$GITHUB_STEP_SUMMARY"
