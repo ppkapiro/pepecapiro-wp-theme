@@ -1,0 +1,8 @@
+{
+  "python.defaultInterpreterPath": "/home/pepe/work/pepecapiro-wp-theme/.venv/bin/python",
+  "ruff.path": [
+    "/home/pepe/work/pepecapiro-wp-theme/.venv/bin/ruff"
+  ],
+  "python.testing.pytestEnabled": false,
+  "python.testing.unittestEnabled": false
+}

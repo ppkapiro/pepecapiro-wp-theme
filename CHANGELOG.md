@@ -1,3 +1,19 @@
+## 0.3.20 – 20250926 (Release)
+- Cierre de etapa "Publicación Automática WP (Posts)":
+	- Workflows consolidados: Publish Test Post (private, ES/EN, vinculación), Publish Prod Post (publish, ES/EN, categorías por idioma, idempotencia por slug), Cleanup Test Posts (cron diario).
+	- Flags documentados: `.github/auto/README.flags.md` con instrucciones.
+	- Docs nuevas/actualizadas: `README.md` (Automatización WP), `docs/LIENZO_AUTOMATIZACION_WP.md`, `docs/DEPLOY_RUNBOOK.md` (operación diaria), `docs/TROUBLESHOOTING_AUTOMATIZACION.md`, `docs/SECURITY_NOTES.md`, `docs/ROADMAP_AUTOMATIZACION_TOTAL.md`.
+	- Release `release.yml` con título/nota de etapa.
+
+## 0.3.19 – 20250926 (Release)
+- Workflows WP bilingües:
+	- Publish Test Post: publica ES/EN en privado, enlaza traducciones y emite resumen.
+	- Publish Prod Post: publica ES/EN en publish con categorías (ES: Blog/Guías; EN: Blog/Guides), idempotencia por slug por idioma y enlace Polylang.
+	- Cleanup Test Posts: elimina posts de prueba antiguos diariamente o manual.
+- Flags para disparar: `.github/auto/publish_test_post.flag` y `.github/auto/publish_prod.flag`.
+- Documentación: `.github/auto/README.flags.md` + sección en README.
+- Bump tema a 0.3.19.
+
 ## 0.3.18 – 20250925 (Release)
 - Modo `--drift-only`: genera `content/drift_report.md` sin realizar mutaciones (comprueba existencia y hash de contenido remoto vs local).
 - Resumen de plan en dry-run: crea `content/content_plan_summary.md` listando acciones (create/update/skip/removed).

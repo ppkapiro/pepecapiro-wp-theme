@@ -111,3 +111,23 @@ Script incorporado:
 Notas operativas:
 - Si se renombra el slug EN a simplemente `/en/blog`, actualizar enlaces internos y purgar cache + sitemap.
 - En caso de 0 posts en un idioma, el marcador aún aparecerá (`posts_found:0`) facilitando detección temprana.
+
+## 9) Operación diaria — Automatización WP (Posts)
+
+Workflows clave:
+- Publish Test Post: pruebas privadas ES/EN; resumen con Auth, IDs, links, vínculo, categorías.
+- Publish Prod Post: publicación real ES/EN con categorías; idempotente por slug; vínculo best‑effort.
+- Cleanup Test Posts: cron diario (elimina test antiguos) o manual.
+
+Cómo disparar:
+- Flags: editar `.github/auto/publish_test_post.flag` o `.github/auto/publish_prod.flag` y hacer push a `main`.
+- Manual: Actions → seleccionar workflow → Run workflow.
+
+Guardarraíles:
+- Nunca exponer `WP_URL`, `WP_USER`, `WP_APP_PASSWORD` en commits/logs.
+- Validar `/wp-json/wp/v2/users/me` devuelve 200 antes de publicar en prod.
+- Revisar el Job Summary: debe listar IDs y links ES/EN; si IDs coinciden, revisar slugs por idioma.
+- Rotación de Application Passwords cada 60–90 días (ver `docs/SECURITY_NOTES.md`).
+
+Cómo ver último uso del token (Application Password):
+- WP Admin → Users → Profile (del usuario CI) → Application Passwords → columna "Last Used".

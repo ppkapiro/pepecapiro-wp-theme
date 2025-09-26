@@ -59,11 +59,22 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
-          name: ${{ github.ref_name }}
+          name: "Automatización de posts (bilingüe) — ${{ github.ref_name }}"
           draft: false
           prerelease: false
           body: |
-            Release ${{ github.ref_name }}
+            Cierre de etapa: Publicación automática de posts bilingües (ES/EN) con REST + Application Passwords.
+
+            Qué incluye:
+            - Workflows: Publish Test Post (private), Publish Prod Post (publish + categorías + vinculación), Cleanup Test Posts (cron diario).
+            - Flags de disparo: `.github/auto/publish_test_post.flag` y `.github/auto/publish_prod.flag`.
+            - Documentación: README (Automatización WP), Runbook, Troubleshooting, Security Notes y Roadmap.
+
+            Enlaces:
+            - Runbook: docs/DEPLOY_RUNBOOK.md
+            - Troubleshooting: docs/TROUBLESHOOTING_AUTOMATIZACION.md
+            - Roadmap: docs/ROADMAP_AUTOMATIZACION_TOTAL.md
+            - Lienzo de etapa: docs/LIENZO_AUTOMATIZACION_WP.md
 
             Ver CHANGELOG para detalles completos.
           files: |
