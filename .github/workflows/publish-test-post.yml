@@ -1,0 +1,118 @@
+name: Publish Test Post (auto)
+
+# Publica un post de prueba en WordPress mediante REST, sin intervención manual.
+# Disparadores:
+#  - Push a main modificando .github/auto/publish_test_post.flag
+#  - Opcional: workflow_dispatch
+# Salida: imprime Auth OK/KO, y si crea el post, muestra ID, status y link.
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - ".github/auto/publish_test_post.flag"
+  workflow_dispatch:
+
+concurrency:
+  group: publish-test-post-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Ensure jq
+        run: |
+          sudo apt-get update -y >/dev/null 2>&1 || true
+          sudo apt-get install -y jq >/dev/null 2>&1 || true
+
+      - name: Fail-fast autenticación
+        id: auth
+        env:
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -z "${WP_URL:-}" ] || [ -z "${WP_USER:-}" ] || [ -z "${WP_APP_PASSWORD:-}" ]; then
+            echo "Auth: KO (faltan secrets WP_URL/WP_USER/WP_APP_PASSWORD)"
+            exit 2
+          fi
+          URL="${WP_URL%/}/wp-json/wp/v2/users/me"
+          CODE=$(curl -sS -o /tmp/auth.json -w "%{http_code}" -u "$WP_USER:$WP_APP_PASSWORD" "$URL")
+          echo "Auth HTTP=$CODE"
+          if [ "$CODE" != "200" ]; then
+            if [ "$CODE" = "401" ] || [ "$CODE" = "403" ]; then
+              echo "Auth: KO (credenciales/rol). Verificar WP_USER/WP_APP_PASSWORD."
+            else
+              echo "Auth: KO (HTTP $CODE)"
+            fi
+            exit 2
+          fi
+          echo "Auth: OK"
+
+      - name: Generar contenido de prueba
+        id: gen
+        run: |
+          set -euo pipefail
+          TS=$(date -u +"%Y%m%d-%H%M%S")
+          RAND=$(printf "%04d" $((RANDOM%10000)))
+          TITLE="Auto Test Post ${TS} #${RAND}"
+          CONTENT="<p>Post de prueba generado automáticamente.</p><p>UTC: ${TS}</p><p>Nonce: ${RAND}</p>"
+          jq -n --arg t "$TITLE" --arg c "$CONTENT" --arg s "private" '{title:$t, content:$c, status:$s}' > test_post_payload.json
+          echo "TITLE::$TITLE"
+
+      - name: Publicar post (REST)
+        id: publish
+        env:
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          URL="${WP_URL%/}/wp-json/wp/v2/posts"
+          RESP=$(curl -sS -u "$WP_USER:$WP_APP_PASSWORD" -H "Content-Type: application/json" -d @test_post_payload.json -w " HTTP_STATUS:%{http_code}" "$URL")
+          HTTP_CODE="${RESP##* HTTP_STATUS:}"
+          BODY="${RESP% HTTP_STATUS:*}"
+          echo "$BODY" > test_post_result_raw.json
+          if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "201" ]; then
+            ID=$(jq -r '.id' test_post_result_raw.json)
+            STATUS=$(jq -r '.status' test_post_result_raw.json)
+            LINK=$(jq -r '.link' test_post_result_raw.json)
+            printf '{"id":%s,"status":"%s","link":"%s"}\n' "$ID" "$STATUS" "$LINK" > test_post_result.json
+            echo "CREATE_OK id=$ID status=$STATUS link=$LINK"
+          elif [ "$HTTP_CODE" = "422" ]; then
+            echo "CREATE_KO http=422 causa=datos inválidos (título/contenido)"
+            exit 3
+          elif [ "$HTTP_CODE" = "401" ] || [ "$HTTP_CODE" = "403" ]; then
+            echo "CREATE_KO http=$HTTP_CODE causa=autenticación/permiso"
+            exit 3
+          elif [ "${HTTP_CODE%%[!0-9]*}" -ge 500 ] 2>/dev/null; then
+            echo "CREATE_KO http=$HTTP_CODE causa=error servidor (reintente)"
+            exit 3
+          else
+            EXCERPT=$(head -c 200 test_post_result_raw.json | tr '\n' ' ')
+            echo "CREATE_KO http=$HTTP_CODE detalle=$EXCERPT"
+            exit 3
+          fi
+
+      - name: Resumen final
+        if: always()
+        run: |
+          echo "--- Summary (Publish Test Post) ---"
+          if [ -f test_post_result.json ]; then
+            ID=$(jq -r '.id' test_post_result.json)
+            STATUS=$(jq -r '.status' test_post_result.json)
+            LINK=$(jq -r '.link' test_post_result.json)
+            echo "Auth: OK"
+            echo "Creación: OK"
+            echo "ID: $ID"
+            echo "Estado: $STATUS"
+            echo "Link: $LINK"
+          else
+            echo "Auth: KO/Indeterminado (ver paso de autenticación)"
+            echo "Creación: KO (ver paso Publicar post)"
+          fi
