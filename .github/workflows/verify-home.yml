@@ -52,6 +52,8 @@ jobs:
           echo "en=$EN_CODE" >> $GITHUB_OUTPUT
           echo "ES_CODE=$ES_CODE" >> $GITHUB_ENV
           echo "EN_CODE=$EN_CODE" >> $GITHUB_ENV
+        env:
+          WP_URL: ${{ secrets.WP_URL }}
       - name: Resumen
         id: summary
         run: |
@@ -73,8 +75,22 @@ jobs:
           owner="${repo%%/*}"; name="${repo##*/}"
           title="Alerta verificación ${AREA} — $(date -u +%F\ %H:%M)"
           existing=$(gh issue list --search "in:title Alerta verificación ${AREA}" --state open --json number --jq '.[0].number' || true)
-          body="Resumen:\n- show_on_front: ${SHOW:-${{ steps.settings.outputs.show_on_front }}}\n- page_on_front: ${HOME_ID:-${{ steps.settings.outputs.home_id }}}\n- Front ES: ${ES_CODE}\n- Front EN: ${EN_CODE}\n"
-          if [ "${VERIFY_STATUS}" = "KO" ]; then
+
+          # Variables seguras con fallback
+          SHOW="${SHOW:-${{ steps.settings.outputs.show_on_front }}}"
+          HOME_ID="${HOME_ID:-${{ steps.settings.outputs.home_id }}}"
+          ES="${ES_CODE:-${{ steps.fronts.outputs.es }}}"; ES="${ES:-000}"
+          EN="${EN_CODE:-${{ steps.fronts.outputs.en }}}"; EN="${EN:-000}"
+          INVALID_HOME="${INVALID_HOME:-1}"
+
+          # Calcular estado si no existe
+          STATUS="${VERIFY_STATUS:-}"
+          if [ -z "$STATUS" ]; then
+            if [ "$INVALID_HOME" = "1" ] || [ "$ES" != "200" ] || [ "$EN" != "200" ]; then STATUS=KO; else STATUS=OK; fi
+          fi
+
+          body="Resumen:\n- show_on_front: ${SHOW}\n- page_on_front: ${HOME_ID}\n- Front ES: ${ES}\n- Front EN: ${EN}\n"
+          if [ "$STATUS" = "KO" ]; then
             if [ -n "${existing:-}" ]; then
               gh issue comment "$existing" -b "Run fallido de verificación (${AREA}).\n\n${body}" || true
             else
