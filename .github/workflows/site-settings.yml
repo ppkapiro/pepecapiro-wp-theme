@@ -20,20 +20,48 @@ jobs:
           WP_URL: ${{ secrets.WP_URL }}
           WP_USER: ${{ secrets.WP_USER }}
           WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
-      - name: Actualizar ajustes básicos
+      - name: Aplicar ajustes básicos (PATCH)
         run: |
-          echo "PATCH /wp-json/wp/v2/settings"
-          echo "timezone_string = 'America/New_York'"
-          echo "start_of_week = 1"
-          echo "default_category = 1"
-          echo "permalink_structure = '/%postname%/'"
+          set -euo pipefail
+          API="${WP_URL%/}/wp-json/wp/v2/settings"
+          DATA=$(jq -n \
+            --arg tz "America/New_York" \
+            --arg pf "/%postname%/" \
+            '{timezone_string: $tz, start_of_week: 1, default_category: 1, permalink_structure: $pf}')
+          RESP=$(curl -sS -u "$WP_USER:$WP_APP_PASSWORD" -H 'Content-Type: application/json' -X POST "$API" -d "$DATA" -w " HTTP_STATUS:%{http_code}")
+          CODE="${RESP##* HTTP_STATUS:}"
+          BODY="${RESP% HTTP_STATUS:*}"
+          echo "$BODY" > /tmp/settings_applied.json
+          echo "HTTP_CODE=$CODE" >> $GITHUB_ENV
+          [ "$CODE" = "200" ] || { echo "Fallo PATCH settings ($CODE)"; cat /tmp/settings_applied.json; exit 1; }
+        env:
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+      - name: Obtener settings (post-apply)
+        id: get
+        run: |
+          set -euo pipefail
+          RESP=$(curl -sS -u "$WP_USER:$WP_APP_PASSWORD" "${WP_URL%/}/wp-json/wp/v2/settings")
+          echo "$RESP" > /tmp/settings.json
+          tz=$(jq -r '.timezone_string' /tmp/settings.json)
+          pf=$(jq -r '.permalink_structure' /tmp/settings.json)
+          sow=$(jq -r '.start_of_week' /tmp/settings.json)
+          echo "tz=$tz" >> $GITHUB_OUTPUT
+          echo "pf=$pf" >> $GITHUB_OUTPUT
+          echo "sow=$sow" >> $GITHUB_OUTPUT
+        env:
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
       - name: Resumen final
         run: |
-          echo "--- Resumen Site Settings ---"
-          echo "Auth: OK"
-          echo "timezone_string: America/New_York"
-          echo "permalink_structure: /%postname%/"
-          echo "Cambios aplicados: Sí"
+          echo "--- Resumen Site Settings ---" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "Auth: OK" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "timezone_string (get): ${{ steps.get.outputs.tz }}" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "permalink_structure (get): ${{ steps.get.outputs.pf }}" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "start_of_week (get): ${{ steps.get.outputs.sow }}" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "HTTP PATCH code: ${HTTP_CODE:-}"
         env:
           WP_URL: ${{ secrets.WP_URL }}
           WP_USER: ${{ secrets.WP_USER }}
