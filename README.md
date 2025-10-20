@@ -161,8 +161,24 @@ Más detalle y flujo completo: ver `docs/TROUBLESHOOTING_PUBLICACION.md`.
 
 ### Automatización WordPress (bilingüe)
 Resumen de workflows:
-- Publish Test Post: crea entradas ES/EN en estado `private`, intenta vincular traducciones (Polylang) y muestra resumen (Auth, IDs, links, vínculo, categorías). Para pruebas.
-- Publish Prod Post: publica ES/EN en `publish`, idempotente por slug por idioma; vincula y asigna categorías si existen (ES: Blog/Guías; EN: Blog/Guides). Disparo por flag y/o workflow_dispatch.
+...existing code...
+
+## Páginas y Home (Automatización)
+
+- **publish-test-page.yml**: Crea página ES/EN en estado `private` con contenido aleatorio. Disparo por flag `.github/auto/publish_test_page.flag` o manual desde Actions. Vincula traducciones vía Polylang (best-effort).
+- **publish-prod-page.yml**: Igual que el test, pero estado `publish` y atributos/categorías si existen. Disparo por flag `.github/auto/publish_prod_page.flag` o manual.
+- **set-home.yml**: Fija la última página creada (o por ID/slug) como portada (`show_on_front=page`). Refleja traducción EN si existe (Polylang, best-effort).
+
+### Flags
+- `.github/auto/publish_test_page.flag`: dispara "Publish Test Page" (private, ES/EN).
+- `.github/auto/publish_prod_page.flag`: dispara "Publish Prod Page" (publish, ES/EN).
+
+### Cómo disparar
+1. Modifica y haz push a uno de los flags para disparar el workflow correspondiente.
+2. Alternativamente, ejecuta manualmente desde Actions → "Run workflow".
+
+### Qué devuelve
+- Resumen estándar en Job Summary: Auth OK/KO, IDs/links ES/EN, estado, template, traducciones vinculadas Sí/No.
 - Cleanup Test Posts: elimina posts de prueba antiguos (cron diario) y puede lanzarse manualmente.
 - Content Sync: no cambia en esta etapa (sólo catálogo; ver `content-sync.yml`).
 

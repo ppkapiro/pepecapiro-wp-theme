@@ -1,0 +1,111 @@
+name: Set Home Page
+
+on:
+  workflow_dispatch:
+    inputs:
+      page_id:
+        description: 'ID de la página a fijar como Home (opcional)'
+        required: false
+      page_slug:
+        description: 'Slug de la página a fijar como Home (opcional)'
+        required: false
+
+jobs:
+  set-home:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Auth fail-fast
+        id: auth
+        env:
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -z "${WP_URL:-}" ] || [ -z "${WP_USER:-}" ] || [ -z "${WP_APP_PASSWORD:-}" ]; then
+            echo "Auth: KO (faltan secrets)"; exit 2; fi
+          URL="${WP_URL%/}/wp-json/wp/v2/users/me"
+          CODE=$(curl -sS -o /tmp/auth.json -w "%{http_code}" -u "$WP_USER:$WP_APP_PASSWORD" "$URL")
+          if [ "$CODE" != "200" ]; then echo "Auth: KO ($CODE)"; exit 2; fi
+          echo "Auth: OK"
+
+      - name: Detectar última página creada (ES)
+        id: detect
+        env:
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          API="${WP_URL%/}/wp-json/wp/v2/pages"
+          PAGE_ID="${{ github.event.inputs.page_id }}"
+          PAGE_SLUG="${{ github.event.inputs.page_slug }}"
+          if [ -n "$PAGE_ID" ]; then
+            found=$(curl -sS -u "$WP_USER:$WP_APP_PASSWORD" "$API/$PAGE_ID" || echo "{}")
+          elif [ -n "$PAGE_SLUG" ]; then
+            found=$(curl -sS -u "$WP_USER:$WP_APP_PASSWORD" "$API?slug=$PAGE_SLUG" || echo "[]")
+            PAGE_ID=$(printf '%s' "$found" | jq -r '.[0].id // empty')
+          else
+            found=$(curl -sS -u "$WP_USER:$WP_APP_PASSWORD" "$API?per_page=1&orderby=date&order=desc" || echo "[]")
+            PAGE_ID=$(printf '%s' "$found" | jq -r '.[0].id // empty')
+          fi
+          LINK=$(printf '%s' "$found" | jq -r '.link // .[0].link // empty')
+          echo "page_id=$PAGE_ID" >> $GITHUB_OUTPUT
+          echo "link=$LINK" >> $GITHUB_OUTPUT
+
+      - name: Fijar Home (show_on_front)
+        id: set_home
+        env:
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+          PAGE_ID: ${{ steps.detect.outputs.page_id }}
+        run: |
+          set -euo pipefail
+          # Fijar show_on_front=page y page_on_front=ID
+          API="${WP_URL%/}/wp-json/wp/v2/settings"
+          payload=$(jq -n --arg id "$PAGE_ID" '{show_on_front:"page", page_on_front:($id|tonumber)}')
+          RESP=$(curl -sS -u "$WP_USER:$WP_APP_PASSWORD" -X POST -H "Content-Type: application/json" -d "$payload" "$API" -w " HTTP_STATUS:%{http_code}")
+          CODE="${RESP##* HTTP_STATUS:}"
+          BODY="${RESP% HTTP_STATUS:*}"
+          if [ "$CODE" != "200" ]; then echo "KO (HTTP $CODE)"; exit 3; fi
+          echo "$BODY" > /tmp/home.json
+          SHOW=$(jq -r '.show_on_front' /tmp/home.json)
+          HOME_ID=$(jq -r '.page_on_front' /tmp/home.json)
+          echo "show_on_front=$SHOW" >> $GITHUB_OUTPUT
+          echo "home_id=$HOME_ID" >> $GITHUB_OUTPUT
+
+      - name: Detectar traducción EN (Polylang, best-effort)
+        id: detect_en
+        env:
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+          HOME_ID: ${{ steps.set_home.outputs.home_id }}
+        run: |
+          set -euo pipefail
+          # Intentar obtener la traducción EN vía meta Polylang
+          API="${WP_URL%/}/wp-json/wp/v2/pages/$HOME_ID"
+          resp=$(curl -sS -u "$WP_USER:$WP_APP_PASSWORD" "$API" || echo "{}")
+          EN_ID=$(printf '%s' "$resp" | jq -r '.meta.pll_translations.en // empty')
+          EN_LINK=""
+          if [ -n "$EN_ID" ]; then
+            resp_en=$(curl -sS -u "$WP_USER:$WP_APP_PASSWORD" "${WP_URL%/}/wp-json/wp/v2/pages/$EN_ID" || echo "{}")
+            EN_LINK=$(printf '%s' "$resp_en" | jq -r '.link // empty')
+          fi
+          echo "en_id=$EN_ID" >> $GITHUB_OUTPUT
+          echo "en_link=$EN_LINK" >> $GITHUB_OUTPUT
+
+      - name: Resumen final
+        if: always()
+        run: |
+          {
+            echo "--- Resumen Set Home Page ---"
+            echo "Auth: $([[ '${{ steps.auth.outcome }}' == 'success' ]] && echo OK || echo KO)"
+            echo "Home ES: ID=${{ steps.set_home.outputs.home_id }} link=${{ steps.detect.outputs.link }} show_on_front=${{ steps.set_home.outputs.show_on_front }}"
+            echo "Home EN: ID=${{ steps.detect_en.outputs.en_id }} link=${{ steps.detect_en.outputs.en_link }}"
+            echo "Best-effort Polylang: $([[ -n '${{ steps.detect_en.outputs.en_id }}' ]] && echo Sí || echo No)"
+          } | tee -a "$GITHUB_STEP_SUMMARY"

@@ -89,31 +89,35 @@ Acciones:
 Contexto: Se introdujo `page-blog.php` como plantilla dedicada para listar entradas sin depender de `page_for_posts`, aplicando filtrado por idioma (Polylang) y añadiendo un marcador HTML para verificación automatizada.
 
 Detalles clave:
-- Plantilla: `pepecapiro/page-blog.php` (Template Name: "Blog Listing").
-- Marcador comentario: `<!-- posts_found:X lang:YY -->` se inserta siempre al inicio del loop.
-- Marcador alternativo (no eliminado por minifiers que quitan comentarios): `<div id="blog-query-info" data-posts="X" data-lang="YY" style="display:none"></div>`.
-- Paginación: usa `paged` + `paginate_links()`; `posts_per_page=10`.
-- Slugs finales: ES `/blog`, EN `/en/blog-en` (decisión operativa tras conflictos previos con slugs huérfanos).
 
 Health check script (local, carpeta `_scratch/`): `blog_health_check.sh`
-- Valida HTTP 200 de ambos listados.
-- Extrae marcador `posts_found` y compara >0.
-- Comprueba que la plantilla activa para la página es `page-blog.php` vía `wp post get`.
-- Retorna código !=0 sólo si falla una condición crítica (el warning de Polylang se ignora).
 
 Integración CI:
-- `deploy.yml`: paso "Blog listing health" ejecuta `scripts/blog_health_ci.sh` (falla si no hay marker o count<1).
-- `site-health.yml`: verificación periódica reutiliza el script para detección temprana.
   
 Script incorporado:
-- `scripts/blog_health_ci.sh` (invocable local/CI; soporta `ALLOW_ZERO=1`).
 
 Notas operativas:
-- Si se renombra el slug EN a simplemente `/en/blog`, actualizar enlaces internos y purgar cache + sitemap.
-- En caso de 0 posts en un idioma, el marcador aún aparecerá (`posts_found:0`) facilitando detección temprana.
 
 ## 9) Operación diaria — Automatización WP (Posts)
 
+## Páginas y Home (Automatización)
+
+### Workflows
+- `.github/workflows/publish-test-page.yml`: Crea página ES/EN en estado `private` (flag o manual).
+- `.github/workflows/publish-prod-page.yml`: Crea página ES/EN en estado `publish` (flag o manual).
+- `.github/workflows/set-home.yml`: Fija la última página creada (o por ID/slug) como portada; refleja traducción EN si existe.
+
+### Flags
+- `.github/auto/publish_test_page.flag`: dispara test-page.
+- `.github/auto/publish_prod_page.flag`: dispara prod-page.
+
+### Cómo disparar
+1. Modifica y haz push a uno de los flags para disparar el workflow.
+2. Alternativamente, ejecuta manualmente desde Actions → "Run workflow".
+
+### Output esperado
+- Job Summary: Auth OK/KO, IDs/links ES/EN, estado, template, traducciones vinculadas Sí/No.
+- Para set-home: show_on_front=page, IDs/links ES/EN fijados, best-effort traducción EN.
 Workflows clave:
 - Publish Test Post: pruebas privadas ES/EN; resumen con Auth, IDs, links, vínculo, categorías.
 - Publish Prod Post: publicación real ES/EN con categorías; idempotente por slug; vínculo best‑effort.

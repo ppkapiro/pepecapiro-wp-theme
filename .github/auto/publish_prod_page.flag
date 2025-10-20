@@ -1,0 +1,4 @@
+# Disparador: Publish Prod Page
+# Modifica este archivo y haz push a main para ejecutar el workflow de producción de páginas (publish, ES/EN).
+# Cualquier cambio activa el job. No incluir datos sensibles aquí.
+2025-10-20T16:00:00Z

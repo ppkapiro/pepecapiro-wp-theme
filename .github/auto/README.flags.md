@@ -4,9 +4,12 @@ Estos archivos sirven como interruptores sencillos para lanzar workflows sin usa
 No contienen información sensible; basta con modificar su contenido y hacer push a `main`.
 
 Archivos:
-- `.github/auto/publish_test_post.flag`: dispara "Publish Test Post" (crea ES/EN en estado `private`).
-- `.github/auto/publish_prod.flag`: dispara "Publish Prod Post" (crea ES/EN en `publish`, enlaza y asigna categorías si existen).
+	- `.github/auto/publish_test_post.flag`: dispara "Publish Test Post" (crea ES/EN en estado `private`).
+	- `.github/auto/publish_prod.flag`: dispara "Publish Prod Post" (crea ES/EN en `publish`, enlaza y asigna categorías si existen).
+	- `.github/auto/publish_test_page.flag`: dispara "Publish Test Page" (crea página ES/EN en estado `private`).
+	- `.github/auto/publish_prod_page.flag`: dispara "Publish Prod Page" (crea página ES/EN en estado `publish`).
 
+Para páginas, los workflows intentan vincular traducciones vía Polylang (best-effort, no fallan si no existe).
 Uso:
 1. Edita el archivo correspondiente y añade una línea con una marca temporal (p. ej., `$(date -u +%FT%TZ)`).
 2. Haz commit y push a la rama `main`.

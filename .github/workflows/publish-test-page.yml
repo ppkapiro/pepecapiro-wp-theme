@@ -1,0 +1,148 @@
+name: Publish Test Page
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - .github/auto/publish_test_page.flag
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Auth fail-fast
+        id: auth
+        env:
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -z "${WP_URL:-}" ] || [ -z "${WP_USER:-}" ] || [ -z "${WP_APP_PASSWORD:-}" ]; then
+            echo "Auth: KO (faltan secrets)"; exit 2; fi
+          URL="${WP_URL%/}/wp-json/wp/v2/users/me"
+          CODE=$(curl -sS -o /tmp/auth.json -w "%{http_code}" -u "$WP_USER:$WP_APP_PASSWORD" "$URL")
+          if [ "$CODE" != "200" ]; then echo "Auth: KO ($CODE)"; exit 2; fi
+          echo "Auth: OK"
+
+      - name: Generar contenido aleatorio ES/EN
+        id: gen
+        run: |
+          set -euo pipefail
+          TS=$(date -u +"%Y%m%d-%H%M%S")
+          RAND=$(printf "%04d" $((RANDOM%10000)))
+          TITLE_ES="Auto Test Page ES ${TS} #${RAND}"
+          TITLE_EN="Auto Test Page EN ${TS} #${RAND}"
+          CONTENT_ES="<p>Página (ES) de prueba generada automáticamente.</p><p>UTC: ${TS}</p><p>Nonce: ${RAND}</p>"
+          CONTENT_EN="<p>Page (EN) auto-generated for testing.</p><p>UTC: ${TS}</p><p>Nonce: ${RAND}</p>"
+          SLUG_ES="auto-test-page-es-${TS}-${RAND}"
+          SLUG_EN="auto-test-page-en-${TS}-${RAND}"
+          jq -n --arg t "$TITLE_ES" --arg c "$CONTENT_ES" --arg s "private" --arg g "$SLUG_ES" '{title:$t, content:$c, status:$s, slug:$g}' > test_page_es.json
+          jq -n --arg t "$TITLE_EN" --arg c "$CONTENT_EN" --arg s "private" --arg g "$SLUG_EN" '{title:$t, content:$c, status:$s, slug:$g}' > test_page_en.json
+          echo "title_es=$TITLE_ES" >> $GITHUB_OUTPUT
+          echo "title_en=$TITLE_EN" >> $GITHUB_OUTPUT
+          echo "slug_es=$SLUG_ES" >> $GITHUB_OUTPUT
+          echo "slug_en=$SLUG_EN" >> $GITHUB_OUTPUT
+
+      - name: Crear página ES (private)
+        id: publish_es
+        env:
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          API="${WP_URL%/}/wp-json/wp/v2/pages"
+          slug_q=$(printf '%s' "${{ steps.gen.outputs.slug_es }}" | jq -sRr @uri)
+          found=$(curl -sS -u "$WP_USER:$WP_APP_PASSWORD" "$API?slug=$slug_q" || echo "[]")
+          upd_id=$(printf '%s' "$found" | jq -r '.[0].id // empty')
+          MODE="create"
+          if [ -n "$upd_id" ]; then
+            MODE="update"
+            url="$API/$upd_id"
+            RESP=$(curl -sS -u "$WP_USER:$WP_APP_PASSWORD" -X POST -H "Content-Type: application/json" -d @test_page_es.json -w " HTTP_STATUS:%{http_code}" "$url")
+          else
+            url="$API"
+            RESP=$(curl -sS -u "$WP_USER:$WP_APP_PASSWORD" -H "Content-Type: application/json" -d @test_page_es.json -w " HTTP_STATUS:%{http_code}" "$url")
+          fi
+          HTTP_CODE="${RESP##* HTTP_STATUS:}"
+          BODY="${RESP% HTTP_STATUS:*}"
+          echo "$BODY" > /tmp/page_es.json
+          if [ "$HTTP_CODE" != "201" ] && [ "$HTTP_CODE" != "200" ]; then exit 3; fi
+          ID=$(jq -r '.id' /tmp/page_es.json)
+          STATUS=$(jq -r '.status' /tmp/page_es.json)
+          LINK=$(jq -r '.link' /tmp/page_es.json)
+          TEMPLATE=$(jq -r '.template // "default"' /tmp/page_es.json)
+          echo "id_es=$ID" >> $GITHUB_OUTPUT
+          echo "status_es=$STATUS" >> $GITHUB_OUTPUT
+          echo "link_es=$LINK" >> $GITHUB_OUTPUT
+          echo "template_es=$TEMPLATE" >> $GITHUB_OUTPUT
+
+      - name: Crear página EN (private)
+        id: publish_en
+        env:
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          API="${WP_URL%/}/wp-json/wp/v2/pages"
+          slug_q=$(printf '%s' "${{ steps.gen.outputs.slug_en }}" | jq -sRr @uri)
+          found=$(curl -sS -u "$WP_USER:$WP_APP_PASSWORD" "$API?slug=$slug_q" || echo "[]")
+          upd_id=$(printf '%s' "$found" | jq -r '.[0].id // empty')
+          MODE="create"
+          if [ -n "$upd_id" ]; then
+            MODE="update"
+            url="$API/$upd_id"
+            RESP=$(curl -sS -u "$WP_USER:$WP_APP_PASSWORD" -X POST -H "Content-Type: application/json" -d @test_page_en.json -w " HTTP_STATUS:%{http_code}" "$url")
+          else
+            url="$API"
+            RESP=$(curl -sS -u "$WP_USER:$WP_APP_PASSWORD" -H "Content-Type: application/json" -d @test_page_en.json -w " HTTP_STATUS:%{http_code}" "$url")
+          fi
+          HTTP_CODE="${RESP##* HTTP_STATUS:}"
+          BODY="${RESP% HTTP_STATUS:*}"
+          echo "$BODY" > /tmp/page_en.json
+          if [ "$HTTP_CODE" != "201" ] && [ "$HTTP_CODE" != "200" ]; then exit 3; fi
+          ID=$(jq -r '.id' /tmp/page_en.json)
+          STATUS=$(jq -r '.status' /tmp/page_en.json)
+          LINK=$(jq -r '.link' /tmp/page_en.json)
+          TEMPLATE=$(jq -r '.template // "default"' /tmp/page_en.json)
+          echo "id_en=$ID" >> $GITHUB_OUTPUT
+          echo "status_en=$STATUS" >> $GITHUB_OUTPUT
+          echo "link_en=$LINK" >> $GITHUB_OUTPUT
+          echo "template_en=$TEMPLATE" >> $GITHUB_OUTPUT
+
+      - name: Vincular traducciones (Polylang, best-effort)
+        id: link
+        env:
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+          ID_ES: ${{ steps.publish_es.outputs.id_es }}
+          ID_EN: ${{ steps.publish_en.outputs.id_en }}
+        run: |
+          set -euo pipefail
+          linked="no"
+          if [ -n "${ID_ES:-}" ] && [ -n "${ID_EN:-}" ]; then
+            API_BASE="${WP_URL%/}/wp-json/wp/v2/pages"
+            payload=$(jq -n --arg es "$ID_ES" --arg en "$ID_EN" '{meta:{pll_translations:{es: ($es|tonumber), en: ($en|tonumber)}}}')
+            RESP=$(curl -sS -u "$WP_USER:$WP_APP_PASSWORD" -X PATCH -H "Content-Type: application/json" -d "$payload" -w " HTTP_STATUS:%{http_code}" "$API_BASE/$ID_ES" || true)
+            CODE="${RESP##* HTTP_STATUS:}"
+            if [ "$CODE" = "200" ]; then linked="si"; fi
+          fi
+          echo "linked=$linked" >> $GITHUB_OUTPUT
+
+      - name: Resumen final
+        if: always()
+        run: |
+          {
+            echo "--- Resumen Publish Test Page ---"
+            echo "Auth: $([[ '${{ steps.auth.outcome }}' == 'success' ]] && echo OK || echo KO)"
+            echo "ES: ID=${{ steps.publish_es.outputs.id_es }} link=${{ steps.publish_es.outputs.link_es }} estado=${{ steps.publish_es.outputs.status_es }} template=${{ steps.publish_es.outputs.template_es }}"
+            echo "EN: ID=${{ steps.publish_en.outputs.id_en }} link=${{ steps.publish_en.outputs.link_en }} estado=${{ steps.publish_en.outputs.status_en }} template=${{ steps.publish_en.outputs.template_en }}"
+            echo "Traducciones vinculadas: $([[ '${{ steps.link.outputs.linked }}' == 'si' ]] && echo Sí || echo No) (Polylang)"
+          } | tee -a "$GITHUB_STEP_SUMMARY"
