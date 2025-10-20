@@ -1,2 +1,7 @@
+# Disparador: Publish Prod Post
+# - Modifica este archivo y haz push a main → publica un post ES/EN (status=publish).
+# - Cualquier cambio activa el job; se recomienda incluir un sello de tiempo.
+# - Vincula traducciones y asigna categorías por idioma cuando existan (Blog/Guías | Blog/Guides).
+# - No incluir datos sensibles aquí.
 2025-09-26T19:29:40Z
 2025-09-26T19:56:54Z

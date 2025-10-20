@@ -1,5 +1,8 @@
-# Modifica este archivo y haz push a main para disparar el workflow Publish Test Post (auto)
-# El contenido es irrelevante; cualquier cambio con commit en este archivo activará el job.
+# Disparador: Publish Test Post
+# - Modifica este archivo y haz push a main → ejecuta el workflow de pruebas.
+# - Cualquier cambio en este archivo activa el job (contenido irrelevante).
+# - Estado por defecto: private (no público). Crea ES/EN y trata de vincular traducciones.
+# - No incluir datos sensibles aquí.
 # updated: $(date -u)
 # trigger
 2025-09-26T19:19:03Z
