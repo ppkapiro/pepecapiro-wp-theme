@@ -1,0 +1,106 @@
+name: Weekly Audit
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: '0 2 * * 0'  # Domingo 2:00 UTC
+permissions:
+  contents: write
+  issues: write
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Hash manifiestos
+        id: hash
+        run: |
+          MENUS_HASH=$(sha256sum content/menus/menus.json | awk '{print $1}')
+          MEDIA_HASH=$(sha256sum content/media/media_manifest.json | awk '{print $1}')
+          echo "menus=$MENUS_HASH" >> $GITHUB_OUTPUT
+          echo "media=$MEDIA_HASH" >> $GITHUB_OUTPUT
+          echo "Hash Menus: $MENUS_HASH"
+          echo "Hash Media: $MEDIA_HASH"
+      
+      - name: Ejecutar verify workflows
+        run: |
+          gh workflow run verify-home.yml
+          gh workflow run verify-menus.yml
+          gh workflow run verify-media.yml
+          gh workflow run verify-settings.yml
+          echo "✓ Verificaciones lanzadas"
+      
+      - name: Esperar y comprobar resultados
+        run: |
+          sleep 20
+          HOME_RESULT=$(gh run list --workflow=verify-home.yml --limit 1 --json conclusion --jq '.[0].conclusion')
+          MENUS_RESULT=$(gh run list --workflow=verify-menus.yml --limit 1 --json conclusion --jq '.[0].conclusion')
+          MEDIA_RESULT=$(gh run list --workflow=verify-media.yml --limit 1 --json conclusion --jq '.[0].conclusion')
+          SETTINGS_RESULT=$(gh run list --workflow=verify-settings.yml --limit 1 --json conclusion --jq '.[0].conclusion')
+          
+          echo "VERIFY_HOME=$HOME_RESULT" >> $GITHUB_ENV
+          echo "VERIFY_MENUS=$MENUS_RESULT" >> $GITHUB_ENV
+          echo "VERIFY_MEDIA=$MEDIA_RESULT" >> $GITHUB_ENV
+          echo "VERIFY_SETTINGS=$SETTINGS_RESULT" >> $GITHUB_ENV
+      
+      - name: Generar informe de auditoría
+        run: |
+          mkdir -p docs
+          cat > docs/AUDITORIA_SEMANAL.md <<EOF
+          # Auditoría Semanal — $(date -u +%Y-%m-%d)
+          
+          ## Hashes de Manifiestos
+          - Menus: \`${{ steps.hash.outputs.menus }}\`
+          - Media: \`${{ steps.hash.outputs.media }}\`
+          
+          ## Resultados de Verificación
+          - verify-home: **${VERIFY_HOME:-pending}**
+          - verify-menus: **${VERIFY_MENUS:-pending}**
+          - verify-media: **${VERIFY_MEDIA:-pending}**
+          - verify-settings: **${VERIFY_SETTINGS:-pending}**
+          
+          ## Drift Detectado
+          $(if [ "${VERIFY_HOME}" != "success" ] || [ "${VERIFY_MENUS}" != "success" ] || [ "${VERIFY_MEDIA}" != "success" ] || [ "${VERIFY_SETTINGS}" != "success" ]; then echo "⚠️ Se detectó drift en una o más áreas. Revisar issues automáticos."; else echo "✓ Sin drift detectado."; fi)
+          
+          ---
+          Generado automáticamente por weekly-audit.yml
+          EOF
+          cat docs/AUDITORIA_SEMANAL.md
+      
+      - name: Commit informe
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/AUDITORIA_SEMANAL.md
+          if git diff --cached --quiet; then
+            echo "Sin cambios"
+          else
+            git commit -m "chore: auditoría semanal $(date -u +%Y-%m-%d) [skip ci]"
+            git push
+          fi
+      
+      - name: Crear issue si drift
+        if: env.VERIFY_HOME != 'success' || env.VERIFY_MENUS != 'success' || env.VERIFY_MEDIA != 'success' || env.VERIFY_SETTINGS != 'success'
+        run: |
+          title="Auditoría Semanal — Drift detectado — $(date -u +%Y-%m-%d)"
+          body="Se detectó drift en la auditoría semanal.\n\n**Resultados:**\n- Home: ${VERIFY_HOME}\n- Menus: ${VERIFY_MENUS}\n- Media: ${VERIFY_MEDIA}\n- Settings: ${VERIFY_SETTINGS}\n\nRevisar logs y ejecutar run-repair si es necesario."
+          num=$(gh api -X POST repos/$GITHUB_REPOSITORY/issues -f title="$title" -f body="$body" --jq '.number' || echo "")
+          if [ -n "$num" ]; then
+            gh api -X POST repos/$GITHUB_REPOSITORY/labels -f name="audit" -f color="fbca04" -f description="Auditoría automática" || true
+            gh api -X POST repos/$GITHUB_REPOSITORY/issues/$num/labels -f labels[]="audit" -f labels[]="monitoring" || true
+          fi
+      
+      - name: Summary
+        run: |
+          {
+            echo "--- Weekly Audit ---"
+            echo "Menus Hash: ${{ steps.hash.outputs.menus }}"
+            echo "Media Hash: ${{ steps.hash.outputs.media }}"
+            echo "Verify Home: ${VERIFY_HOME:-pending}"
+            echo "Verify Menus: ${VERIFY_MENUS:-pending}"
+            echo "Verify Media: ${VERIFY_MEDIA:-pending}"
+            echo "Verify Settings: ${VERIFY_SETTINGS:-pending}"
+            echo "Informe: docs/AUDITORIA_SEMANAL.md"
+          } | tee -a "$GITHUB_STEP_SUMMARY"

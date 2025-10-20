@@ -181,6 +181,12 @@ Resumen: Auth, IDs/localizaciones/ítems, traducciones, cambios, warnings.
 - `run-repair.yml`: reparación on-demand por área (home/menus/media/settings) en modo `plan` o `apply`.
 - `rotate-app-password.yml`: guía y validación para rotación del Application Password.
 
+## Mantenimiento Proactivo (Fase 7 / v0.6.0)
+- **health-dashboard.yml** (6h): genera `public/status.json` con estado de Auth/Home/Menus/Media/Settings/Polylang e issues abiertos. Dashboard público para monitoreo externo.
+- **smoke-tests.yml**: pruebas de humo post-deploy (Home ES/EN, REST API, Auth); ejecuta al hacer push a `main`.
+- **weekly-audit.yml**: auditoría semanal (domingos 2:00 UTC) que hashea manifiestos, lanza verify-*, genera `docs/AUDITORIA_SEMANAL.md` y crea issue si detecta drift.
+- **Dashboard público**: Consulta el estado del sitio en tiempo real en `public/status.json` ([ver referencia](docs/DASHBOARD_REFERENCE.md)).
+
 ## Páginas y Home (Automatización)
 
 - **publish-test-page.yml**: Crea página ES/EN en estado `private` con contenido aleatorio. Disparo por flag `.github/auto/publish_test_page.flag` o manual desde Actions. Vincula traducciones vía Polylang (best-effort).

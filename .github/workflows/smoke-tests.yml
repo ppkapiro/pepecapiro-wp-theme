@@ -1,0 +1,65 @@
+name: Smoke Tests
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test Home ES
+        id: home_es
+        run: |
+          CODE=$(curl -sSL -o /dev/null -w "%{http_code}" "${WP_URL%/}/" || echo 000)
+          echo "code=$CODE" >> $GITHUB_OUTPUT
+          if [ "$CODE" = "200" ]; then echo "✓ Home ES: OK"; else echo "✗ Home ES: KO ($CODE)"; fi
+        env:
+          WP_URL: ${{ secrets.WP_URL }}
+      
+      - name: Test Home EN
+        id: home_en
+        run: |
+          CODE=$(curl -sSL -o /dev/null -w "%{http_code}" "${WP_URL%/}/en/" || echo 000)
+          echo "code=$CODE" >> $GITHUB_OUTPUT
+          if [ "$CODE" = "200" ]; then echo "✓ Home EN: OK"; else echo "✗ Home EN: KO ($CODE)"; fi
+        env:
+          WP_URL: ${{ secrets.WP_URL }}
+      
+      - name: Test REST API
+        id: rest
+        run: |
+          CODE=$(curl -sSL -o /dev/null -w "%{http_code}" "${WP_URL%/}/wp-json/" || echo 000)
+          echo "code=$CODE" >> $GITHUB_OUTPUT
+          if [ "$CODE" = "200" ]; then echo "✓ REST API: OK"; else echo "✗ REST API: KO ($CODE)"; fi
+        env:
+          WP_URL: ${{ secrets.WP_URL }}
+      
+      - name: Test Auth Endpoint
+        id: auth
+        run: |
+          CODE=$(curl -sSL -o /dev/null -w "%{http_code}" -u "$WP_USER:$WP_APP_PASSWORD" "${WP_URL%/}/wp-json/wp/v2/users/me" || echo 000)
+          echo "code=$CODE" >> $GITHUB_OUTPUT
+          if [ "$CODE" = "200" ]; then echo "✓ Auth: OK"; else echo "✗ Auth: KO ($CODE)"; fi
+        env:
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+      
+      - name: Summary
+        run: |
+          {
+            echo "--- Smoke Tests ---"
+            echo "Home ES: ${{ steps.home_es.outputs.code }}"
+            echo "Home EN: ${{ steps.home_en.outputs.code }}"
+            echo "REST API: ${{ steps.rest.outputs.code }}"
+            echo "Auth: ${{ steps.auth.outputs.code }}"
+            if [ "${{ steps.home_es.outputs.code }}" = "200" ] && \
+               [ "${{ steps.home_en.outputs.code }}" = "200" ] && \
+               [ "${{ steps.rest.outputs.code }}" = "200" ] && \
+               [ "${{ steps.auth.outputs.code }}" = "200" ]; then
+              echo "**Resultado: ✓ OK**"
+            else
+              echo "**Resultado: ✗ FALLO**"
+              exit 1
+            fi
+          } | tee -a "$GITHUB_STEP_SUMMARY"

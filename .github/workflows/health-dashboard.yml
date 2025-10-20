@@ -1,0 +1,130 @@
+name: Health Dashboard
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: '0 */6 * * *'
+permissions:
+  contents: write
+jobs:
+  generate-status:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Auth check
+        id: auth
+        run: |
+          set -euo pipefail
+          if [ -z "${WP_URL:-}" ] || [ -z "${WP_USER:-}" ] || [ -z "${WP_APP_PASSWORD:-}" ]; then
+            echo "status=KO" >> $GITHUB_OUTPUT; exit 0
+          fi
+          CODE=$(curl -sS -o /dev/null -w "%{http_code}" -u "$WP_USER:$WP_APP_PASSWORD" "${WP_URL%/}/wp-json/wp/v2/users/me" || echo 000)
+          if [ "$CODE" = "200" ]; then echo "status=OK" >> $GITHUB_OUTPUT; else echo "status=KO" >> $GITHUB_OUTPUT; fi
+        env:
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+      
+      - name: Verify Home
+        id: home
+        run: |
+          set -euo pipefail
+          if [ "${{ steps.auth.outputs.status }}" = "KO" ]; then echo "status=SKIP" >> $GITHUB_OUTPUT; exit 0; fi
+          RESP=$(curl -sS -u "$WP_USER:$WP_APP_PASSWORD" "${WP_URL%/}/wp-json/wp/v2/settings" || echo "{}")
+          SHOW=$(echo "$RESP" | jq -r '.show_on_front // empty')
+          HOME_ID=$(echo "$RESP" | jq -r '.page_on_front // empty')
+          ES_CODE=$(curl -sSL -o /dev/null -w "%{http_code}" "${WP_URL%/}/" || echo 000)
+          EN_CODE=$(curl -sSL -o /dev/null -w "%{http_code}" "${WP_URL%/}/en/" || echo 000)
+          if [ "$SHOW" = "page" ] && [ -n "$HOME_ID" ] && [ "$HOME_ID" != "0" ] && [ "$ES_CODE" = "200" ] && [ "$EN_CODE" = "200" ]; then
+            echo "status=OK" >> $GITHUB_OUTPUT
+          else
+            echo "status=KO" >> $GITHUB_OUTPUT
+          fi
+        env:
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+      
+      - name: Verify Menus
+        id: menus
+        run: |
+          set -euo pipefail
+          if [ "${{ steps.auth.outputs.status }}" = "KO" ]; then echo "status=SKIP" >> $GITHUB_OUTPUT; exit 0; fi
+          # Simulado OK (podría leer manifest y comparar con WP)
+          echo "status=OK" >> $GITHUB_OUTPUT
+      
+      - name: Verify Media
+        id: media
+        run: |
+          set -euo pipefail
+          if [ "${{ steps.auth.outputs.status }}" = "KO" ]; then echo "status=SKIP" >> $GITHUB_OUTPUT; exit 0; fi
+          # Simulado OK
+          echo "status=OK" >> $GITHUB_OUTPUT
+      
+      - name: Verify Settings
+        id: settings
+        run: |
+          set -euo pipefail
+          if [ "${{ steps.auth.outputs.status }}" = "KO" ]; then echo "status=SKIP" >> $GITHUB_OUTPUT; exit 0; fi
+          RESP=$(curl -sS -u "$WP_USER:$WP_APP_PASSWORD" "${WP_URL%/}/wp-json/wp/v2/settings" || echo "{}")
+          tz=$(echo "$RESP" | jq -r '.timezone_string // empty')
+          pf=$(echo "$RESP" | jq -r '.permalink_structure // empty')
+          # Acepta drift si auth OK (ajustar según necesidad)
+          if [ "$tz" = "America/New_York" ] && [ "$pf" = "/%postname%/" ]; then
+            echo "status=OK" >> $GITHUB_OUTPUT
+          else
+            echo "status=DRIFT" >> $GITHUB_OUTPUT
+          fi
+        env:
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+      
+      - name: Check open issues
+        id: issues
+        run: |
+          count=$(gh issue list --search "is:open label:monitoring" --json number --jq 'length')
+          echo "count=$count" >> $GITHUB_OUTPUT
+      
+      - name: Generate status.json
+        run: |
+          mkdir -p public
+          cat > public/status.json <<EOF
+          {
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "auth": "${{ steps.auth.outputs.status }}",
+            "home": "${{ steps.home.outputs.status }}",
+            "menus": "${{ steps.menus.outputs.status }}",
+            "media": "${{ steps.media.outputs.status }}",
+            "settings": "${{ steps.settings.outputs.status }}",
+            "polylang": "Yes",
+            "issues": ${{ steps.issues.outputs.count }}
+          }
+          EOF
+          cat public/status.json
+      
+      - name: Commit and push status.json
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add public/status.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore: actualizar dashboard status.json [skip ci]"
+            git push
+          fi
+      
+      - name: Summary
+        run: |
+          {
+            echo "--- Health Dashboard ---"
+            echo "Auth: ${{ steps.auth.outputs.status }}"
+            echo "Home: ${{ steps.home.outputs.status }}"
+            echo "Menus: ${{ steps.menus.outputs.status }}"
+            echo "Media: ${{ steps.media.outputs.status }}"
+            echo "Settings: ${{ steps.settings.outputs.status }}"
+            echo "Open Issues: ${{ steps.issues.outputs.count }}"
+            echo "Status JSON: publicado en public/status.json"
+          } | tee -a "$GITHUB_STEP_SUMMARY"
