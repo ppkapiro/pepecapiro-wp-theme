@@ -1,0 +1,84 @@
+name: Verify Home
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: '0 */6 * * *'
+jobs:
+  verify-home:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      AREA: home
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Auth fail-fast
+        id: auth
+        run: |
+          set -euo pipefail
+          if [ -z "${WP_URL:-}" ] || [ -z "${WP_USER:-}" ] || [ -z "${WP_APP_PASSWORD:-}" ]; then echo "Auth: KO"; exit 2; fi
+          CODE=$(curl -sS -o /tmp/auth.json -w "%{http_code}" -u "$WP_USER:$WP_APP_PASSWORD" "${WP_URL%/}/wp-json/wp/v2/users/me")
+          test "$CODE" = "200" && echo "Auth: OK" || { echo "Auth: KO ($CODE)"; exit 2; }
+        env:
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+      - name: Obtener settings y validar Home
+        id: settings
+        run: |
+          set -euo pipefail
+          API="${WP_URL%/}/wp-json/wp/v2/settings"
+          RESP=$(curl -sS -u "$WP_USER:$WP_APP_PASSWORD" "$API" -w " HTTP_STATUS:%{http_code}")
+          CODE="${RESP##* HTTP_STATUS:}"
+          BODY="${RESP% HTTP_STATUS:*}"
+          echo "$BODY" > /tmp/settings.json
+          SHOW=$(jq -r '.show_on_front // empty' /tmp/settings.json)
+          HOME_ID=$(jq -r '.page_on_front // empty' /tmp/settings.json)
+          echo "show_on_front=$SHOW" >> $GITHUB_OUTPUT
+          echo "home_id=$HOME_ID" >> $GITHUB_OUTPUT
+          [ "$CODE" = "200" ] || exit 3
+          if [ "$SHOW" != "page" ] || [ -z "$HOME_ID" ] || [ "$HOME_ID" = "0" ]; then echo "INVALID_HOME=1" >> $GITHUB_ENV; else echo "INVALID_HOME=0" >> $GITHUB_ENV; fi
+        env:
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+      - name: Comprobar Front ES/EN
+        id: fronts
+        run: |
+          set -euo pipefail
+          ES_CODE=$(curl -sS -o /dev/null -w "%{http_code}" "${WP_URL%/}/") || ES_CODE=000
+          EN_CODE=$(curl -sS -o /dev/null -w "%{http_code}" "${WP_URL%/}/en/") || EN_CODE=000
+          echo "es=$ES_CODE" >> $GITHUB_OUTPUT
+          echo "en=$EN_CODE" >> $GITHUB_OUTPUT
+          echo "ES_CODE=$ES_CODE" >> $GITHUB_ENV
+          echo "EN_CODE=$EN_CODE" >> $GITHUB_ENV
+      - name: Resumen
+        id: summary
+        run: |
+          {
+            echo "--- Verify Home ---"
+            echo "Auth: OK"
+            echo "show_on_front: ${{ steps.settings.outputs.show_on_front }}"
+            echo "page_on_front: ${{ steps.settings.outputs.home_id }}"
+            echo "Front ES: ${{ steps.fronts.outputs.es }}"
+            echo "Front EN: ${{ steps.fronts.outputs.en }}"
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+          # Señal de estado
+          if [ "$INVALID_HOME" = "1" ] || [ "$ES_CODE" != "200" ] || [ "$EN_CODE" != "200" ]; then echo "VERIFY_STATUS=KO" >> $GITHUB_ENV; else echo "VERIFY_STATUS=OK" >> $GITHUB_ENV; fi
+      - name: Alerta automática (Issue)
+        if: always()
+        run: |
+          set -euo pipefail
+          title="Alerta verificación ${AREA} — $(date -u +%F\ %H:%M)"
+          existing=$(gh issue list --search "in:title Alerta verificación ${AREA}" --state open --json number --jq '.[0].number' || true)
+          body="Resumen:\n- show_on_front: ${SHOW:-${{ steps.settings.outputs.show_on_front }}}\n- page_on_front: ${HOME_ID:-${{ steps.settings.outputs.home_id }}}\n- Front ES: ${ES_CODE}\n- Front EN: ${EN_CODE}\n"
+          if [ "${VERIFY_STATUS}" = "KO" ]; then
+            if [ -n "${existing:-}" ]; then
+              gh issue comment "$existing" -b "Run fallido de verificación (${AREA}).\n\n${body}"
+            else
+              gh issue create -t "$title" -b "Run fallido de verificación (${AREA}). Recomendación: ejecutar run-repair (area=${AREA}, mode=apply).\n\n${body}" -l monitoring,incident
+            fi
+          else
+            if [ -n "${existing:-}" ]; then gh issue close "$existing" -c "Verificación OK. Cerrando incidente."; fi
+          fi
+      

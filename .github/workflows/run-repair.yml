@@ -1,0 +1,52 @@
+name: Run Repair
+on:
+  workflow_dispatch:
+    inputs:
+      area:
+        description: 'Área a reparar'
+        type: choice
+        required: true
+        options: [home, menus, media, settings]
+      mode:
+        description: 'Modo (plan/apply)'
+        type: choice
+        required: false
+        default: apply
+        options: [plan, apply]
+jobs:
+  run-repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Auth fail-fast
+        run: |
+          set -euo pipefail
+          [ -n "${WP_URL:-}" ] && [ -n "${WP_USER:-}" ] && [ -n "${WP_APP_PASSWORD:-}" ] || { echo KO; exit 2; }
+          CODE=$(curl -sS -o /tmp/me.json -w "%{http_code}" -u "$WP_USER:$WP_APP_PASSWORD" "${WP_URL%/}/wp-json/wp/v2/users/me"); [ "$CODE" = 200 ] || exit 2
+        env:
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+      - name: Ejecutar reparación
+        id: repair
+        run: |
+          set -euo pipefail
+          area="${{ github.event.inputs.area }}"; mode="${{ github.event.inputs.mode }}"
+          echo "Área: $area (modo: $mode)"
+          if [ "$mode" = "plan" ]; then echo "Plan solamente (no se ejecuta)"; exit 0; fi
+          case "$area" in
+            home) gh workflow run set-home.yml ;;
+            menus) gh workflow run publish-prod-menu.yml ;;
+            media) gh workflow run upload-media.yml ;;
+            settings) gh workflow run site-settings.yml ;;
+          esac
+          sleep 5
+          echo "result=executed" >> $GITHUB_OUTPUT
+      - name: Resumen
+        run: |
+          {
+            echo "--- Run Repair ---"
+            echo "Área: ${{ github.event.inputs.area }}"
+            echo "Modo: ${{ github.event.inputs.mode }}"
+            echo "Acción: ${{ steps.repair.outputs.result }}"
+          } | tee -a "$GITHUB_STEP_SUMMARY"

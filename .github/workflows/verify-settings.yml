@@ -1,0 +1,60 @@
+name: Verify Settings
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: '0 0 * * *'
+jobs:
+  verify-settings:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      AREA: settings
+    steps:
+      - uses: actions/checkout@v4
+      - name: Auth fail-fast
+        id: auth
+        run: |
+          set -euo pipefail
+          [ -n "${WP_URL:-}" ] && [ -n "${WP_USER:-}" ] && [ -n "${WP_APP_PASSWORD:-}" ] || { echo KO; exit 2; }
+          CODE=$(curl -sS -o /tmp/me.json -w "%{http_code}" -u "$WP_USER:$WP_APP_PASSWORD" "${WP_URL%/}/wp-json/wp/v2/users/me"); [ "$CODE" = 200 ] || exit 2
+        env:
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+      - name: Obtener settings
+        id: get
+        run: |
+          set -euo pipefail
+          RESP=$(curl -sS -u "$WP_USER:$WP_APP_PASSWORD" "${WP_URL%/}/wp-json/wp/v2/settings")
+          echo "$RESP" > /tmp/settings.json
+          tz=$(jq -r '.timezone_string' /tmp/settings.json)
+          pf=$(jq -r '.permalink_structure' /tmp/settings.json)
+          sow=$(jq -r '.start_of_week' /tmp/settings.json)
+          echo "tz=$tz" >> $GITHUB_OUTPUT
+          echo "pf=$pf" >> $GITHUB_OUTPUT
+          echo "sow=$sow" >> $GITHUB_OUTPUT
+        env:
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+      - name: Resumen
+        run: |
+          {
+            echo "--- Verify Settings ---"
+            echo "timezone_string: ${{ steps.get.outputs.tz }}"
+            echo "permalink_structure: ${{ steps.get.outputs.pf }}"
+            echo "start_of_week: ${{ steps.get.outputs.sow }}"
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+          if [ "${{ steps.get.outputs.tz }}" != "America/New_York" ] || [ "${{ steps.get.outputs.pf }}" != "/%postname%/" ] || [ "${{ steps.get.outputs.sow }}" != "1" ]; then echo VERIFY_STATUS=KO >> $GITHUB_ENV; else echo VERIFY_STATUS=OK >> $GITHUB_ENV; fi
+      - name: Alerta automática (Issue)
+        if: always()
+        run: |
+          set -euo pipefail
+          title="Alerta verificación ${AREA} — $(date -u +%F\ %H:%M)"
+          existing=$(gh issue list --search "in:title Alerta verificación ${AREA}" --state open --json number --jq '.[0].number' || true)
+          body="Resumen: tz=${{ steps.get.outputs.tz }}, pf=${{ steps.get.outputs.pf }}, sow=${{ steps.get.outputs.sow }}"
+          if [ "${VERIFY_STATUS}" = "KO" ]; then
+            if [ -n "${existing:-}" ]; then gh issue comment "$existing" -b "$body"; else gh issue create -t "$title" -b "$body" -l monitoring,incident; fi
+          else
+            if [ -n "${existing:-}" ]; then gh issue close "$existing" -c "Verificación OK"; fi
+          fi

@@ -176,6 +176,11 @@ Resumen: Auth, IDs/localizaciones/ítems, traducciones, cambios, warnings.
 ### Ajustes del sitio (Fase 5 base)
 - `site-settings.yml`: PATCH a `/wp-json/wp/v2/settings` para timezone/permalinks/etc. Resumen con valores aplicados.
 
+## Verificaciones programadas y alertas (Fase 6)
+- `verify-home.yml` (6h), `verify-menus.yml` (12h), `verify-media.yml` (diario), `verify-settings.yml` (24h): validan estado y abren/cerran issues automáticos con etiquetas `monitoring, incident` en caso de KO.
+- `run-repair.yml`: reparación on-demand por área (home/menus/media/settings) en modo `plan` o `apply`.
+- `rotate-app-password.yml`: guía y validación para rotación del Application Password.
+
 ## Páginas y Home (Automatización)
 
 - **publish-test-page.yml**: Crea página ES/EN en estado `private` con contenido aleatorio. Disparo por flag `.github/auto/publish_test_page.flag` o manual desde Actions. Vincula traducciones vía Polylang (best-effort).

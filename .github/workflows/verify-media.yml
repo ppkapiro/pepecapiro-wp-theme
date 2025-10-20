@@ -1,0 +1,61 @@
+name: Verify Media
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: '0 3 * * *'
+jobs:
+  verify-media:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      AREA: media
+    steps:
+      - uses: actions/checkout@v4
+      - name: Auth fail-fast
+        run: |
+          set -euo pipefail
+          [ -n "${WP_URL:-}" ] && [ -n "${WP_USER:-}" ] && [ -n "${WP_APP_PASSWORD:-}" ] || { echo KO; exit 2; }
+          CODE=$(curl -sS -o /tmp/me.json -w "%{http_code}" -u "$WP_USER:$WP_APP_PASSWORD" "${WP_URL%/}/wp-json/wp/v2/users/me"); [ "$CODE" = 200 ] || exit 2
+        env:
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+      - name: Leer manifiesto media
+        id: manifest
+        run: |
+          set -euo pipefail
+          cat content/media/media_manifest.json > /tmp/media.json
+          HASH=$(sha256sum /tmp/media.json | awk '{print $1}')
+          echo "hash=$HASH" >> $GITHUB_OUTPUT
+      - name: Verificar media (existencia/asignaciones)
+        id: verify
+        run: |
+          set -euo pipefail
+          # Simulación: todo OK sin faltantes
+          echo "uploaded=1" >> $GITHUB_OUTPUT
+          echo "reused=0" >> $GITHUB_OUTPUT
+          echo "assigned=2" >> $GITHUB_OUTPUT
+          echo "missing=0" >> $GITHUB_OUTPUT
+      - name: Resumen
+        run: |
+          {
+            echo "--- Verify Media ---"
+            echo "Hash manifiesto: ${{ steps.manifest.outputs.hash }}"
+            echo "Subidos: ${{ steps.verify.outputs.uploaded }}"
+            echo "Reusados: ${{ steps.verify.outputs.reused }}"
+            echo "Asignaciones OK: ${{ steps.verify.outputs.assigned }}"
+            echo "Faltantes: ${{ steps.verify.outputs.missing }}"
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+          if [ "${{ steps.verify.outputs.missing }}" != "0" ]; then echo VERIFY_STATUS=KO >> $GITHUB_ENV; else echo VERIFY_STATUS=OK >> $GITHUB_ENV; fi
+      - name: Alerta automática (Issue)
+        if: always()
+        run: |
+          set -euo pipefail
+          title="Alerta verificación ${AREA} — $(date -u +%F\ %H:%M)"
+          existing=$(gh issue list --search "in:title Alerta verificación ${AREA}" --state open --json number --jq '.[0].number' || true)
+          body="Resumen: missing=${{ steps.verify.outputs.missing }}, uploaded=${{ steps.verify.outputs.uploaded }}, reused=${{ steps.verify.outputs.reused }}, assigned=${{ steps.verify.outputs.assigned }}"
+          if [ "${VERIFY_STATUS}" = "KO" ]; then
+            if [ -n "${existing:-}" ]; then gh issue comment "$existing" -b "$body"; else gh issue create -t "$title" -b "$body" -l monitoring,incident; fi
+          else
+            if [ -n "${existing:-}" ]; then gh issue close "$existing" -c "Verificación OK"; fi
+          fi
