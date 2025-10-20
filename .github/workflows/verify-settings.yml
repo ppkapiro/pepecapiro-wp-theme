@@ -3,6 +3,8 @@ on:
   workflow_dispatch: {}
   schedule:
     - cron: '0 0 * * *'
+permissions:
+  issues: write
 jobs:
   verify-settings:
     runs-on: ubuntu-latest
@@ -59,7 +61,12 @@ jobs:
               gh issue comment "$existing" -b "$body" || true
             else
               num=$(gh api -X POST repos/$repo/issues -f title="$title" -f body="$body" --jq '.number' || echo "")
-              if [ -n "$num" ]; then gh api -X POST repos/$repo/issues/$num/labels -f labels[]="monitoring" -f labels[]="incident" || true; fi
+              # Etiquetado best-effort (crea si falta y asigna)
+              if [ -n "$num" ]; then
+                gh api -X POST repos/$repo/labels -f name="monitoring" -f color="0e8a16" -f description="Monitoreo CI" || true
+                gh api -X POST repos/$repo/labels -f name="incident" -f color="d93f0b" -f description="Incidente detectado" || true
+                gh api -X POST repos/$repo/issues/$num/labels -f labels[]="monitoring" -f labels[]="incident" || true
+              fi
             fi
           else
             if [ -n "${existing:-}" ]; then gh api -X PATCH repos/$repo/issues/$existing -f state=closed -f state_reason=completed || true; fi
