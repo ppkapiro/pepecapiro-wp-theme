@@ -46,8 +46,8 @@ jobs:
         id: fronts
         run: |
           set -euo pipefail
-          ES_CODE=$(curl -sS -o /dev/null -w "%{http_code}" "${WP_URL%/}/") || ES_CODE=000
-          EN_CODE=$(curl -sS -o /dev/null -w "%{http_code}" "${WP_URL%/}/en/") || EN_CODE=000
+          ES_CODE=$(curl -sSL -o /dev/null -w "%{http_code}" "${WP_URL%/}/" || echo 000)
+          EN_CODE=$(curl -sSL -o /dev/null -w "%{http_code}" "${WP_URL%/}/en/" || echo 000)
           echo "es=$ES_CODE" >> $GITHUB_OUTPUT
           echo "en=$EN_CODE" >> $GITHUB_OUTPUT
           echo "ES_CODE=$ES_CODE" >> $GITHUB_ENV
@@ -69,16 +69,20 @@ jobs:
         if: always()
         run: |
           set -euo pipefail
+          repo="$GITHUB_REPOSITORY"
+          owner="${repo%%/*}"; name="${repo##*/}"
           title="Alerta verificación ${AREA} — $(date -u +%F\ %H:%M)"
           existing=$(gh issue list --search "in:title Alerta verificación ${AREA}" --state open --json number --jq '.[0].number' || true)
           body="Resumen:\n- show_on_front: ${SHOW:-${{ steps.settings.outputs.show_on_front }}}\n- page_on_front: ${HOME_ID:-${{ steps.settings.outputs.home_id }}}\n- Front ES: ${ES_CODE}\n- Front EN: ${EN_CODE}\n"
           if [ "${VERIFY_STATUS}" = "KO" ]; then
             if [ -n "${existing:-}" ]; then
-              gh issue comment "$existing" -b "Run fallido de verificación (${AREA}).\n\n${body}"
+              gh issue comment "$existing" -b "Run fallido de verificación (${AREA}).\n\n${body}" || true
             else
-              gh issue create -t "$title" -b "Run fallido de verificación (${AREA}). Recomendación: ejecutar run-repair (area=${AREA}, mode=apply).\n\n${body}" -l monitoring,incident
+              num=$(gh api -X POST repos/$repo/issues -f title="$title" -f body="Run fallido de verificación (${AREA}). Recomendación: ejecutar run-repair (area=${AREA}, mode=apply).\n\n${body}" --jq '.number' || echo "")
+              # Intentar etiquetar (best-effort)
+              if [ -n "$num" ]; then gh api -X POST repos/$repo/issues/$num/labels -f labels[]="monitoring" -f labels[]="incident" || true; fi
             fi
           else
-            if [ -n "${existing:-}" ]; then gh issue close "$existing" -c "Verificación OK. Cerrando incidente."; fi
+            if [ -n "${existing:-}" ]; then gh api -X PATCH repos/$repo/issues/$existing -f state=closed -f state_reason=completed || true; fi
           fi
       
