@@ -98,18 +98,18 @@ Notas:
 - Cambio en plantillas: las imágenes temporales del tema (about-temp.jpg, hero-temp.jpg) se reemplazaron por placeholders SVG inline para evitar bloqueos 403 del host sobre /wp-content/themes/*/assets/img.
 - Verificación posterior: 0 errores 404/5xx en las 10 URLs; conteo de assets por página=4 en todas (About ES/EN incluido); HTML ~15–16 KB en Home; ~15 KB en About.
 
-## Lighthouse móvil (métricas reales) — 2025-10-20 16:19:58
+## Lighthouse móvil (métricas reales) — 2025-10-20 16:38:36
 
 | Página | Perf | LCP | TTI | INP | Top 2 oportunidades |
 |--------|------|-----|-----|-----|----------------------|
-| [/](lighthouse/home.html) | 99 | 1.7s | 1.7s | n/a | — |
-| [/en/](lighthouse/en-home.html) | 99 | 1.8s | 1.8s | n/a | — |
+| [/](lighthouse/home.html) | 99 | 1.6s | 1.6s | n/a | — |
+| [/en/](lighthouse/en-home.html) | 99 | 1.6s | 1.6s | n/a | — |
 | [/sobre-mi/](lighthouse/sobre-mi.html) | 99 | 1.6s | 1.6s | n/a | — |
 | [/en/about/](lighthouse/en-about.html) | 99 | 1.6s | 1.6s | n/a | — |
 | [/proyectos/](lighthouse/proyectos.html) | 100 | 1.5s | 1.5s | n/a | — |
 | [/en/projects/](lighthouse/en-projects.html) | 100 | 1.5s | 1.5s | n/a | — |
-| [/recursos/](lighthouse/recursos.html) | 99 | 1.6s | 1.6s | n/a | — |
-| [/en/resources/](lighthouse/en-resources.html) | 99 | 1.7s | 1.7s | n/a | — |
+| [/recursos/](lighthouse/recursos.html) | 100 | 1.5s | 1.5s | n/a | — |
+| [/en/resources/](lighthouse/en-resources.html) | 100 | 1.5s | 1.5s | n/a | — |
 | [/contacto/](lighthouse/contacto.html) | 100 | 1.5s | 1.5s | n/a | — |
 | [/en/contact/](lighthouse/en-contact.html) | 100 | 1.5s | 1.5s | n/a | — |
 
