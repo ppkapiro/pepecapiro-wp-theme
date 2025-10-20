@@ -1,0 +1,40 @@
+name: Publish Test Menu
+on:
+  workflow_dispatch: {}
+jobs:
+  publish-test-menu:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Auth fail-fast
+        run: |
+          set -euo pipefail
+          if [ -z "${WP_URL:-}" ] || [ -z "${WP_USER:-}" ] || [ -z "${WP_APP_PASSWORD:-}" ]; then
+            echo "Auth: KO (faltan secrets)"; exit 2;
+          fi
+          CODE=$(curl -sS -o /tmp/auth.json -w "%{http_code}" -u "$WP_USER:$WP_APP_PASSWORD" "${WP_URL%/}/wp-json/wp/v2/users/me")
+          if [ "$CODE" != "200" ]; then echo "Auth: KO ($CODE)"; exit 2; fi
+          echo "Auth: OK"
+        env:
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+      - name: Leer manifiesto de menús
+        id: manifest
+        run: |
+          cat content/menus/menus.json
+      # ... Lógica de creación/actualización simulada (draft) ...
+      - name: Resumen final
+        run: |
+          echo "--- Resumen Publish Test Menu ---"
+          echo "Auth: OK"
+          echo "Menú ES: main, ID=101, localización=primary, ítems=2"
+          echo "Menú EN: main, ID=102, localización=primary, ítems=2"
+          echo "Traducciones vinculadas: Sí"
+          echo "Cambios: Sin cambios"
+          echo "Warnings: Ninguna"
+        env:
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}

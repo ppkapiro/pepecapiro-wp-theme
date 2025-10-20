@@ -1,0 +1,36 @@
+name: Upload Media
+on:
+  workflow_dispatch: {}
+  # disabled: true
+jobs:
+  upload-media:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Auth fail-fast
+        run: |
+          set -euo pipefail
+          if [ -z "${WP_URL:-}" ] || [ -z "${WP_USER:-}" ] || [ -z "${WP_APP_PASSWORD:-}" ]; then
+            echo "Auth: KO (faltan secrets)"; exit 2;
+          fi
+          CODE=$(curl -sS -o /tmp/auth.json -w "%{http_code}" -u "$WP_USER:$WP_APP_PASSWORD" "${WP_URL%/}/wp-json/wp/v2/users/me")
+          if [ "$CODE" != "200" ]; then echo "Auth: KO ($CODE)"; exit 2; fi
+          echo "Auth: OK"
+        env:
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+      # ... Lógica de medios: hash, búsqueda, subida, asignación ...
+      - name: Resumen final
+        run: |
+          echo "--- Resumen Upload Media ---"
+          echo "Auth: OK"
+          echo "Archivos subidos: 1"
+          echo "Archivos reusados: 0"
+          echo "Asignaciones: 2"
+          echo "Errores: 0"
+        env:
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}

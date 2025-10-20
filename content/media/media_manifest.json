@@ -1,0 +1,4 @@
+[
+  { "file": "demo_banner.jpg", "alt": "Banner demo", "assign_to": "auto-prod-page-es", "lang": "es" },
+  { "file": "demo_banner.jpg", "alt": "Demo banner", "assign_to": "auto-prod-page-en", "lang": "en" }
+]
