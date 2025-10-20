@@ -4,6 +4,7 @@ on:
   schedule:
     - cron: '0 0 * * *'
 permissions:
+  contents: read
   issues: write
 jobs:
   verify-settings:
@@ -47,7 +48,8 @@ jobs:
             echo "permalink_structure: ${{ steps.get.outputs.pf }}"
             echo "start_of_week: ${{ steps.get.outputs.sow }}"
           } | tee -a "$GITHUB_STEP_SUMMARY"
-          if [ "${{ steps.get.outputs.tz }}" != "America/New_York" ] || [ "${{ steps.get.outputs.pf }}" != "/%postname%/" ] || [ "${{ steps.get.outputs.sow }}" != "1" ]; then echo VERIFY_STATUS=KO >> $GITHUB_ENV; else echo VERIFY_STATUS=OK >> $GITHUB_ENV; fi
+          # Señal de estado robusta
+          if [ "${{ steps.get.outputs.tz || '' }}" != "America/New_York" ] || [ "${{ steps.get.outputs.pf || '' }}" != "/%postname%/" ] || [ "${{ steps.get.outputs.sow || '' }}" != "1" ]; then echo VERIFY_STATUS=KO >> $GITHUB_ENV; else echo VERIFY_STATUS=OK >> $GITHUB_ENV; fi
       - name: Alerta automática (Issue)
         if: always()
         run: |
