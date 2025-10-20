@@ -1,0 +1,255 @@
+{
+  "version": "0.8.0",
+  "last_updated": "2025-10-20",
+  "description": "Inventario completo de archivos replicables del ecosistema pepecapiro-wp-theme",
+  "workflows": {
+    "wordpress_operations": [
+      {
+        "path": ".github/workflows/create-pages.yml",
+        "type": "workflow",
+        "phase": "v0.1",
+        "required": true,
+        "secrets_deps": ["WP_URL", "WP_USER", "WP_APP_PASSWORD"],
+        "description": "Creación/actualización de páginas WordPress desde JSON"
+      },
+      {
+        "path": ".github/workflows/create-posts.yml",
+        "type": "workflow",
+        "phase": "v0.1",
+        "required": true,
+        "secrets_deps": ["WP_URL", "WP_USER", "WP_APP_PASSWORD"],
+        "description": "Publicación de posts desde /content/posts/*.md"
+      },
+      {
+        "path": ".github/workflows/create-menus.yml",
+        "type": "workflow",
+        "phase": "v0.2",
+        "required": true,
+        "secrets_deps": ["WP_URL", "WP_USER", "WP_APP_PASSWORD", "WP_PATH"],
+        "description": "Construcción de menús de navegación desde JSON"
+      },
+      {
+        "path": ".github/workflows/upload-media.yml",
+        "type": "workflow",
+        "phase": "v0.2",
+        "required": false,
+        "secrets_deps": ["WP_URL", "WP_USER", "WP_APP_PASSWORD"],
+        "description": "Carga de imágenes y archivos multimedia"
+      },
+      {
+        "path": ".github/workflows/configure-wp-settings.yml",
+        "type": "workflow",
+        "phase": "v0.3",
+        "required": true,
+        "secrets_deps": ["WP_URL", "WP_USER", "WP_APP_PASSWORD", "WP_PATH"],
+        "description": "Configuración de opciones y ajustes de WordPress"
+      }
+    ],
+    "verification": [
+      {
+        "path": ".github/workflows/verify-home.yml",
+        "type": "workflow",
+        "phase": "v0.4",
+        "required": true,
+        "secrets_deps": ["WP_URL"],
+        "description": "Validación de página principal con Lighthouse"
+      },
+      {
+        "path": ".github/workflows/verify-menus.yml",
+        "type": "workflow",
+        "phase": "v0.4",
+        "required": true,
+        "secrets_deps": ["WP_URL", "WP_USER", "WP_APP_PASSWORD"],
+        "description": "Verificación de estructura de menús"
+      },
+      {
+        "path": ".github/workflows/verify-media.yml",
+        "type": "workflow",
+        "phase": "v0.4",
+        "required": false,
+        "secrets_deps": ["WP_URL", "WP_USER", "WP_APP_PASSWORD"],
+        "description": "Validación de galería multimedia"
+      },
+      {
+        "path": ".github/workflows/verify-settings.yml",
+        "type": "workflow",
+        "phase": "v0.5",
+        "required": true,
+        "secrets_deps": ["WP_URL", "WP_USER", "WP_APP_PASSWORD", "WP_PATH"],
+        "description": "Auditoría de configuración de WordPress"
+      }
+    ],
+    "monitoring": [
+      {
+        "path": ".github/workflows/health-dashboard.yml",
+        "type": "workflow",
+        "phase": "v0.5",
+        "required": true,
+        "secrets_deps": ["WP_URL", "WP_USER", "WP_APP_PASSWORD"],
+        "description": "Generación de dashboard de salud (public/status.json)"
+      },
+      {
+        "path": ".github/workflows/smoke-tests.yml",
+        "type": "workflow",
+        "phase": "v0.6",
+        "required": true,
+        "secrets_deps": ["WP_URL"],
+        "description": "Tests de humo post-deploy"
+      },
+      {
+        "path": ".github/workflows/weekly-audit.yml",
+        "type": "workflow",
+        "phase": "v0.6",
+        "required": false,
+        "secrets_deps": ["WP_URL", "WP_USER", "WP_APP_PASSWORD"],
+        "description": "Auditoría semanal automatizada (cron)"
+      }
+    ],
+    "external_integration": [
+      {
+        "path": ".github/workflows/api-automation-trigger.yml",
+        "type": "workflow",
+        "phase": "v0.7",
+        "required": true,
+        "secrets_deps": ["API_GATEWAY_TOKEN"],
+        "description": "Receptor de eventos repository_dispatch para triggers externos"
+      },
+      {
+        "path": ".github/workflows/webhook-github-to-wp.yml",
+        "type": "workflow",
+        "phase": "v0.7",
+        "required": false,
+        "secrets_deps": ["WP_URL", "WP_USER", "WP_APP_PASSWORD"],
+        "description": "Sincronización GitHub→WordPress en push a /content/"
+      }
+    ]
+  },
+  "scripts": [
+    {
+      "path": "scripts/validate_wp_connectivity.sh",
+      "type": "script",
+      "phase": "v0.0",
+      "required": true,
+      "secrets_deps": ["WP_URL", "WP_USER", "WP_APP_PASSWORD"],
+      "description": "Valida conectividad con WordPress REST API"
+    },
+    {
+      "path": "scripts/create_issue.sh",
+      "type": "script",
+      "phase": "v0.4",
+      "required": false,
+      "secrets_deps": [],
+      "description": "Crea issues en GitHub desde workflows"
+    },
+    {
+      "path": "scripts/cleanup_test_data.sh",
+      "type": "script",
+      "phase": "v0.6",
+      "required": false,
+      "secrets_deps": ["WP_URL", "WP_USER", "WP_APP_PASSWORD", "WP_PATH"],
+      "description": "Limpia datos de prueba en WordPress"
+    }
+  ],
+  "configs": [
+    {
+      "path": "configs/pages.json",
+      "type": "data",
+      "phase": "v0.1",
+      "required": true,
+      "secrets_deps": [],
+      "description": "Definición de páginas a crear"
+    },
+    {
+      "path": "configs/menus.json",
+      "type": "data",
+      "phase": "v0.2",
+      "required": true,
+      "secrets_deps": [],
+      "description": "Estructura de menús de navegación"
+    },
+    {
+      "path": "configs/settings.json",
+      "type": "data",
+      "phase": "v0.3",
+      "required": true,
+      "secrets_deps": [],
+      "description": "Configuración de opciones de WordPress"
+    },
+    {
+      "path": "public/status.json",
+      "type": "data",
+      "phase": "v0.7",
+      "required": true,
+      "secrets_deps": [],
+      "description": "Dashboard de salud (auto-generado por health-dashboard.yml)"
+    }
+  ],
+  "docs": [
+    {
+      "path": "README.md",
+      "type": "doc",
+      "phase": "v0.0",
+      "required": true,
+      "description": "Guía principal del proyecto"
+    },
+    {
+      "path": "docs/API_REFERENCE.md",
+      "type": "doc",
+      "phase": "v0.7",
+      "required": true,
+      "description": "Referencia de API Gateway (GET /status, POST /trigger)"
+    },
+    {
+      "path": "docs/WEBHOOK_WP_TO_GITHUB.md",
+      "type": "doc",
+      "phase": "v0.7",
+      "required": false,
+      "description": "Configuración de webhooks WordPress→GitHub"
+    },
+    {
+      "path": "docs/ops/SUMARIO_ARRANQUE.md",
+      "type": "doc",
+      "phase": "v0.7",
+      "required": false,
+      "description": "Snapshot del ecosistema al iniciar integración externa"
+    }
+  ],
+  "secrets_required": {
+    "critical": [
+      {
+        "name": "WP_URL",
+        "description": "URL completa del sitio WordPress (ej: https://mi-sitio.com)"
+      },
+      {
+        "name": "WP_USER",
+        "description": "Usuario con permisos de administrador"
+      },
+      {
+        "name": "WP_APP_PASSWORD",
+        "description": "Application Password de WordPress"
+      }
+    ],
+    "optional": [
+      {
+        "name": "WP_PATH",
+        "description": "Path a instalación WordPress (si no es root, ej: /wordpress)"
+      },
+      {
+        "name": "API_GATEWAY_TOKEN",
+        "description": "Token GitHub PAT para triggers externos (v0.7+)"
+      }
+    ]
+  },
+  "usage": {
+    "full_replication": [
+      "git clone https://github.com/ppkapiro/pepecapiro-wp-theme nuevo-proyecto",
+      "cd nuevo-proyecto",
+      "bash export/scripts/bootstrap.sh",
+      "Configure secrets in GitHub Settings → Secrets",
+      "Adjust configs/pages.json, configs/menus.json, configs/settings.json",
+      "gh workflow run create-pages.yml"
+    ],
+    "minimal_replication": ["bash export/scripts/bootstrap.sh --minimal"],
+    "verify_only": ["bash export/scripts/bootstrap.sh --verify-only"]
+  }
+}

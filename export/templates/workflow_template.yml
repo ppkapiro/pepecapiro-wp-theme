@@ -1,0 +1,95 @@
+name: WordPress Workflow Template
+
+# Este es un template genérico para crear nuevos workflows de WordPress
+# Reemplaza las secciones marcadas con <PLACEHOLDER> según tu necesidad
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment (production/staging)'
+        required: false
+        default: 'production'
+  # Descomenta para trigger automático:
+  # push:
+  #   branches: [main]
+  #   paths: ['content/**']
+
+jobs:
+  wordpress-operation:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup WP-CLI
+        run: |
+          curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+          chmod +x wp-cli.phar
+          sudo mv wp-cli.phar /usr/local/bin/wp
+          wp --info
+      
+      - name: <NOMBRE_OPERACION>
+        env:
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+          WP_PATH: ${{ secrets.WP_PATH }}
+        run: |
+          # Validar conectividad
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
+            --user "$WP_USER:$WP_APP_PASSWORD" \
+            "$WP_URL/wp-json/wp/v2/users/me")
+          
+          if [ "$RESPONSE" != "200" ]; then
+            echo "❌ Error de conectividad con WordPress (HTTP $RESPONSE)"
+            exit 1
+          fi
+          
+          echo "✅ Conectado a WordPress"
+          
+          # <TU_LOGICA_AQUI>
+          # Ejemplo: Crear página
+          # wp post create --post_type=page --post_title="Mi Página" --post_status=publish
+          
+          # Ejemplo: Listar posts
+          # wp post list --post_type=post --format=table
+          
+          # Ejemplo: Actualizar opción
+          # wp option update blogdescription "Mi descripción"
+      
+      - name: Summary
+        if: always()
+        run: |
+          echo "## 📊 Resumen de Ejecución" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Workflow**: ${{ github.workflow }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Triggered by**: ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment**: ${{ github.event.inputs.environment || 'production' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status**: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "✅ Operación completada exitosamente" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Operación falló. Revisa los logs." >> $GITHUB_STEP_SUMMARY
+          fi
+      
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "🚨 El workflow falló. Considera abrir un issue."
+          # Opcional: Integrar con gh CLI para crear issue automáticamente
+          # gh issue create --title "Workflow ${{ github.workflow }} failed" --body "Ver run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+# Secrets requeridos (configurar en Settings → Secrets):
+# - WP_URL: URL completa del sitio WordPress
+# - WP_USER: Usuario admin de WordPress
+# - WP_APP_PASSWORD: Application Password de WordPress
+# - WP_PATH: (Opcional) Path a instalación si no es root
+
+# Para más ejemplos, consulta:
+# - .github/workflows/create-pages.yml
+# - .github/workflows/health-dashboard.yml
+# - docs/API_REFERENCE.md

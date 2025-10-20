@@ -1,10 +1,16 @@
 {
+  "version": "0.7.0",
   "timestamp": "2025-10-20T18:02:19Z",
-  "auth": "OK",
-  "home": "OK",
-  "menus": "OK",
-  "media": "OK",
-  "settings": "DRIFT",
-  "polylang": "Yes",
-  "issues": 0
+  "services": {
+    "auth": "OK",
+    "home": "OK",
+    "menus": "OK",
+    "media": "OK",
+    "settings": "DRIFT",
+    "polylang": "Yes"
+  },
+  "health": "healthy",
+  "issues": 0,
+  "last_update": "2025-10-20T18:02:19Z"
 }
+

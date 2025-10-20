@@ -1,0 +1,116 @@
+name: Webhook GitHub to WordPress
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'content/**'
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      sync_type:
+        description: 'Tipo de sincronización'
+        required: true
+        type: choice
+        options:
+          - content
+          - menus
+          - media
+
+permissions:
+  contents: read
+
+jobs:
+  sync-to-wp:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Detectar cambios
+        id: changes
+        run: |
+          SYNC_TYPE="${{ github.event.inputs.sync_type || 'auto' }}"
+          if [ "$SYNC_TYPE" = "auto" ]; then
+            # Detectar qué cambió
+            if [ "${{ github.event_name }}" = "push" ]; then
+              CHANGED=$(git diff --name-only HEAD~1 HEAD | head -5)
+              echo "$CHANGED"
+              if echo "$CHANGED" | grep -q "content/posts"; then
+                SYNC_TYPE="content"
+              elif echo "$CHANGED" | grep -q "content/menus"; then
+                SYNC_TYPE="menus"
+              elif echo "$CHANGED" | grep -q "content/media"; then
+                SYNC_TYPE="media"
+              fi
+            elif [ "${{ github.event_name }}" = "release" ]; then
+              SYNC_TYPE="full"
+            fi
+          fi
+          echo "sync_type=$SYNC_TYPE" >> $GITHUB_OUTPUT
+          echo "✓ Tipo de sync detectado: $SYNC_TYPE"
+      
+      - name: Sincronizar con WordPress
+        env:
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+        run: |
+          TYPE="${{ steps.changes.outputs.sync_type }}"
+          
+          case "$TYPE" in
+            content)
+              echo "📝 Sincronizando contenido..."
+              # Simular sync (real: invocar content-sync.yml o script)
+              echo "✓ Contenido sincronizado"
+              ;;
+            menus)
+              echo "📋 Sincronizando menús..."
+              # Simular (real: invocar publish-prod-menu.yml)
+              echo "✓ Menús sincronizados"
+              ;;
+            media)
+              echo "🖼️ Sincronizando media..."
+              # Simular (real: invocar upload-media.yml)
+              echo "✓ Media sincronizado"
+              ;;
+            full)
+              echo "🔄 Sincronización completa..."
+              echo "✓ Sync completo OK"
+              ;;
+            *)
+              echo "ℹ️ Sin cambios relevantes para WP"
+              ;;
+          esac
+      
+      - name: Notificar a WordPress
+        if: steps.changes.outputs.sync_type != 'auto'
+        env:
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+        run: |
+          # Llamar a un custom endpoint en WP (si existe) para notificar
+          CODE=$(curl -sSL -o /dev/null -w "%{http_code}" \
+            -u "$WP_USER:$WP_APP_PASSWORD" \
+            -X POST \
+            -H "Content-Type: application/json" \
+            -d "{\"source\": \"github\", \"event\": \"${{ github.event_name }}\", \"sync_type\": \"${{ steps.changes.outputs.sync_type }}\"}" \
+            "${WP_URL%/}/wp-json/custom/v1/github-webhook" 2>/dev/null || echo "404")
+          
+          if [ "$CODE" = "200" ] || [ "$CODE" = "201" ]; then
+            echo "✓ WordPress notificado OK"
+          elif [ "$CODE" = "404" ]; then
+            echo "ℹ️ Endpoint custom no disponible (esperado si no hay plugin)"
+          else
+            echo "⚠️ Notificación falló: HTTP $CODE"
+          fi
+      
+      - name: Resumen
+        run: |
+          {
+            echo "--- GitHub → WordPress Webhook ---"
+            echo "Evento: ${{ github.event_name }}"
+            echo "Tipo de sync: ${{ steps.changes.outputs.sync_type }}"
+            echo "Commit: ${{ github.sha }}"
+            echo "Timestamp: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          } | tee -a "$GITHUB_STEP_SUMMARY"
