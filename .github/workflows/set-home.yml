@@ -163,5 +163,5 @@ jobs:
             echo "Auth: $([[ '${{ steps.auth.outcome }}' == 'success' ]] && echo OK || echo KO)"
             echo "Home ES: ID=${{ steps.detect.outputs.id_es }} link=${{ steps.detect.outputs.link_es }} show_on_front=${{ steps.set_home.outputs.show_on_front }}"
             echo "Home EN: ID=${{ steps.detect.outputs.id_en }} link=${{ steps.link_en.outputs.en_link }}"
-            echo "Best-effort Polylang: ${ { { steps.link_en.outputs.best_effort } } }"
+            echo "Best-effort Polylang: ${{ steps.link_en.outputs.best_effort }}"
           } | tee -a "$GITHUB_STEP_SUMMARY"
