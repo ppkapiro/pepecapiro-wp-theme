@@ -1,0 +1,84 @@
+name: API Automation Trigger
+on:
+  repository_dispatch:
+    types: [automation-trigger]
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Acción a ejecutar'
+        required: true
+        type: choice
+        options:
+          - sync-content
+          - rebuild-dashboard
+          - run-verifications
+          - cleanup-test-data
+      target:
+        description: 'Objetivo (opcional)'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Validar acción
+        id: validate
+        run: |
+          ACTION="${{ github.event.inputs.action || github.event.client_payload.action }}"
+          TARGET="${{ github.event.inputs.target || github.event.client_payload.target || 'default' }}"
+          echo "action=$ACTION" >> $GITHUB_OUTPUT
+          echo "target=$TARGET" >> $GITHUB_OUTPUT
+          echo "✓ Acción recibida: $ACTION (target: $TARGET)"
+      
+      - name: Ejecutar acción
+        run: |
+          ACTION="${{ steps.validate.outputs.action }}"
+          TARGET="${{ steps.validate.outputs.target }}"
+          
+          case "$ACTION" in
+            sync-content)
+              echo "🔄 Sincronizando contenido..."
+              gh workflow run content-sync.yml -f apply=true || echo "⚠️ content-sync no disponible"
+              ;;
+            rebuild-dashboard)
+              echo "📊 Reconstruyendo dashboard..."
+              gh workflow run health-dashboard.yml || true
+              ;;
+            run-verifications)
+              echo "✓ Ejecutando verificaciones..."
+              gh workflow run verify-home.yml || true
+              gh workflow run verify-menus.yml || true
+              gh workflow run verify-media.yml || true
+              gh workflow run verify-settings.yml || true
+              ;;
+            cleanup-test-data)
+              echo "🧹 Limpiando datos de prueba..."
+              gh workflow run cleanup-test-posts.yml || echo "⚠️ cleanup workflow no disponible"
+              ;;
+            *)
+              echo "❌ Acción desconocida: $ACTION"
+              exit 1
+              ;;
+          esac
+      
+      - name: Resumen
+        run: |
+          {
+            echo "--- API Automation Trigger ---"
+            echo "Acción: ${{ steps.validate.outputs.action }}"
+            echo "Target: ${{ steps.validate.outputs.target }}"
+            echo "Timestamp: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "Triggered by: ${{ github.event_name }}"
+            if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+              echo "Client: ${{ github.event.client_payload.client || 'unknown' }}"
+            fi
+          } | tee -a "$GITHUB_STEP_SUMMARY"

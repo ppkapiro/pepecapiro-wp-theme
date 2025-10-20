@@ -1,0 +1,87 @@
+{
+  "hub_version": "0.9.0",
+  "generated_at": "2025-10-20T10:30:00Z",
+  "summary": {
+    "total_instances": 2,
+    "healthy": 1,
+    "degraded": 1,
+    "offline": 0
+  },
+  "instances": [
+    {
+      "id": "pepecapiro-prod",
+      "name": "Pepecapiro Production",
+      "status": "healthy",
+      "version": "0.6.0",
+      "health_details": {
+        "auth": "OK",
+        "home": "OK",
+        "menus": "OK",
+        "media": "OK",
+        "settings": "DRIFT"
+      },
+      "issues": 0,
+      "last_check": "2025-10-20T10:25:00Z",
+      "uptime_percentage": 99.8,
+      "response_time_ms": 738
+    },
+    {
+      "id": "pepecapiro-staging",
+      "name": "Pepecapiro Staging",
+      "status": "degraded",
+      "version": "0.7.0-alpha",
+      "health_details": {
+        "auth": "OK",
+        "home": "OK",
+        "menus": "KO",
+        "media": "OK",
+        "settings": "DRIFT"
+      },
+      "issues": 1,
+      "last_check": "2025-10-20T10:20:00Z",
+      "uptime_percentage": 95.2,
+      "response_time_ms": 1250,
+      "blockers": [
+        {
+          "id": 7,
+          "title": "BLOCKER: Falta API_GATEWAY_TOKEN para trigger remoto",
+          "url": "https://github.com/ppkapiro/pepecapiro-wp-theme/issues/7",
+          "severity": "critical"
+        }
+      ]
+    }
+  ],
+  "global_metrics": {
+    "average_uptime": 97.5,
+    "average_response_time_ms": 994,
+    "total_issues": 1,
+    "total_blockers": 1
+  },
+  "recent_incidents": [
+    {
+      "instance_id": "pepecapiro-staging",
+      "timestamp": "2025-10-18T14:30:00Z",
+      "severity": "warning",
+      "message": "Menus verification failed: Expected 3 locations, found 2",
+      "resolved": true,
+      "resolved_at": "2025-10-19T09:00:00Z"
+    }
+  ],
+  "next_scheduled_checks": [
+    {
+      "instance_id": "pepecapiro-prod",
+      "check_type": "health",
+      "scheduled_at": "2025-10-20T10:35:00Z"
+    },
+    {
+      "instance_id": "pepecapiro-staging",
+      "check_type": "health",
+      "scheduled_at": "2025-10-20T10:40:00Z"
+    },
+    {
+      "instance_id": "pepecapiro-prod",
+      "check_type": "weekly_audit",
+      "scheduled_at": "2025-10-27T00:00:00Z"
+    }
+  ]
+}

@@ -1,0 +1,64 @@
+{
+  "hub_version": "0.9.0",
+  "last_updated": "2025-10-20T10:30:00Z",
+  "instances": [
+    {
+      "id": "pepecapiro-prod",
+      "name": "Pepecapiro Production",
+      "url": "https://pepecapiro.com",
+      "repo": "ppkapiro/pepecapiro-wp-theme",
+      "status_endpoint": "https://ppkapiro.github.io/pepecapiro-wp-theme/public/status.json",
+      "environment": "production",
+      "owner": "ppkapiro",
+      "contact": "admin@pepecapiro.com",
+      "created_at": "2025-09-17T19:00:00Z",
+      "version": "0.6.0",
+      "features": {
+        "api_gateway": true,
+        "webhooks": true,
+        "export_kit": true,
+        "hub_enabled": true
+      },
+      "monitoring": {
+        "health_check_interval": "5m",
+        "alert_on_failure": true,
+        "weekly_audit": true
+      }
+    },
+    {
+      "id": "pepecapiro-staging",
+      "name": "Pepecapiro Staging",
+      "url": "https://staging.pepecapiro.com",
+      "repo": "ppkapiro/pepecapiro-wp-theme-staging",
+      "status_endpoint": "https://ppkapiro.github.io/pepecapiro-wp-theme-staging/public/status.json",
+      "environment": "staging",
+      "owner": "ppkapiro",
+      "contact": "admin@pepecapiro.com",
+      "created_at": "2025-10-01T12:00:00Z",
+      "version": "0.7.0-alpha",
+      "features": {
+        "api_gateway": true,
+        "webhooks": true,
+        "export_kit": false,
+        "hub_enabled": true
+      },
+      "monitoring": {
+        "health_check_interval": "15m",
+        "alert_on_failure": false,
+        "weekly_audit": false
+      }
+    }
+  ],
+  "aggregation_config": {
+    "poll_interval": "10m",
+    "timeout": "30s",
+    "retry_attempts": 3,
+    "cache_ttl": "5m"
+  },
+  "alert_config": {
+    "enabled": true,
+    "channels": ["github_issues"],
+    "severity_levels": ["critical", "warning"],
+    "rate_limit": "1_per_hour"
+  }
+}
