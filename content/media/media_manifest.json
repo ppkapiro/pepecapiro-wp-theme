@@ -1,4 +1,5 @@
 [
-  { "file": "demo_banner.jpg", "alt": "Banner demo", "assign_to": "auto-prod-page-es", "lang": "es" },
-  { "file": "demo_banner.jpg", "alt": "Demo banner", "assign_to": "auto-prod-page-en", "lang": "en" }
+  { "file": "banner_home.jpg", "alt": "Banner principal", "assign_to": "auto-prod-page-es", "lang": "es" },
+  { "file": "banner_home.jpg", "alt": "Main banner", "assign_to": "auto-prod-page-en", "lang": "en" },
+  { "file": "footer_logo.png", "alt": "Logo pie de página", "assign_to": null, "lang": "es" }
 ]

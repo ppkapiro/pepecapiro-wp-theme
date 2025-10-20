@@ -8,6 +8,8 @@ Archivos:
 	- `.github/auto/publish_prod.flag`: dispara "Publish Prod Post" (crea ES/EN en `publish`, enlaza y asigna categorías si existen).
 	- `.github/auto/publish_test_page.flag`: dispara "Publish Test Page" (crea página ES/EN en estado `private`).
 	- `.github/auto/publish_prod_page.flag`: dispara "Publish Prod Page" (crea página ES/EN en estado `publish`).
+	- `.github/auto/publish_test_menu.flag`: dispara "Publish Test Menu" (simula ES/EN desde `content/menus/menus.json`).
+	- `.github/auto/publish_prod_menu.flag`: dispara "Publish Prod Menu" (crea/actualiza menús ES/EN y asigna localizaciones).
 
 Para páginas, los workflows intentan vincular traducciones vía Polylang (best-effort, no fallan si no existe).
 Uso:

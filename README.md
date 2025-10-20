@@ -163,6 +163,19 @@ Más detalle y flujo completo: ver `docs/TROUBLESHOOTING_PUBLICACION.md`.
 Resumen de workflows:
 ...existing code...
 
+### Menús bilingües (Fase 3)
+- `publish-test-menu.yml`: simula creación/actualización de menús ES/EN desde `content/menus/menus.json`.
+- `publish-prod-menu.yml`: crea/actualiza menús reales y asigna localizaciones. Polylang best‑effort.
+Manifiesto: `content/menus/menus.json`.
+Flags: `.github/auto/publish_test_menu.flag`, `.github/auto/publish_prod_menu.flag`.
+Resumen: Auth, IDs/localizaciones/ítems, traducciones, cambios, warnings.
+
+### Medios automáticos (Fase 4 base)
+- `upload-media.yml`: sube/reusa ficheros definidos en `content/media/media_manifest.json`, calcula SHA256, asigna featured a páginas/posts por `assign_to`. Resumen con contadores.
+
+### Ajustes del sitio (Fase 5 base)
+- `site-settings.yml`: PATCH a `/wp-json/wp/v2/settings` para timezone/permalinks/etc. Resumen con valores aplicados.
+
 ## Páginas y Home (Automatización)
 
 - **publish-test-page.yml**: Crea página ES/EN en estado `private` con contenido aleatorio. Disparo por flag `.github/auto/publish_test_page.flag` o manual desde Actions. Vincula traducciones vía Polylang (best-effort).
