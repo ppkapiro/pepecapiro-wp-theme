@@ -1,0 +1,41 @@
+name: Hub Aggregation
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"  # cada 10 minutos
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  aggregate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Ensure jq installed
+        run: |
+          if ! command -v jq >/dev/null 2>&1; then
+            sudo apt-get update -y
+            sudo apt-get install -y jq
+          fi
+
+      - name: Run aggregation script
+        run: bash scripts/hub/aggregate_status.sh
+
+      - name: Commit changes if any
+        run: |
+          set -e
+          if [[ -n "$(git status --porcelain docs/hub/hub_status.json)" ]]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add docs/hub/hub_status.json
+            git commit -m "chore(hub): refresh hub_status.json [skip ci]"
+            git push
+          else
+            echo "No changes in hub_status.json"
+          fi

@@ -58,6 +58,8 @@ docs/ops/
 - ✅ Workflow api-automation-trigger.yml funcional
 - ⚠️ BLOCKER #7: API_GATEWAY_TOKEN no configurado (documentado, solución especificada)
 
+ Log local de referencia: [`docs/ops/logs/issue_blocker_token.md`](./logs/issue_blocker_token.md)
+
 ---
 
 ### FASE 2: Webhooks Bidireccionales (v0.7.0 parte 2)
@@ -128,12 +130,12 @@ docs/ops/
 |------|----------|-----------|--------|----------|
 | **FASE 0** | Descubrimiento | SUMARIO_ARRANQUE.md, wp_connectivity log | ✅ Completo | Ninguno |
 | **FASE 1** | API Gateway | API_REFERENCE.md, api-automation-trigger.yml, issue #7 | ✅ Completo | #7 (API_GATEWAY_TOKEN) |
-| **FASE 2** | Webhooks | webhook-github-to-wp.yml, WEBHOOK_WP_TO_GITHUB.md, logs de test | ✅ Completo | #7 (WP→GitHub), Merge pendiente (GitHub→WP) |
+| **FASE 2** | Webhooks | webhook-github-to-wp.yml, WEBHOOK_WP_TO_GITHUB.md, logs de test | ✅ Completo | #7 (WP→GitHub) |
 | **FASE 3** | Export Kit | EXPORT_MANUAL.md, bootstrap.sh, files_by_phase.json, validation log | ✅ Completo | Ninguno |
 | **FASE 4** | Hub Central | HUB_OVERVIEW.md, instances.json, hub_status.json, index.md | ✅ Completo | Ninguno |
-| **FASE 5** | Documentación | SUMARIO_EVIDENCIAS.md (este archivo) | 🔄 En progreso | Ninguno |
-| **FASE 6** | Releases | Tags v0.7.0, v0.8.0, v0.9.0 | ⏸️ Pendiente | Merge a main |
-| **FASE 7** | Resumen Final | RESUMEN_FASE_INTEGRACION.md | ⏸️ Pendiente | Completar FASE 6 |
+| **FASE 5** | Documentación | SUMARIO_EVIDENCIAS.md (este archivo) | ✅ Completo | Ninguno |
+| **FASE 6** | Releases | Tags v0.7.0, v0.8.0, v0.9.0; log de ejecución | ✅ Completo | Ninguno |
+| **FASE 7** | Resumen Final | RESUMEN_FASE_INTEGRACION.md | ✅ Completo | #7 sigue abierto |
 
 ---
 
@@ -162,8 +164,10 @@ docs/ops/
 |-----|-------|-----------|----------|
 | **WP REST Connectivity** | 2025-10-20 | ✅ OK | HTTP 200, 0.738s latency, 20+ namespaces |
 | **Export Kit Dry-Run** | 2025-10-20 | ✅ Exitoso | Bootstrap funcional, validación de calidad 5/5 |
-| **Webhook GitHub→WP** | 2025-10-20 | ⏸️ Pendiente merge | Workflow diseñado, test real pendiente |
+| **Webhook GitHub→WP** | 2025-10-20 | ✅ Documentado | Workflow diseñado (test real pendiente) |
 | **Webhook WP→GitHub** | 2025-10-20 | 🚫 Bloqueado | Issue #7 impide ejecución |
+| **FASE 6 Releases** | 2025-10-20 | ✅ OK | `docs/ops/logs/fase6_releases_20251020.md` |
+| **Hub Aggregation Setup** | 2025-10-21 | ✅ OK | `docs/ops/logs/hub_aggregation_setup_20251021.md` |
 
 ### Issues y Blockers
 

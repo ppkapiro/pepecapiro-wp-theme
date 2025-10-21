@@ -1,10 +1,11 @@
 # pepecapiro-wp-theme
 
 [![Lighthouse Mobile + Docs](https://github.com/ppkapiro/pepecapiro-wp-theme/actions/workflows/lighthouse_docs.yml/badge.svg)](https://github.com/ppkapiro/pepecapiro-wp-theme/actions/workflows/lighthouse_docs.yml)
+[![Release](https://img.shields.io/github/v/tag/ppkapiro/pepecapiro-wp-theme?label=release&sort=semver)](https://github.com/ppkapiro/pepecapiro-wp-theme/releases)
 
 Tema WordPress para pepecapiro.com.
 
-Versión estable actual: 0.3.20 (ver `CHANGELOG.md`).
+Versión estable actual: 0.9.0 (ver `CHANGELOG.md`).
 
 ## Documentación Clave
 - Índice: `docs/INDEX.md`
@@ -221,6 +222,28 @@ git tag v0.3.19
 git push origin v0.3.19
 ```
 El workflow valida versión en `style.css`, entrada en `CHANGELOG.md`, empaqueta y sube artefactos.
+
+## Integración Externa (v0.7.0–v0.9.0)
+
+### API Gateway (v0.7.0)
+- Documentación: `docs/API_REFERENCE.md`
+- Estado público: `public/status.json` y `docs/status.json`
+- Trigger externo (plan B): repository_dispatch autenticado por token
+
+### Replicación (Export Kit, v0.8.0)
+- Manual completo: `export/EXPORT_MANUAL.md`
+- Script interactivo: `export/scripts/bootstrap.sh`
+- Manifiestos y plantillas: `export/manifests/`, `export/templates/`
+
+### Hub Central (v0.9.0)
+- Arquitectura y guía: `docs/hub/HUB_OVERVIEW.md`
+- Instancias: `docs/hub/instances.json`
+- Estado agregado: `docs/hub/hub_status.json` (actualizado cada 10 min por CI)
+- Panel: `docs/hub/index.md`
+
+Notas:
+- Para habilitar `POST /trigger` y webhooks WP→GitHub se requiere el secret `API_GATEWAY_TOKEN` (ver Issue #7). 
+
 
 ## Notas de Desarrollo
 - WP 6.x, PHP 8.2.

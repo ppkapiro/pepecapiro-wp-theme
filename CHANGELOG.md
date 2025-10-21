@@ -1,3 +1,19 @@
+## 0.9.0 – 20251021 (Release)
+- Hub Central (v0.9.0): `docs/hub/instances.json`, `docs/hub/hub_status.json`, `docs/hub/index.md`.
+- Agregación planificada para v0.9.1 y workflow programado para refrescar `hub_status.json`.
+- Ver notas: `docs/hub/HUB_OVERVIEW.md` y release https://github.com/ppkapiro/pepecapiro-wp-theme/releases/tag/v0.9.0
+
+## 0.8.0 – 20251021 (Release)
+- Export Kit (v0.8.0): `export/EXPORT_MANUAL.md` (480+ líneas), `export/scripts/bootstrap.sh`, manifiestos y plantilla de workflow.
+- Dry‑run validado, checklist de compatibilidad y troubleshooting incluidos.
+- Ver release: https://github.com/ppkapiro/pepecapiro-wp-theme/releases/tag/v0.8.0
+
+## 0.7.0 – 20251021 (Release)
+- API Gateway (v0.7.0): `GET /status` (public/status.json y docs/status.json) y `POST /trigger` (repository_dispatch, auth por token).
+- Webhooks bidireccionales: GitHub→WP (workflow) y WP→GitHub (guía).
+- Issue #7 (BLOCKER): Falta `API_GATEWAY_TOKEN` (scopes repo+workflow) – documentado con pasos.
+- Ver release: https://github.com/ppkapiro/pepecapiro-wp-theme/releases/tag/v0.7.0
+
 ## 0.3.20 – 20250926 (Release)
 - Cierre de etapa "Publicación Automática WP (Posts)":
 	- Workflows consolidados: Publish Test Post (private, ES/EN, vinculación), Publish Prod Post (publish, ES/EN, categorías por idioma, idempotencia por slug), Cleanup Test Posts (cron diario).

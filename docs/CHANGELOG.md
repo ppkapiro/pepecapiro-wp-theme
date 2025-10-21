@@ -1,3 +1,22 @@
+## v0.9.0 — Hub Central y Gestión Multi‑Instancia (2025-10-21)
+- Arquitectura de Hub Central documentada y operativa (docs/hub/).
+- `docs/hub/instances.json`, `docs/hub/hub_status.json`, `docs/hub/index.md` creados.
+- Script de agregación planificado (v0.9.1) y ahora implementado con workflow programado.
+- Ver release: https://github.com/ppkapiro/pepecapiro-wp-theme/releases/tag/v0.9.0
+
+## v0.8.0 — Export Kit para Replicación (2025-10-21)
+- Export Kit completo en `export/` con manual de 480+ líneas (`EXPORT_MANUAL.md`).
+- Script `export/scripts/bootstrap.sh` (modo dry‑run, validaciones, setup de secrets).
+- Manifiesto `export/manifests/files_by_phase.json` y plantilla de workflow.
+- Ver release: https://github.com/ppkapiro/pepecapiro-wp-theme/releases/tag/v0.8.0
+
+## v0.7.0 — API Gateway + Webhooks (2025-10-21)
+- Endpoint público `GET /status` vía `public/status.json` y `docs/status.json` (mirror).
+- `POST /trigger` documentado (plan B repository_dispatch) con auth por `API_GATEWAY_TOKEN`.
+- Webhooks bidireccionales: GitHub→WP (workflow) y guía WP→GitHub (documentada).
+- Issue BLOCKER #7 documentado: falta `API_GATEWAY_TOKEN` (scopes repo+workflow).
+- Ver release: https://github.com/ppkapiro/pepecapiro-wp-theme/releases/tag/v0.7.0
+
 ## v0.6.0 — Mantenimiento Proactivo + Dashboard
 - **health-dashboard.yml**: genera `public/status.json` con estado de Auth/Home/Menus/Media/Settings/Polylang e issues; cron cada 6h.
 - **smoke-tests.yml**: pruebas de humo post-deploy (Home ES/EN, REST API, Auth); ejecuta con push a main.
