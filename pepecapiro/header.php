@@ -8,6 +8,7 @@
   <?php wp_head(); ?>
 </head>
 <body <?php body_class(); ?>>
+<a href="#main" class="sr-only focusable">Saltar al contenido</a>
 <header class="site-header">
   <div class="container site-header__inner">
     <a class="brand" href="<?php echo esc_url(function_exists('pll_home_url') ? pll_home_url() : home_url('/')); ?>">Pepecapiro</a>

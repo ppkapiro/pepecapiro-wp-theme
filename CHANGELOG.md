@@ -1,3 +1,11 @@
+## 0.9.2 – 20251027 (Release)
+- Fase 4 — Rendimiento, Accesibilidad y SEO:
+	- Preloads de fuentes woff2 (Montserrat SemiBold, OpenSans Regular/SemiBold) para mejorar LCP.
+	- JSON-LD extra en Home: Organization y WebSite con SearchAction.
+	- Fallback OG: si falta imagen específica, usa la de Home según idioma.
+	- Accesibilidad: landmarks (role="main"), aria-labelledby, grillas marcadas como listas, enlace "Saltar al contenido".
+	- CI: gate Lighthouse móvil con `scripts/assert_lh_thresholds.py` y paso en workflow `lighthouse.yml` (Performance/LCP/CLS contra `configs/perf_thresholds.json`).
+
 ## 0.9.1 – 20251027 (en desarrollo)
 - **Fase 3 — Maquetado bilingüe y OG dinámico**:
   - Plantillas creadas: `page-projects.php`, `page-resources.php` (grids con placeholders, copy ES/EN).
