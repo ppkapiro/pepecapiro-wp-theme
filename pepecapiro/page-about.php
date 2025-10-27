@@ -18,7 +18,7 @@ $t_cta_contact_url = $is_en ? home_url('/en/contact/') : home_url('/contacto/');
 $linkedin_url = 'https://linkedin.com/in/pepecapiro';
 ?>
 
-<main id="main" class="site-main container" style="padding:var(--space-5) 0;">
+<main id="main" class="site-main container" role="main" style="padding:var(--space-5) 0;">
   <h1 style="font-family:var(--font-title); font-size:var(--font-size-step-3); color:var(--color-fg); margin-bottom:var(--space-5);">
     <?php echo esc_html($t_title); ?>
   </h1>

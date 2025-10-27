@@ -1,63 +1,63 @@
-# WordPress Governance & Automation for Small Teams
+# Governance and Automation of WordPress for Small Teams
 
-> Sustain delivery speed with control when you are just 1–3 people.
+> How to maintain speed without losing control when there are only 1–3 people.
 
 ## Executive Summary
-Decide explicitly what you will NOT tackle yet. A lightweight 5‑pillar frame keeps fires down.
+The key: explicitly decide what you will NOT do yet. A lightweight framework of 5 pillars allows for growth with less fire.
 
-## 1. Code & Assets
-- Single repo (theme + scripts)
+## 1. Code and Assets
+- Single repository for the theme + scripts
 - Semantic versioning (disciplined CHANGELOG)
-- Small commits → small deploys
-- Fonts, key images & CSS under version control (avoid random CDNs)
+- Small commits → small deployments
+- Controlled critical assets like fonts, images, and CSS (do not rely on arbitrary CDNs)
 
 ## 2. Content
-- Idempotent creation (bilingual posts/pages) through API
-- Markdown as source → reproducibility
-- Stable slugs; avoid renames
-- Audit script can diff content hash
+- Automate idempotent creation (bilingual posts/pages) via API
+- Versioned source Markdown → reproducibility
+- Stable slugs, avoid renaming
+- Audit: script compares content hash
 
-## 3. Delivery & CI
+## 3. Deliveries and CI
 - Pipeline: build -> validations -> deploy
 - Health checks: blog page ready, detectable markers
 - Packaged releases (.zip + .sha256)
-- Fast review: scheduled Lighthouse
+- Quick review: scheduled Lighthouse
 
 ## 4. Lightweight Observability
-- Deployment logs retained
+- Retained deployment logs
 - Minimum metric: home/blog response time
-- CRON health check (HTTP 200 + posts_found)
+- Health check CRON (HTTP 200 + posts_found)
 - Alerts only on critical failures
 
-## 5. Risk & Change
-- "One functional change per release" rule when uncertain
+## 5. Risk and Changes
+- Rule of “1 functional change per release” when there is uncertainty
 - Simple feature flags (WP options + theme conditionals)
-- Verified daily backups
-- Rollback policy: reinstall last verified zip
+- Verified daily automatic backups
+- Rollback policy: reinstall previously verified zip
 
-## Daily Flow
-1. Short-lived branch (feature/blog-categories)
-2. Change + content markdown
+## Proposed Daily Workflow
+1. Create short branch (feature/blog-categories)
+2. Adjust + markdown content
 3. Run publication script (idempotent)
 4. Review health + Lighthouse
 5. Merge + tag version
 6. Automatic deploy
 
 ## Initial Health Metrics
-| Metric | Target | Frequency |
-|--------|--------|-----------|
-| TTFB | < 600ms | Daily |
-| Lighthouse mobile | ≥ 90 | Weekly |
+| Metric | Goal | Frequency |
+|--------|----------|------------|
+| TTFB Time | < 600ms | Daily |
+| Mobile Lighthouse | ≥ 90 | Weekly |
 | Health check failures | 0 | Continuous |
 | Failed releases | 0 | Per release |
 
 ## Key Anti-Pattern
-"I upload manual FTP changes" → not auditable, not reversible, not scalable.
+“I upload manual changes via FTP” → not auditable, not reversible, not scalable.
 
 ## Next Increments
-- Light visual diff test
-- Object cache (Redis) if complexity grows
-- Synthetic monitoring for contact form
+- Lightweight visual testing (basic diff screenshots)
+- Object cache (Redis) if complexity increases
+- Synthetic form monitoring
 
 ---
-Governance ≠ bureaucracy: it's minimizing future friction by documenting minimal decisions now.
+Governance is not bureaucracy: it is reducing future friction by documenting minimal decisions now.

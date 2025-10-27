@@ -27,3 +27,8 @@ __pycache__/
 
 # Snapshots voluminosos locales (estado)
 docs/STATUS_SNAPSHOT_*.md
+
+# Credenciales locales (no versionar)
+secrets/
+!secrets/.gitkeep
+secrets/.wp_env.local

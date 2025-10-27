@@ -14,3 +14,9 @@
   - No imprimir secretos en logs. Los workflows ya evitan exponer valores.
   - Usar usuario con el mínimo rol necesario (author/editor).
   - Revisar "Último uso" del Application Password en WP Admin para detectar fugas.
+
+- Secretos locales (entornos desarrollador)
+  - Guardar `WP_URL`, `WP_USER`, `WP_APP_PASSWORD` únicamente en `secrets/.wp_env.local` (ignorado por Git).
+  - Para cargar credenciales: `source secrets/.wp_env.local` (bash) o iterar con `Get-Content` en PowerShell.
+  - Rotar Application Password y actualizar `secrets/.wp_env.local` y secrets de GitHub inmediatamente.
+  - `scripts/env/configure_wp_creds.py` automatiza la creación/actualización del archivo local (no imprime los valores).

@@ -1,7 +1,8 @@
 [
   {
     "translation_key": "privacy-policy",
-    "slug": {"es": "privacidad", "en": "privacy"},
+    "slug_es": "privacidad",
+    "slug_en": "privacy",
     "title": {"es": "Política de Privacidad", "en": "Privacy Policy"},
     "excerpt": {"es": "Privacidad del sitio", "en": "Site privacy"},
     "status": {"es": "publish", "en": "publish"},
@@ -9,7 +10,8 @@
   },
   {
     "translation_key": "cookies-policy",
-    "slug": {"es": "cookies", "en": "cookies"},
+    "slug_es": "cookies",
+    "slug_en": "cookies",
     "title": {"es": "Política de Cookies", "en": "Cookies Policy"},
     "excerpt": {"es": "Uso de cookies", "en": "Cookies usage"},
     "status": {"es": "publish", "en": "publish"},
@@ -17,35 +19,40 @@
   },
   {
     "translation_key": "home-page",
-    "slug": {"es": "inicio", "en": "home"},
+    "slug_es": "inicio",
+    "slug_en": "home",
     "title": {"es": "Inicio", "en": "Home"},
     "excerpt": {"es": "Página principal", "en": "Main landing page"},
     "status": {"es": "publish", "en": "publish"}
   },
   {
     "translation_key": "about-page",
-    "slug": {"es": "sobre-mi", "en": "about"},
+    "slug_es": "sobre-mi",
+    "slug_en": "about",
     "title": {"es": "Sobre mí", "en": "About"},
     "excerpt": {"es": "Resumen profesional", "en": "Professional summary"},
     "status": {"es": "publish", "en": "publish"}
   },
   {
     "translation_key": "projects-page",
-    "slug": {"es": "proyectos", "en": "projects"},
+    "slug_es": "proyectos",
+    "slug_en": "projects",
     "title": {"es": "Proyectos", "en": "Projects"},
     "excerpt": {"es": "Listado de proyectos", "en": "Project listing"},
     "status": {"es": "publish", "en": "publish"}
   },
   {
     "translation_key": "resources-page",
-    "slug": {"es": "recursos", "en": "resources"},
+    "slug_es": "recursos",
+    "slug_en": "resources",
     "title": {"es": "Recursos", "en": "Resources"},
     "excerpt": {"es": "Colección de recursos", "en": "Resource collection"},
     "status": {"es": "publish", "en": "publish"}
   },
   {
     "translation_key": "contact-page",
-    "slug": {"es": "contacto", "en": "contact"},
+    "slug_es": "contacto",
+    "slug_en": "contact",
     "title": {"es": "Contacto", "en": "Contact"},
     "excerpt": {"es": "Formulario de contacto", "en": "Contact form"},
     "status": {"es": "publish", "en": "publish"}

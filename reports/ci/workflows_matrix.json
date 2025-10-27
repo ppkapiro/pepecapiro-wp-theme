@@ -1,0 +1,1291 @@
+{
+  "generated_at": "2025-10-27T18:23:11.913405Z",
+  "workflow_count": 38,
+  "workflows": [
+    {
+      "file": "api-automation-trigger.yml",
+      "workflow_name": "API Automation Trigger",
+      "triggers": [
+        "repository_dispatch(types:['automation-trigger'])",
+        "workflow_dispatch(inputs:{'action': {'description': 'Acción a ejecutar', 'required': True, 'type': 'choice', 'options': ['sync-content', 'rebuild-dashboard', 'run-verifications', 'cleanup-test-data']}, 'target': {'description': 'Objetivo (opcional)', 'required': False, 'type': 'string'}})"
+      ],
+      "jobs": [
+        "trigger"
+      ],
+      "needs": {
+        "trigger": []
+      },
+      "uses": [
+        "actions/checkout@v4"
+      ],
+      "reusable_workflows": [],
+      "secrets": [],
+      "variables": [],
+      "artifacts": [],
+      "outputs": {},
+      "paths": [],
+      "dispatch_inputs": {
+        "action": {
+          "description": "Acción a ejecutar",
+          "default": null,
+          "required": true
+        },
+        "target": {
+          "description": "Objetivo (opcional)",
+          "default": null,
+          "required": false
+        }
+      },
+      "dtc_section": "Integraciones Externas",
+      "description": "Dispara pipelines externos vía API para sincronizaciones específicas."
+    },
+    {
+      "file": "cleanup-test-posts.yml",
+      "workflow_name": "Cleanup Test Posts",
+      "triggers": [
+        "schedule(cron:17 3 * * *)",
+        "workflow_dispatch"
+      ],
+      "jobs": [
+        "cleanup"
+      ],
+      "needs": {
+        "cleanup": []
+      },
+      "uses": [],
+      "reusable_workflows": [],
+      "secrets": [
+        "WP_APP_PASSWORD",
+        "WP_URL",
+        "WP_USER"
+      ],
+      "variables": [],
+      "artifacts": [],
+      "outputs": {},
+      "paths": [],
+      "dispatch_inputs": {},
+      "dtc_section": "QA y Auditoría Continua",
+      "description": "Elimina contenido de prueba en el entorno remoto tras ejecuciones QA."
+    },
+    {
+      "file": "content-ops.yml",
+      "workflow_name": "Content Ops (remote WP-CLI)",
+      "triggers": [
+        "workflow_dispatch(inputs:{'apply': {'description': 'Aplicar cambios (true) o dry-run (false)', 'required': True, 'default': 'false'}, 'create_privacy': {'description': 'Crear páginas de Privacidad/Cookies ES/EN', 'required': False, 'default': 'true'}, 'publish_post': {'description': 'Publicar primer post ES/EN y eliminar Hello World', 'required': False, 'default': 'true'}, 'unify_contact_es': {'description': 'Asignar plantilla Contacto (bilingüe) a ES', 'required': False, 'default': 'true'}})",
+        "push(paths:['.github/content-ops/run.apply', '.github/content-ops/run.dry'])"
+      ],
+      "jobs": [
+        "run"
+      ],
+      "needs": {
+        "run": []
+      },
+      "uses": [
+        "actions/checkout@v4",
+        "webfactory/ssh-agent@v0.8.0"
+      ],
+      "reusable_workflows": [],
+      "secrets": [
+        "PEPE_HOST",
+        "PEPE_PORT",
+        "PEPE_SSH_KEY",
+        "PEPE_USER"
+      ],
+      "variables": [],
+      "artifacts": [],
+      "outputs": {},
+      "paths": [
+        "push:paths:.github/content-ops/run.apply",
+        "push:paths:.github/content-ops/run.dry"
+      ],
+      "dispatch_inputs": {
+        "apply": {
+          "description": "Aplicar cambios (true) o dry-run (false)",
+          "default": "false",
+          "required": true
+        },
+        "create_privacy": {
+          "description": "Crear páginas de Privacidad/Cookies ES/EN",
+          "default": "true",
+          "required": false
+        },
+        "publish_post": {
+          "description": "Publicar primer post ES/EN y eliminar Hello World",
+          "default": "true",
+          "required": false
+        },
+        "unify_contact_es": {
+          "description": "Asignar plantilla Contacto (bilingüe) a ES",
+          "default": "true",
+          "required": false
+        }
+      },
+      "dtc_section": "Operaciones de Contenido",
+      "description": "Orquesta tareas de contenido (inventarios, validaciones y exportaciones)."
+    },
+    {
+      "file": "content-sync.yml",
+      "workflow_name": "Content Sync",
+      "triggers": [
+        "workflow_dispatch(inputs:{'apply': {'description': 'Aplicar cambios (true) o solo plan (false)', 'required': True, 'default': 'false'}})",
+        "push(paths:['content/**', 'scripts/publish_content.py', '.github/workflows/content-sync.yml', '.auto_apply'])"
+      ],
+      "jobs": [
+        "sync"
+      ],
+      "needs": {
+        "sync": []
+      },
+      "uses": [
+        "actions/checkout@v4",
+        "actions/setup-python@v5",
+        "actions/upload-artifact@v4"
+      ],
+      "reusable_workflows": [],
+      "secrets": [
+        "WP_APP_PASSWORD",
+        "WP_URL",
+        "WP_USER"
+      ],
+      "variables": [],
+      "artifacts": [
+        "preflight-quality-gates",
+        "publish-verification",
+        "content-sync-log",
+        "content-plan-summary",
+        "content-drift-report"
+      ],
+      "outputs": {},
+      "paths": [
+        "push:paths:content/**",
+        "push:paths:scripts/publish_content.py",
+        "push:paths:.github/workflows/content-sync.yml",
+        "push:paths:.auto_apply"
+      ],
+      "dispatch_inputs": {
+        "apply": {
+          "description": "Aplicar cambios (true) o solo plan (false)",
+          "default": "false",
+          "required": true
+        }
+      },
+      "dtc_section": "Fase 1 – Contenido Bilingüe",
+      "description": "Publica contenido ES/EN en producción usando GitHub Actions (plan/apply)."
+    },
+    {
+      "file": "deploy.yml",
+      "workflow_name": "Deploy pepecapiro theme",
+      "triggers": [
+        "push(tags:['v*'])",
+        "workflow_dispatch(inputs:{'version': {'description': 'Versión para desplegar (ej: 0.1.9)', 'required': False}, 'continue_on_verify_fail': {'description': 'Permitir continuar si hay difs en verificación (true/false)', 'required': False, 'default': 'false'}})"
+      ],
+      "jobs": [
+        "deploy"
+      ],
+      "needs": {
+        "deploy": []
+      },
+      "uses": [
+        "actions/checkout@v4",
+        "actions/upload-artifact@v4",
+        "webfactory/ssh-agent@v0.8.0"
+      ],
+      "reusable_workflows": [],
+      "secrets": [
+        "PEPE_HOST",
+        "PEPE_PORT",
+        "PEPE_SSH_KEY",
+        "PEPE_USER"
+      ],
+      "variables": [],
+      "artifacts": [
+        "content-ops-log",
+        "integrity-${{ steps.verify.outputs.mismatches || 'unknown' }}",
+        "release-${{ steps.ver.outputs.ver }}-${{ steps.env_tag.outputs.tag }}"
+      ],
+      "outputs": {},
+      "paths": [],
+      "dispatch_inputs": {
+        "version": {
+          "description": "Versión para desplegar (ej: 0.1.9)",
+          "default": null,
+          "required": false
+        },
+        "continue_on_verify_fail": {
+          "description": "Permitir continuar si hay difs en verificación (true/false)",
+          "default": "false",
+          "required": false
+        }
+      },
+      "dtc_section": "Operaciones / Releases",
+      "description": "Despliega el tema y assets principales hacia producción."
+    },
+    {
+      "file": "external_links.yml",
+      "workflow_name": "external_links_health",
+      "triggers": [
+        "workflow_dispatch()",
+        "schedule(cron:29 4 * * *)"
+      ],
+      "jobs": [
+        "scan"
+      ],
+      "needs": {
+        "scan": []
+      },
+      "uses": [
+        "actions/checkout@v4",
+        "actions/setup-python@v5",
+        "actions/upload-artifact@v4"
+      ],
+      "reusable_workflows": [],
+      "secrets": [],
+      "variables": [],
+      "artifacts": [
+        "external-links-report"
+      ],
+      "outputs": {},
+      "paths": [],
+      "dispatch_inputs": {},
+      "dtc_section": "Fase 4 – SEO/Performance",
+      "description": "Verifica enlaces externos y reporta roturas."
+    },
+    {
+      "file": "health-dashboard.yml",
+      "workflow_name": "Health Dashboard",
+      "triggers": [
+        "workflow_dispatch()",
+        "schedule(cron:0 */6 * * *)"
+      ],
+      "jobs": [
+        "generate-status"
+      ],
+      "needs": {
+        "generate-status": []
+      },
+      "uses": [
+        "actions/checkout@v4"
+      ],
+      "reusable_workflows": [],
+      "secrets": [
+        "WP_APP_PASSWORD",
+        "WP_URL",
+        "WP_USER"
+      ],
+      "variables": [],
+      "artifacts": [],
+      "outputs": {},
+      "paths": [],
+      "dispatch_inputs": {},
+      "dtc_section": "Monitoreo Técnico",
+      "description": "Genera el dashboard de salud general del sitio."
+    },
+    {
+      "file": "hub-aggregation.yml",
+      "workflow_name": "Hub Aggregation",
+      "triggers": [
+        "schedule(cron:*/10 * * * *)",
+        "workflow_dispatch()"
+      ],
+      "jobs": [
+        "aggregate"
+      ],
+      "needs": {
+        "aggregate": []
+      },
+      "uses": [
+        "actions/checkout@v4"
+      ],
+      "reusable_workflows": [],
+      "secrets": [],
+      "variables": [],
+      "artifacts": [],
+      "outputs": {},
+      "paths": [],
+      "dispatch_inputs": {},
+      "dtc_section": "Integraciones Externas",
+      "description": "Agrega métricas desde servicios externos para informes consolidados."
+    },
+    {
+      "file": "lighthouse.yml",
+      "workflow_name": "Lighthouse Mobile Audit",
+      "triggers": [
+        "workflow_dispatch",
+        "push(branches:['main'])"
+      ],
+      "jobs": [
+        "lighthouse"
+      ],
+      "needs": {
+        "lighthouse": []
+      },
+      "uses": [
+        "actions/checkout@v4",
+        "actions/setup-node@v4",
+        "actions/setup-python@v5",
+        "actions/upload-artifact@v4",
+        "browser-actions/setup-chrome@v1"
+      ],
+      "reusable_workflows": [],
+      "secrets": [
+        "GITHUB_TOKEN"
+      ],
+      "variables": [],
+      "artifacts": [
+        "lighthouse_reports"
+      ],
+      "outputs": {},
+      "paths": [],
+      "dispatch_inputs": {},
+      "dtc_section": "Fase 4 – SEO/Performance",
+      "description": "Ejecuta auditorías Lighthouse en producción."
+    },
+    {
+      "file": "lighthouse_cli.yml",
+      "workflow_name": "Lighthouse CLI Batch",
+      "triggers": [
+        "workflow_dispatch",
+        "schedule(cron:0 3 * * *)"
+      ],
+      "jobs": [
+        "lh"
+      ],
+      "needs": {
+        "lh": []
+      },
+      "uses": [
+        "actions/checkout@v4",
+        "actions/setup-node@v4",
+        "actions/upload-artifact@v4"
+      ],
+      "reusable_workflows": [],
+      "secrets": [],
+      "variables": [],
+      "artifacts": [
+        "lighthouse-reports-${{ github.run_id }}"
+      ],
+      "outputs": {},
+      "paths": [],
+      "dispatch_inputs": {},
+      "dtc_section": "Fase 4 – SEO/Performance",
+      "description": "Corre Lighthouse desde CLI para smoke tests rápidos."
+    },
+    {
+      "file": "lighthouse_docs.yml",
+      "workflow_name": "Lighthouse Mobile + Docs",
+      "triggers": [
+        "workflow_dispatch(inputs:{'urls_file': {'description': 'Ruta del archivo con URLs', 'required': False, 'default': 'scripts/urls_lighthouse.txt'}})",
+        "schedule(cron:0 13 * * 1)"
+      ],
+      "jobs": [
+        "audit-and-update"
+      ],
+      "needs": {
+        "audit-and-update": []
+      },
+      "uses": [
+        "actions/checkout@v4",
+        "actions/setup-node@v4",
+        "actions/upload-artifact@v4",
+        "treosh/lighthouse-ci-action@v10"
+      ],
+      "reusable_workflows": [],
+      "secrets": [
+        "PSI_API_KEY"
+      ],
+      "variables": [],
+      "artifacts": [
+        "lhci_raw",
+        "reports_after",
+        "lh_fail"
+      ],
+      "outputs": {},
+      "paths": [],
+      "dispatch_inputs": {
+        "urls_file": {
+          "description": "Ruta del archivo con URLs",
+          "default": "scripts/urls_lighthouse.txt",
+          "required": false
+        }
+      },
+      "dtc_section": "Fase 4 – SEO/Performance",
+      "description": "Genera informes Lighthouse en formato HTML y los publica en docs/."
+    },
+    {
+      "file": "prune-runs.yml",
+      "workflow_name": "Prune Old Workflow Runs",
+      "triggers": [
+        "workflow_dispatch(inputs:{'workflow': {'description': 'Nombre (name) del workflow a podar (ej: Content Sync). Vacío = todos.', 'required': False, 'default': ''}, 'keep': {'description': 'Número de ejecuciones más recientes a conservar', 'required': True, 'default': '10'}, 'dry_run': {'description': 'true = solo mostrar qué se borraría, false = borrar de verdad', 'required': False, 'default': 'true'}})"
+      ],
+      "jobs": [
+        "prune"
+      ],
+      "needs": {
+        "prune": []
+      },
+      "uses": [
+        "actions/checkout@v4",
+        "actions/upload-artifact@v4"
+      ],
+      "reusable_workflows": [],
+      "secrets": [
+        "GITHUB_TOKEN"
+      ],
+      "variables": [],
+      "artifacts": [
+        "prune-runs-output"
+      ],
+      "outputs": {},
+      "paths": [],
+      "dispatch_inputs": {
+        "workflow": {
+          "description": "Nombre (name) del workflow a podar (ej: Content Sync). Vacío = todos.",
+          "default": "",
+          "required": false
+        },
+        "keep": {
+          "description": "Número de ejecuciones más recientes a conservar",
+          "default": "10",
+          "required": true
+        },
+        "dry_run": {
+          "description": "true = solo mostrar qué se borraría, false = borrar de verdad",
+          "default": "true",
+          "required": false
+        }
+      },
+      "dtc_section": "Gobernanza y Auditorías",
+      "description": "Limpia ejecuciones antiguas de GitHub Actions para reducir ruido."
+    },
+    {
+      "file": "psi_metrics.yml",
+      "workflow_name": "PSI Metrics",
+      "triggers": [
+        "workflow_dispatch",
+        "schedule(cron:15 3 * * *)"
+      ],
+      "jobs": [
+        "psi"
+      ],
+      "needs": {
+        "psi": []
+      },
+      "uses": [
+        "actions/checkout@v4",
+        "actions/setup-python@v5",
+        "actions/upload-artifact@v4"
+      ],
+      "reusable_workflows": [],
+      "secrets": [
+        "GITHUB_TOKEN",
+        "PSI_API_KEY"
+      ],
+      "variables": [],
+      "artifacts": [
+        "psi-run"
+      ],
+      "outputs": {},
+      "paths": [],
+      "dispatch_inputs": {},
+      "dtc_section": "Fase 4 – SEO/Performance",
+      "description": "Consulta PageSpeed Insights y guarda métricas históricas."
+    },
+    {
+      "file": "publish-prod-menu.yml",
+      "workflow_name": "Publish Prod Menu",
+      "triggers": [
+        "workflow_dispatch()"
+      ],
+      "jobs": [
+        "publish-prod-menu"
+      ],
+      "needs": {
+        "publish-prod-menu": []
+      },
+      "uses": [
+        "actions/checkout@v4"
+      ],
+      "reusable_workflows": [],
+      "secrets": [
+        "WP_APP_PASSWORD",
+        "WP_URL",
+        "WP_USER"
+      ],
+      "variables": [],
+      "artifacts": [],
+      "outputs": {},
+      "paths": [],
+      "dispatch_inputs": {},
+      "dtc_section": "Fase 1 – Contenido Bilingüe",
+      "description": "Aplica cambios de menús en producción."
+    },
+    {
+      "file": "publish-prod-page.yml",
+      "workflow_name": "Publish Prod Page",
+      "triggers": [
+        "push(branches:['main']; paths:['.github/auto/publish_prod_page.flag'])",
+        "workflow_dispatch"
+      ],
+      "jobs": [
+        "publish"
+      ],
+      "needs": {
+        "publish": []
+      },
+      "uses": [
+        "actions/checkout@v4"
+      ],
+      "reusable_workflows": [],
+      "secrets": [
+        "WP_APP_PASSWORD",
+        "WP_URL",
+        "WP_USER"
+      ],
+      "variables": [],
+      "artifacts": [],
+      "outputs": {},
+      "paths": [
+        "push:paths:.github/auto/publish_prod_page.flag"
+      ],
+      "dispatch_inputs": {},
+      "dtc_section": "Fase 1 – Contenido Bilingüe",
+      "description": "Publica páginas en producción (ES/EN)."
+    },
+    {
+      "file": "publish-prod-post.yml",
+      "workflow_name": "Publish Prod Post",
+      "triggers": [
+        "push(branches:['main']; paths:['.github/auto/publish_prod.flag'])",
+        "workflow_dispatch"
+      ],
+      "jobs": [
+        "publish"
+      ],
+      "needs": {
+        "publish": []
+      },
+      "uses": [
+        "actions/checkout@v4"
+      ],
+      "reusable_workflows": [],
+      "secrets": [
+        "WP_APP_PASSWORD",
+        "WP_URL",
+        "WP_USER"
+      ],
+      "variables": [],
+      "artifacts": [],
+      "outputs": {},
+      "paths": [
+        "push:paths:.github/auto/publish_prod.flag"
+      ],
+      "dispatch_inputs": {},
+      "dtc_section": "Fase 1 – Contenido Bilingüe",
+      "description": "Publica posts en producción (ES/EN)."
+    },
+    {
+      "file": "publish-test-menu.yml",
+      "workflow_name": "Publish Test Menu",
+      "triggers": [
+        "workflow_dispatch()"
+      ],
+      "jobs": [
+        "publish-test-menu"
+      ],
+      "needs": {
+        "publish-test-menu": []
+      },
+      "uses": [
+        "actions/checkout@v4"
+      ],
+      "reusable_workflows": [],
+      "secrets": [
+        "WP_APP_PASSWORD",
+        "WP_URL",
+        "WP_USER"
+      ],
+      "variables": [],
+      "artifacts": [],
+      "outputs": {},
+      "paths": [],
+      "dispatch_inputs": {},
+      "dtc_section": "QA y Auditoría Continua",
+      "description": "Publica menús en entorno de prueba."
+    },
+    {
+      "file": "publish-test-page.yml",
+      "workflow_name": "Publish Test Page",
+      "triggers": [
+        "push(branches:['main']; paths:['.github/auto/publish_test_page.flag'])",
+        "workflow_dispatch"
+      ],
+      "jobs": [
+        "publish"
+      ],
+      "needs": {
+        "publish": []
+      },
+      "uses": [
+        "actions/checkout@v4"
+      ],
+      "reusable_workflows": [],
+      "secrets": [
+        "WP_APP_PASSWORD",
+        "WP_URL",
+        "WP_USER"
+      ],
+      "variables": [],
+      "artifacts": [],
+      "outputs": {},
+      "paths": [
+        "push:paths:.github/auto/publish_test_page.flag"
+      ],
+      "dispatch_inputs": {},
+      "dtc_section": "QA y Auditoría Continua",
+      "description": "Publica páginas en entorno de prueba."
+    },
+    {
+      "file": "publish-test-post.yml",
+      "workflow_name": "Publish Test Post",
+      "triggers": [
+        "push(branches:['main']; paths:['.github/auto/publish_test_post.flag'])",
+        "workflow_dispatch"
+      ],
+      "jobs": [
+        "publish"
+      ],
+      "needs": {
+        "publish": []
+      },
+      "uses": [
+        "actions/checkout@v4"
+      ],
+      "reusable_workflows": [],
+      "secrets": [
+        "WP_APP_PASSWORD",
+        "WP_URL",
+        "WP_USER"
+      ],
+      "variables": [],
+      "artifacts": [],
+      "outputs": {},
+      "paths": [
+        "push:paths:.github/auto/publish_test_post.flag"
+      ],
+      "dispatch_inputs": {},
+      "dtc_section": "QA y Auditoría Continua",
+      "description": "Publica posts en entorno de prueba."
+    },
+    {
+      "file": "release.yml",
+      "workflow_name": "Build Theme Release",
+      "triggers": [
+        "push(tags:['v*'])"
+      ],
+      "jobs": [
+        "build-release"
+      ],
+      "needs": {
+        "build-release": []
+      },
+      "uses": [
+        "actions/checkout@v4",
+        "softprops/action-gh-release@v2"
+      ],
+      "reusable_workflows": [],
+      "secrets": [],
+      "variables": [],
+      "artifacts": [],
+      "outputs": {},
+      "paths": [],
+      "dispatch_inputs": {},
+      "dtc_section": "Operaciones / Releases",
+      "description": "Genera releases versionadas con artefactos finales."
+    },
+    {
+      "file": "rollback.yml",
+      "workflow_name": "Rollback pepecapiro theme",
+      "triggers": [
+        "workflow_dispatch(inputs:{'zip_url': {'description': 'URL del zip artefacto (o sube el archivo en este run)', 'required': False}})"
+      ],
+      "jobs": [
+        "rollback"
+      ],
+      "needs": {
+        "rollback": []
+      },
+      "uses": [],
+      "reusable_workflows": [],
+      "secrets": [
+        "PEPE_HOST",
+        "PEPE_PORT",
+        "PEPE_SSH_KEY",
+        "PEPE_USER"
+      ],
+      "variables": [],
+      "artifacts": [],
+      "outputs": {},
+      "paths": [],
+      "dispatch_inputs": {
+        "zip_url": {
+          "description": "URL del zip artefacto (o sube el archivo en este run)",
+          "default": null,
+          "required": false
+        }
+      },
+      "dtc_section": "Operaciones / Releases",
+      "description": "Revierte un deployment de emergencia."
+    },
+    {
+      "file": "rotate-app-password.yml",
+      "workflow_name": "Rotate Application Password",
+      "triggers": [
+        "workflow_dispatch()"
+      ],
+      "jobs": [
+        "rotate-app-password"
+      ],
+      "needs": {
+        "rotate-app-password": []
+      },
+      "uses": [],
+      "reusable_workflows": [],
+      "secrets": [
+        "WP_APP_PASSWORD",
+        "WP_URL",
+        "WP_USER"
+      ],
+      "variables": [],
+      "artifacts": [],
+      "outputs": {},
+      "paths": [],
+      "dispatch_inputs": {},
+      "dtc_section": "Seguridad y Accesos",
+      "description": "Asiste en la rotación del Application Password de WordPress."
+    },
+    {
+      "file": "run-repair.yml",
+      "workflow_name": "Run Repair",
+      "triggers": [
+        "workflow_dispatch(inputs:{'area': {'description': 'Área a reparar', 'type': 'choice', 'required': True, 'options': ['home', 'menus', 'media', 'settings']}, 'mode': {'description': 'Modo (plan/apply)', 'type': 'choice', 'required': False, 'default': 'apply', 'options': ['plan', 'apply']}})"
+      ],
+      "jobs": [
+        "run-repair"
+      ],
+      "needs": {
+        "run-repair": []
+      },
+      "uses": [
+        "actions/checkout@v4"
+      ],
+      "reusable_workflows": [],
+      "secrets": [
+        "WP_APP_PASSWORD",
+        "WP_URL",
+        "WP_USER"
+      ],
+      "variables": [],
+      "artifacts": [],
+      "outputs": {},
+      "paths": [],
+      "dispatch_inputs": {
+        "area": {
+          "description": "Área a reparar",
+          "default": null,
+          "required": true
+        },
+        "mode": {
+          "description": "Modo (plan/apply)",
+          "default": "apply",
+          "required": false
+        }
+      },
+      "dtc_section": "Gobernanza y Auditorías",
+      "description": "Reaplica contenido/ajustes para reparar drift detectado."
+    },
+    {
+      "file": "runs-summary.yml",
+      "workflow_name": "Workflow Runs Summary",
+      "triggers": [
+        "workflow_dispatch(inputs:{'workflow': {'description': 'Nombre del workflow a filtrar (vacío = todos)', 'required': False, 'default': ''}, 'limit': {'description': 'Número máximo de runs listados por workflow', 'required': True, 'default': '40'}})"
+      ],
+      "jobs": [
+        "summary"
+      ],
+      "needs": {
+        "summary": []
+      },
+      "uses": [
+        "actions/upload-artifact@v4"
+      ],
+      "reusable_workflows": [],
+      "secrets": [
+        "GITHUB_TOKEN"
+      ],
+      "variables": [],
+      "artifacts": [
+        "workflow-runs-summary"
+      ],
+      "outputs": {},
+      "paths": [],
+      "dispatch_inputs": {
+        "workflow": {
+          "description": "Nombre del workflow a filtrar (vacío = todos)",
+          "default": "",
+          "required": false
+        },
+        "limit": {
+          "description": "Número máximo de runs listados por workflow",
+          "default": "40",
+          "required": true
+        }
+      },
+      "dtc_section": "Gobernanza y Auditorías",
+      "description": "Resume ejecuciones recientes y publica un reporte."
+    },
+    {
+      "file": "seo_audit.yml",
+      "workflow_name": "seo_audit",
+      "triggers": [
+        "workflow_dispatch()",
+        "schedule(cron:17 3 * * *)",
+        "push(branches:['main'])"
+      ],
+      "jobs": [
+        "audit"
+      ],
+      "needs": {
+        "audit": []
+      },
+      "uses": [
+        "actions/checkout@v4",
+        "actions/setup-python@v5",
+        "actions/upload-artifact@v4"
+      ],
+      "reusable_workflows": [],
+      "secrets": [],
+      "variables": [],
+      "artifacts": [
+        "seo-audit"
+      ],
+      "outputs": {},
+      "paths": [],
+      "dispatch_inputs": {},
+      "dtc_section": "Fase 4 – SEO/Performance",
+      "description": "Auditoría SEO técnica (hreflang, canonical, schema, etc.)."
+    },
+    {
+      "file": "set-home.yml",
+      "workflow_name": "Set Home Page",
+      "triggers": [
+        "workflow_dispatch(inputs:{'page_id_es': {'description': 'ID de la página ES a fijar como Home (opcional)', 'required': False}, 'page_slug_es': {'description': 'Slug de la página ES a fijar como Home (opcional)', 'required': False}, 'page_id_en': {'description': 'ID de la página EN a vincular (opcional)', 'required': False}, 'page_slug_en': {'description': 'Slug de la página EN a vincular (opcional)', 'required': False}})"
+      ],
+      "jobs": [
+        "set-home"
+      ],
+      "needs": {
+        "set-home": []
+      },
+      "uses": [
+        "actions/checkout@v4"
+      ],
+      "reusable_workflows": [],
+      "secrets": [
+        "WP_APP_PASSWORD",
+        "WP_URL",
+        "WP_USER"
+      ],
+      "variables": [],
+      "artifacts": [],
+      "outputs": {},
+      "paths": [],
+      "dispatch_inputs": {
+        "page_id_es": {
+          "description": "ID de la página ES a fijar como Home (opcional)",
+          "default": null,
+          "required": false
+        },
+        "page_slug_es": {
+          "description": "Slug de la página ES a fijar como Home (opcional)",
+          "default": null,
+          "required": false
+        },
+        "page_id_en": {
+          "description": "ID de la página EN a vincular (opcional)",
+          "default": null,
+          "required": false
+        },
+        "page_slug_en": {
+          "description": "Slug de la página EN a vincular (opcional)",
+          "default": null,
+          "required": false
+        }
+      },
+      "dtc_section": "Operaciones / Releases",
+      "description": "Configura la página inicial del sitio."
+    },
+    {
+      "file": "site-health.yml",
+      "workflow_name": "Site Health & Auto-Remediation",
+      "triggers": [
+        "schedule(cron:*/30 * * * *)",
+        "workflow_dispatch"
+      ],
+      "jobs": [
+        "health"
+      ],
+      "needs": {
+        "health": []
+      },
+      "uses": [
+        "actions/checkout@v4",
+        "webfactory/ssh-agent@v0.8.0"
+      ],
+      "reusable_workflows": [],
+      "secrets": [
+        "PEPE_HOST",
+        "PEPE_PORT",
+        "PEPE_SSH_KEY",
+        "PEPE_USER"
+      ],
+      "variables": [],
+      "artifacts": [],
+      "outputs": {},
+      "paths": [],
+      "dispatch_inputs": {},
+      "dtc_section": "Monitoreo Técnico",
+      "description": "Ejecuta el informe de salud del sitio desde WP."
+    },
+    {
+      "file": "site-settings.yml",
+      "workflow_name": "Site Settings",
+      "triggers": [
+        "workflow_dispatch()"
+      ],
+      "jobs": [
+        "site-settings"
+      ],
+      "needs": {
+        "site-settings": []
+      },
+      "uses": [
+        "actions/checkout@v4"
+      ],
+      "reusable_workflows": [],
+      "secrets": [
+        "WP_APP_PASSWORD",
+        "WP_URL",
+        "WP_USER"
+      ],
+      "variables": [],
+      "artifacts": [],
+      "outputs": {},
+      "paths": [],
+      "dispatch_inputs": {},
+      "dtc_section": "Operaciones / Releases",
+      "description": "Sincroniza configuraciones clave del sitio."
+    },
+    {
+      "file": "smoke-tests.yml",
+      "workflow_name": "Smoke Tests",
+      "triggers": [
+        "push(branches:['main'])",
+        "workflow_dispatch()"
+      ],
+      "jobs": [
+        "smoke"
+      ],
+      "needs": {
+        "smoke": []
+      },
+      "uses": [],
+      "reusable_workflows": [],
+      "secrets": [
+        "WP_APP_PASSWORD",
+        "WP_URL",
+        "WP_USER"
+      ],
+      "variables": [],
+      "artifacts": [],
+      "outputs": {},
+      "paths": [],
+      "dispatch_inputs": {},
+      "dtc_section": "QA y Auditoría Continua",
+      "description": "Ejecución de smoke tests end-to-end."
+    },
+    {
+      "file": "status.yml",
+      "workflow_name": "CI Status Probe",
+      "triggers": [
+        "workflow_dispatch",
+        "push"
+      ],
+      "jobs": [
+        "probe"
+      ],
+      "needs": {
+        "probe": []
+      },
+      "uses": [
+        "actions/checkout@v4"
+      ],
+      "reusable_workflows": [],
+      "secrets": [],
+      "variables": [],
+      "artifacts": [],
+      "outputs": {},
+      "paths": [],
+      "dispatch_inputs": {},
+      "dtc_section": "Monitoreo Técnico",
+      "description": "Actualiza public/status.json con métricas actuales."
+    },
+    {
+      "file": "ui-gates.yml",
+      "workflow_name": "UI Visual Gates",
+      "triggers": [
+        "workflow_dispatch",
+        "push(branches:['main']; paths:['pepecapiro/**/*.css', 'scripts/ci/check_css_tokens.py', '.github/workflows/ui-gates.yml'])",
+        "pull_request(branches:['main']; paths:['pepecapiro/**/*.css', 'scripts/ci/check_css_tokens.py'])"
+      ],
+      "jobs": [
+        "css-anti-hex"
+      ],
+      "needs": {
+        "css-anti-hex": []
+      },
+      "uses": [
+        "actions/checkout@v4",
+        "actions/setup-python@v5"
+      ],
+      "reusable_workflows": [],
+      "secrets": [],
+      "variables": [],
+      "artifacts": [],
+      "outputs": {},
+      "paths": [
+        "push:paths:pepecapiro/**/*.css",
+        "push:paths:scripts/ci/check_css_tokens.py",
+        "push:paths:.github/workflows/ui-gates.yml",
+        "pull_request:paths:pepecapiro/**/*.css",
+        "pull_request:paths:scripts/ci/check_css_tokens.py"
+      ],
+      "dispatch_inputs": {},
+      "dtc_section": "Operaciones Generales",
+      "description": "Workflow sin descripción específica (añadir en WORKFLOW_DESCRIPTIONS)."
+    },
+    {
+      "file": "upload-media.yml",
+      "workflow_name": "Upload Media",
+      "triggers": [
+        "workflow_dispatch()"
+      ],
+      "jobs": [
+        "upload-media"
+      ],
+      "needs": {
+        "upload-media": []
+      },
+      "uses": [
+        "actions/checkout@v4"
+      ],
+      "reusable_workflows": [],
+      "secrets": [
+        "WP_APP_PASSWORD",
+        "WP_URL",
+        "WP_USER"
+      ],
+      "variables": [],
+      "artifacts": [],
+      "outputs": {},
+      "paths": [],
+      "dispatch_inputs": {},
+      "dtc_section": "Fase 1 – Contenido Bilingüe",
+      "description": "Sincroniza assets multimedia optimizados."
+    },
+    {
+      "file": "verify-home.yml",
+      "workflow_name": "Verify Home",
+      "triggers": [
+        "workflow_dispatch()",
+        "schedule(cron:0 */6 * * *)"
+      ],
+      "jobs": [
+        "verify-home"
+      ],
+      "needs": {
+        "verify-home": []
+      },
+      "uses": [
+        "actions/checkout@v4"
+      ],
+      "reusable_workflows": [],
+      "secrets": [
+        "WP_APP_PASSWORD",
+        "WP_URL",
+        "WP_USER"
+      ],
+      "variables": [],
+      "artifacts": [],
+      "outputs": {},
+      "paths": [],
+      "dispatch_inputs": {},
+      "dtc_section": "QA y Auditoría Continua",
+      "description": "Smoke test para la portada (contenido + links)."
+    },
+    {
+      "file": "verify-media.yml",
+      "workflow_name": "Verify Media",
+      "triggers": [
+        "workflow_dispatch()",
+        "schedule(cron:0 3 * * *)"
+      ],
+      "jobs": [
+        "verify-media"
+      ],
+      "needs": {
+        "verify-media": []
+      },
+      "uses": [
+        "actions/checkout@v4"
+      ],
+      "reusable_workflows": [],
+      "secrets": [
+        "WP_APP_PASSWORD",
+        "WP_URL",
+        "WP_USER"
+      ],
+      "variables": [],
+      "artifacts": [],
+      "outputs": {},
+      "paths": [],
+      "dispatch_inputs": {},
+      "dtc_section": "QA y Auditoría Continua",
+      "description": "Verifica assets y referencias multimedia."
+    },
+    {
+      "file": "verify-menus.yml",
+      "workflow_name": "Verify Menus",
+      "triggers": [
+        "workflow_dispatch()",
+        "schedule(cron:0 */12 * * *)"
+      ],
+      "jobs": [
+        "verify-menus"
+      ],
+      "needs": {
+        "verify-menus": []
+      },
+      "uses": [
+        "actions/checkout@v4"
+      ],
+      "reusable_workflows": [],
+      "secrets": [
+        "WP_APP_PASSWORD",
+        "WP_URL",
+        "WP_USER"
+      ],
+      "variables": [],
+      "artifacts": [],
+      "outputs": {},
+      "paths": [],
+      "dispatch_inputs": {},
+      "dtc_section": "QA y Auditoría Continua",
+      "description": "Comprueba consistencia de menús."
+    },
+    {
+      "file": "verify-settings.yml",
+      "workflow_name": "Verify Settings",
+      "triggers": [
+        "workflow_dispatch()",
+        "schedule(cron:0 0 * * *)"
+      ],
+      "jobs": [
+        "verify-settings"
+      ],
+      "needs": {
+        "verify-settings": []
+      },
+      "uses": [
+        "actions/checkout@v4"
+      ],
+      "reusable_workflows": [],
+      "secrets": [
+        "WP_APP_PASSWORD",
+        "WP_URL",
+        "WP_USER"
+      ],
+      "variables": [],
+      "artifacts": [],
+      "outputs": {},
+      "paths": [],
+      "dispatch_inputs": {},
+      "dtc_section": "QA y Auditoría Continua",
+      "description": "Valida settings críticos en WP."
+    },
+    {
+      "file": "webhook-github-to-wp.yml",
+      "workflow_name": "Webhook GitHub to WordPress",
+      "triggers": [
+        "push(branches:['main']; paths:['content/**'])",
+        "release(types:['published'])",
+        "workflow_dispatch(inputs:{'sync_type': {'description': 'Tipo de sincronización', 'required': True, 'type': 'choice', 'options': ['content', 'menus', 'media']}})"
+      ],
+      "jobs": [
+        "sync-to-wp"
+      ],
+      "needs": {
+        "sync-to-wp": []
+      },
+      "uses": [
+        "actions/checkout@v4"
+      ],
+      "reusable_workflows": [],
+      "secrets": [
+        "WP_APP_PASSWORD",
+        "WP_URL",
+        "WP_USER"
+      ],
+      "variables": [],
+      "artifacts": [],
+      "outputs": {},
+      "paths": [
+        "push:paths:content/**"
+      ],
+      "dispatch_inputs": {
+        "sync_type": {
+          "description": "Tipo de sincronización",
+          "default": null,
+          "required": true
+        }
+      },
+      "dtc_section": "Integraciones Externas",
+      "description": "Entrega webhook hacia WordPress para acciones remotas."
+    },
+    {
+      "file": "weekly-audit.yml",
+      "workflow_name": "Weekly Audit",
+      "triggers": [
+        "workflow_dispatch()",
+        "schedule(cron:0 2 * * 0)"
+      ],
+      "jobs": [
+        "audit"
+      ],
+      "needs": {
+        "audit": []
+      },
+      "uses": [
+        "actions/checkout@v4"
+      ],
+      "reusable_workflows": [],
+      "secrets": [],
+      "variables": [],
+      "artifacts": [],
+      "outputs": {},
+      "paths": [],
+      "dispatch_inputs": {},
+      "dtc_section": "Gobernanza y Auditorías",
+      "description": "Auditoría semanal de drift y disparo de verificaciones clave."
+    }
+  ]
+}

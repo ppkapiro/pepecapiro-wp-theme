@@ -1,8 +1,8 @@
-# Cookies Policy
+# Cookie Policy
 
-This site uses cookies for:
-- Session maintenance
+This site uses cookies to:
+- Maintain session
 - Aggregate analytics
 
 ## Control
-You can set your preferences in your browser settings.
+You can adjust preferences from your browser.

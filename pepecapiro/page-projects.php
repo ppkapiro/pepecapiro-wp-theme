@@ -39,7 +39,7 @@ $projects = [
 ];
 ?>
 
-<main class="container" style="padding:var(--space-5) 0;">
+<main class="container" role="main" style="padding:var(--space-5) 0;">
   <header class="page-header" style="margin-bottom:var(--space-5);">
     <h1 style="font-family:var(--font-title); color:var(--color-fg);"><?php echo esc_html($t_title); ?></h1>
     <p style="font-size:var(--font-size-step-1); color:var(--color-fg-muted); margin-top:var(--space-2);">
@@ -47,9 +47,9 @@ $projects = [
     </p>
   </header>
 
-  <div class="grid" style="gap:var(--space-4);">
+  <div class="grid" role="list" aria-label="<?php echo $is_en ? 'Project list' : 'Lista de proyectos'; ?>" style="gap:var(--space-4);">
     <?php foreach ($projects as $proj): ?>
-      <article class="card" style="padding:var(--space-4); background:var(--color-surface); border:1px solid var(--color-border); border-radius:var(--radius-card);">
+      <article class="card" role="listitem" style="padding:var(--space-4); background:var(--color-surface); border:1px solid var(--color-border); border-radius:var(--radius-card);">
         <h2 style="font-family:var(--font-title); font-size:var(--font-size-step-1); color:var(--color-fg); margin-bottom:var(--space-2);">
           <?php echo esc_html($proj['title']); ?>
         </h2>

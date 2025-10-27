@@ -1,0 +1,11 @@
+{
+  "has_url": false,
+  "has_user": false,
+  "has_app_password": false,
+  "source": "none",
+  "sources_detail": {},
+  "hints": {
+    "sftp_host": "pepecapiro",
+    "likely_url": "https://pepecapiro.com"
+  }
+}

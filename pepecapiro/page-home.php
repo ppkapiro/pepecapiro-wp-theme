@@ -36,14 +36,14 @@ $pilares = [
 ];
 ?>
 
-<main id="main" class="site-main">
-  <section class="hero" style="padding:var(--space-6) 0; background:linear-gradient(135deg, var(--color-bg) 0%, var(--color-surface) 100%);">
+<main id="main" class="site-main" role="main">
+  <section class="hero" aria-labelledby="hero-title" style="padding:var(--space-6) 0; background:linear-gradient(135deg, var(--color-bg) 0%, var(--color-surface) 100%);">
     <div class="container hero__inner" style="display:flex; flex-wrap:wrap; align-items:center; gap:var(--space-5);">
       <div class="hero__text" style="flex:1 1 55%; min-width:280px;">
-        <h1 class="hero__title" style="font-family:var(--font-title); font-size:var(--font-size-step-4); line-height:1.2; color:var(--color-fg); margin-bottom:var(--space-4);">
+        <h1 id="hero-title" class="hero__title" style="font-family:var(--font-title); font-size:var(--font-size-step-4); line-height:1.2; color:var(--color-fg); margin-bottom:var(--space-4);">
           <?php echo esc_html($t_hero_title); ?>
         </h1>
-        <a class="cta-button" href="<?php echo esc_url($t_hero_cta_url); ?>" style="display:inline-block; padding:var(--space-2) var(--space-4); background:var(--color-accent); color:var(--color-bg); font-weight:700; border-radius:var(--radius-button); text-decoration:none; transition:opacity 0.2s; outline:none; border:2px solid transparent;">
+        <a class="cta-button" href="<?php echo esc_url($t_hero_cta_url); ?>" aria-label="<?php echo esc_attr($t_hero_cta); ?>" style="display:inline-block; padding:var(--space-2) var(--space-4); background:var(--color-accent); color:var(--color-bg); font-weight:700; border-radius:var(--radius-button); text-decoration:none; transition:opacity 0.2s; outline:none; border:2px solid transparent;">
           <?php echo esc_html($t_hero_cta); ?>
         </a>
       </div>
@@ -61,7 +61,7 @@ $pilares = [
     </div>
   </section>
 
-  <section class="container pilares" style="padding:var(--space-6) 0; display:grid; gap:var(--space-4); grid-template-columns:repeat(auto-fit, minmax(280px,1fr));">
+  <section class="container pilares" role="region" aria-label="<?php echo $is_en ? 'Pillars' : 'Pilares'; ?>" style="padding:var(--space-6) 0; display:grid; gap:var(--space-4); grid-template-columns:repeat(auto-fit, minmax(280px,1fr));">
     <?php foreach ($pilares as $p): ?>
       <div class="pilar-card" style="padding:var(--space-4); background:var(--color-surface); border:1px solid var(--color-border); border-radius:var(--radius-card); transition:transform 0.2s, box-shadow 0.2s;">
         <span class="icon-placeholder" aria-hidden="true" style="display:block; width:48px; height:48px; background:var(--color-border); border-radius:var(--radius-button); margin-bottom:var(--space-2);"></span>

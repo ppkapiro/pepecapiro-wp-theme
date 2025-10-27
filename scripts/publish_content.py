@@ -27,24 +27,106 @@ import base64
 import json
 import re
 import hashlib
-from typing import Dict, Any, Optional, List, Set
+from typing import Dict, Any, Optional, List, Set, Tuple
 from datetime import datetime
+from pathlib import Path
+from urllib.parse import urlparse
 
 import requests  # Dependencia externa: instalar con `pip install requests` si se ejecuta fuera de entorno CI
 
 # Buffer de depuración HTTP (se volcará a reports/publish/http_debug.json).
 HTTP_DEBUG: List[Dict[str, Any]] = []
 
-WP_URL = os.getenv("WP_URL", "https://pepecapiro.com")  # sin slash final
-WP_USER = os.getenv("WP_USER", "ADMIN_USER")
-WP_APP_PASSWORD = os.getenv("WP_APP_PASSWORD", "APP_PASSWORD")
+WP_URL = ""
+WP_USER = ""
+WP_APP_PASSWORD = ""
 TIMEOUT = 20
 
-HEADERS = {
-    "Authorization": "Basic " + base64.b64encode(f"{WP_USER}:{WP_APP_PASSWORD}".encode()).decode(),
-    "Content-Type": "application/json",
-    "Accept": "application/json",
-}
+HEADERS: Dict[str, str] = {}
+
+CREDENTIALS_FILE = Path("secrets/.wp_env.local")
+ALLOWED_DOMAIN = "pepecapiro.com"
+CREDENTIAL_KEYS = ("WP_URL", "WP_USER", "WP_APP_PASSWORD")
+API_POSTS = ""
+API_PAGES = ""
+API_CATS = ""
+API_MEDIA = ""
+
+
+def parse_credentials_file(path: Path) -> Dict[str, str]:
+    data: Dict[str, str] = {}
+    if not path.is_file():
+        return data
+    try:
+        for raw in path.read_text(encoding="utf-8").splitlines():
+            line = raw.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            key = key.strip()
+            value = value.strip()
+            if key in CREDENTIAL_KEYS and value:
+                data[key] = value
+    except OSError:
+        pass
+    return data
+
+
+def sanitize_wp_url(url: str) -> str:
+    url = url.strip()
+    if url.endswith("/"):
+        url = url.rstrip("/")
+    return url
+
+
+def resolve_wp_credentials() -> Tuple[Dict[str, str], Dict[str, str]]:
+    values: Dict[str, str] = {}
+    sources: Dict[str, str] = {}
+    for key in CREDENTIAL_KEYS:
+        val = os.getenv(key)
+        if val:
+            values[key] = val.strip()
+            sources[key] = "env"
+    missing = [key for key in CREDENTIAL_KEYS if key not in values]
+    if missing:
+        file_values = parse_credentials_file(CREDENTIALS_FILE)
+        for key in missing:
+            val = file_values.get(key)
+            if val:
+                values[key] = val.strip()
+                sources[key] = f"file:{CREDENTIALS_FILE}"
+    return values, sources
+
+
+def build_headers(user: str, app_password: str) -> Dict[str, str]:
+    token = base64.b64encode(f"{user}:{app_password}".encode("utf-8")).decode("utf-8")
+    return {
+        "Authorization": f"Basic {token}",
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+    }
+
+
+def render_preflight(creds: Dict[str, str], sources: Optional[Dict[str, str]] = None) -> None:
+    wp_url = creds.get("WP_URL", "")
+    display_url = "-"
+    if wp_url:
+        parsed = urlparse(wp_url)
+        display_url = f"{parsed.scheme}://{parsed.netloc}" if parsed.scheme and parsed.netloc else wp_url
+    print(f"[preflight] WP_URL: {'OK' if wp_url else 'NO'} ({display_url})")
+    print(f"[preflight] WP_USER: {'OK' if creds.get('WP_USER') else 'NO'}")
+    print(f"[preflight] WP_APP_PASSWORD: {'OK' if creds.get('WP_APP_PASSWORD') else 'NO'}")
+    if sources:
+        summary = ", ".join(f"{key}:{sources.get(key, '-')}" for key in CREDENTIAL_KEYS)
+        print(f"[preflight] Origen credenciales: {summary}")
+
+
+def configure_endpoints(base_url: str) -> None:
+    global API_POSTS, API_PAGES, API_CATS, API_MEDIA
+    API_POSTS = f"{base_url}/wp-json/wp/v2/posts"
+    API_PAGES = f"{base_url}/wp-json/wp/v2/pages"
+    API_CATS = f"{base_url}/wp-json/wp/v2/categories"
+    API_MEDIA = f"{base_url}/wp-json/wp/v2/media"
 
 DRY_SAFE = '--dry-run' in sys.argv or os.getenv('DRY_RUN','0') in ('1','true','TRUE')
 DRIFT_ONLY = '--drift-only' in sys.argv  # nuevo modo solo informe de divergencias
@@ -177,23 +259,19 @@ def load_posts_config(selected_keys: Optional[Set[str]] = None) -> List[Dict[str
         if isinstance(disabled_field, bool) and disabled_field:
             print(f"[skip-disabled] translation_key={tkey} (global)")
             continue
-        # slug puede ser string (ES base) o dict {es:..., en:...}
-        # Cada entrada define pares de idiomas bajo mismas claves
-        slug_field = entry.get("slug")
-        slug_es = slug_en = None
-        if isinstance(slug_field, dict):
-            slug_es = slug_field.get("es")
-            slug_en = slug_field.get("en")
-        else:
-            slug_es = slug_field
-        # Para mantener compatibilidad: slug EN puede diferir; si es distinto se espera en title.en que slug final se derive? Conservamos original: un slug base ES y uno EN distinto si procede -> usar convenciones existentes.
-        # Estrategia: si contiene un segundo idioma con un título inglés y el slug base es ES, inferimos slug EN buscando en markdown content/<slug_en>.en.md si existe.
-        # Simplicidad: guardamos slug base para ES y derivamos slug EN a partir de la primera traducción cuyo título inglés ya esté en markdown.
-        # Mejor: añadir explícitamente `slug` es y en en config futura; por ahora usamos heurística.
-        # Aquí asumimos: slug base = ES; para EN usamos el slug de cada markdown existente emparejado si difiere.
-        # Detectar slug EN conocido (casos específicos actuales):
-        slug_en_override = slug_en  # si se definió en objeto
-        # Compatibilidad con heurísticas anteriores si sigue siendo string
+        # Slugs bilingües normalizados (Fase 1). Se mantiene compatibilidad con formato legacy.
+        slug_es = entry.get("slug_es")
+        slug_en_override = entry.get("slug_en")
+        legacy_slug_field = entry.get("slug")
+        if not slug_es:
+            if isinstance(legacy_slug_field, dict):
+                slug_es = legacy_slug_field.get("es")
+            elif isinstance(legacy_slug_field, str):
+                slug_es = legacy_slug_field
+        if not slug_en_override and isinstance(legacy_slug_field, dict):
+            slug_en_override = legacy_slug_field.get("en")
+
+        # Compatibilidad con heurísticas anteriores si aún no se define slug EN explícito
         if not slug_en_override and slug_es == 'checklist-wordpress-produccion-1-dia':
             slug_en_override = 'ship-wordpress-production-in-one-day'
         elif not slug_en_override and slug_es == 'gobernanza-automatizacion-wordpress-pequenos-equipos':
@@ -210,6 +288,9 @@ def load_posts_config(selected_keys: Optional[Set[str]] = None) -> List[Dict[str
                 print(f"[skip-disabled] translation_key={tkey} lang={lang}")
                 continue
             slug = slug_es if lang == 'es' or not slug_en_override else slug_en_override
+            if not slug:
+                print(f"[warn] Falta slug para translation_key={tkey} lang={lang}")
+                continue
             status_field = entry.get("status", "publish")
             if isinstance(status_field, dict):
                 status_lang = status_field.get(lang, 'publish')
@@ -264,13 +345,16 @@ def load_pages_config(selected_keys: Optional[Set[str]] = None) -> List[Dict[str
         if isinstance(disabled_field, bool) and disabled_field:
             print(f"[skip-disabled] page translation_key={tkey} (global)")
             continue
-        slug_field = entry.get('slug')
-        slug_es = slug_en = None
-        if isinstance(slug_field, dict):
-            slug_es = slug_field.get('es')
-            slug_en = slug_field.get('en')
-        else:
-            slug_es = slug_field
+        slug_es = entry.get('slug_es')
+        slug_en = entry.get('slug_en')
+        legacy_slug_field = entry.get('slug')
+        if not slug_es:
+            if isinstance(legacy_slug_field, dict):
+                slug_es = legacy_slug_field.get('es')
+            elif isinstance(legacy_slug_field, str):
+                slug_es = legacy_slug_field
+        if not slug_en and isinstance(legacy_slug_field, dict):
+            slug_en = legacy_slug_field.get('en')
         for lang in ('es','en'):
             title = entry.get('title', {}).get(lang)
             excerpt = entry.get('excerpt', {}).get(lang, '')
@@ -280,6 +364,9 @@ def load_pages_config(selected_keys: Optional[Set[str]] = None) -> List[Dict[str
                 print(f"[skip-disabled] page {tkey} lang={lang}")
                 continue
             slug = slug_es if lang == 'es' or not slug_en else slug_en
+            if not slug:
+                print(f"[warn] Falta slug para página {tkey} lang={lang}")
+                continue
             status_field = entry.get('status', 'publish')
             if isinstance(status_field, dict):
                 status_lang = status_field.get(lang, 'publish')
@@ -308,11 +395,6 @@ for p in POSTS:
 for pg in PAGES:
     pg["content_html"] = load_md(pg["slug"], pg["lang"], pg["content_html"])
     pg["md_found"] = os.path.isfile(os.path.join(MD_BASE, f"{pg['slug']}.{pg['lang']}.md"))
-
-API_POSTS = f"{WP_URL}/wp-json/wp/v2/posts"
-API_PAGES = f"{WP_URL}/wp-json/wp/v2/pages"
-API_CATS = f"{WP_URL}/wp-json/wp/v2/categories"
-API_MEDIA = f"{WP_URL}/wp-json/wp/v2/media"
 
 class WPClient:
     def __init__(self, base_url: str, headers: Dict[str, str]):
@@ -498,13 +580,31 @@ def validate_http(url: str) -> bool:
     except Exception as e:
         print(f"[warn] HTTP fail {url}: {e}")
         return False
-
-
 def main():
-    missing = [k for k,v in {"WP_USER":WP_USER, "WP_APP_PASSWORD":WP_APP_PASSWORD}.items() if v in ("APP_PASSWORD","ADMIN_USER","")]
-    if missing and not ('--dry-run' in sys.argv or os.getenv('DRY_RUN','0') in ('1','true','TRUE')):
-        print("[fatal] Debes exportar credenciales reales (WP_USER / WP_APP_PASSWORD)")
-        sys.exit(2)
+    creds, sources = resolve_wp_credentials()
+    if creds.get("WP_URL"):
+        creds["WP_URL"] = sanitize_wp_url(creds["WP_URL"])
+    render_preflight(creds, sources)
+
+    missing = [key for key in CREDENTIAL_KEYS if not creds.get(key)]
+    if missing:
+        print("[fatal] Credenciales WP incompletas. Ejecuta python scripts/env/configure_wp_creds.py")
+        return 2
+
+    wp_url = creds["WP_URL"]
+    if not wp_url.startswith("https://"):
+        print("[fatal] WP_URL debe iniciar con https://")
+        return 2
+    if ALLOWED_DOMAIN not in wp_url:
+        print(f"[fatal] WP_URL no autorizado ({wp_url}). Solo se admite {ALLOWED_DOMAIN}")
+        return 2
+
+    global WP_URL, WP_USER, WP_APP_PASSWORD, HEADERS
+    WP_URL = wp_url
+    WP_USER = creds["WP_USER"]
+    WP_APP_PASSWORD = creds["WP_APP_PASSWORD"]
+    HEADERS = build_headers(WP_USER, WP_APP_PASSWORD)
+    configure_endpoints(WP_URL)
 
     client = WPClient(WP_URL, HEADERS)
     dry = os.getenv('DRY_RUN','0') in ('1','true','TRUE') or '--dry-run' in sys.argv
@@ -749,7 +849,9 @@ def main():
                     print(f"[warn] No se pudo escribir media_map: {e}")
     urls: List[str] = []
     for obj in created_posts.values():
-        urls.append(obj.get('link'))
+        link = obj.get('link')
+        if isinstance(link, str) and link:
+            urls.append(link)
     # Comprobar legales según slugs base
     urls.extend([
         f"{WP_URL}/privacidad/",

@@ -72,6 +72,10 @@ jobs:
         with:
           python-version: '3.x'
 
+      - name: Assert Lighthouse thresholds (mobile)
+        run: |
+          python3 scripts/assert_lh_thresholds.py
+
       - name: Generate Markdown summary
         run: |
           python3 scripts/summarize_lh_to_md.py

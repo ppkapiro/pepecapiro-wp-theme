@@ -43,6 +43,20 @@ add_action('wp_enqueue_scripts', function(){
 
 // Resource hints adicionales podrían agregarse aquí si se usan CDNs
 
+// Preload de fuentes críticas (woff2) para mejorar LCP
+add_action('wp_head', function(){
+  if (is_admin()) return;
+  $base = get_stylesheet_directory_uri() . '/assets/fonts/';
+  $fonts = [
+    'montserrat/Montserrat-SemiBold.woff2',
+    'opensans/OpenSans-Regular.woff2',
+    'opensans/OpenSans-SemiBold.woff2',
+  ];
+  foreach ($fonts as $rel) {
+    echo '<link rel="preload" href="'.esc_url($base.$rel).'" as="font" type="font/woff2" crossorigin />' . "\n";
+  }
+}, 1);
+
 // SEO mínimo OpenGraph / Twitter
 add_action('wp_head', function(){
   if (is_admin()) return;
@@ -93,8 +107,28 @@ add_action('wp_head', function(){
     }
   }
 
-  // JSON-LD: BreadcrumbList + (Article si singular post)
+  // JSON-LD: Organization/WebSite en Home + BreadcrumbList + (Article si singular post)
   $json_ld = [];
+  if ($is_home) {
+    $json_ld[] = [
+      '@context' => 'https://schema.org',
+      '@type' => 'Organization',
+      'name' => 'Pepecapiro',
+      'url' => home_url('/'),
+      'logo' => get_stylesheet_directory_uri() . '/assets/og/og-home-es.png'
+    ];
+    $json_ld[] = [
+      '@context' => 'https://schema.org',
+      '@type' => 'WebSite',
+      'url' => home_url('/'),
+      'name' => 'Pepecapiro',
+      'potentialAction' => [
+        '@type' => 'SearchAction',
+        'target' => home_url('/?s={search_term_string}'),
+        'query-input' => 'required name=search_term_string'
+      ]
+    ];
+  }
   // Breadcrumbs
   $breadcrumbs_items = [];
   $position = 1;
@@ -180,6 +214,11 @@ add_action('wp_head', function(){
     $og_img_url = get_stylesheet_directory_uri() . ( $is_en ? '/assets/og/og-resources-en.png' : '/assets/og/og-resources-es.png' );
   }
   if ($og_img_url) {
+    // Fallback si la imagen específica no existe en disco
+    $path_guess = str_replace(get_stylesheet_directory_uri(), get_stylesheet_directory(), $og_img_url);
+    if (!@file_exists($path_guess)) {
+      $og_img_url = get_stylesheet_directory_uri() . ( $is_en ? '/assets/og/og-home-en.png' : '/assets/og/og-home-es.png' );
+    }
     echo '<meta property="og:image" content="'.esc_url($og_img_url).'" />' . "\n";
     echo '<meta property="og:image:width" content="1200" />' . "\n";
     echo '<meta property="og:image:height" content="630" />' . "\n";

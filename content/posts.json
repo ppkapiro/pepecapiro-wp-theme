@@ -1,7 +1,8 @@
 [
   {
     "translation_key": "checklist-wp-prod-day",
-    "slug": "checklist-wordpress-produccion-1-dia",
+    "slug_es": "checklist-wordpress-produccion-1-dia",
+    "slug_en": "ship-wordpress-production-in-one-day",
     "title": {
       "es": "Checklist para poner un WordPress a producir en 1 día",
       "en": "Ship a Production-Ready WordPress in One Day: A Practical Checklist"
@@ -17,7 +18,8 @@
   },
   {
     "translation_key": "governance-automation-pillars",
-    "slug": {"es": "gobernanza-automatizacion-wordpress-pequenos-equipos", "en": "wordpress-governance-automation-small-teams"},
+    "slug_es": "gobernanza-automatizacion-wordpress-pequenos-equipos",
+    "slug_en": "wordpress-governance-automation-small-teams",
     "title": {
       "es": "Gobernanza y Automatización en WordPress para Equipos Pequeños: 5 Pilares Prácticos",
       "en": "WordPress Governance & Automation for Small Teams: 5 Practical Pillars"
@@ -33,7 +35,8 @@
   },
   {
     "translation_key": "wp-audit-basics",
-    "slug": {"es": "auditoria-wordpress-inicial", "en": "wordpress-initial-audit"},
+    "slug_es": "auditoria-wordpress-inicial",
+    "slug_en": "wordpress-initial-audit",
     "title": {
       "es": "Auditoría Inicial de WordPress: 12 Chequeos Críticos",
       "en": "Initial WordPress Audit: 12 Critical Checks"
@@ -51,7 +54,8 @@
   ,
   {
     "translation_key": "wp-post-7-acciones-post-lanzamiento",
-    "slug": {"es": "acciones-wordpress-post-lanzamiento", "en": "wordpress-post-launch-actions"},
+    "slug_es": "acciones-wordpress-post-lanzamiento",
+    "slug_en": "wordpress-post-launch-actions",
     "title": {
       "es": "WordPress Post‑Lanzamiento: 7 Acciones Clave en los Primeros 7 Días",
       "en": "WordPress Post-Launch: 7 High-Impact Actions in the First 7 Days"
@@ -66,7 +70,8 @@
   ,
   {
     "translation_key": "wp-hardening-week-two",
-    "slug": {"es": "endurecimiento-wordpress-segunda-semana", "en": "wordpress-hardening-second-week"},
+    "slug_es": "endurecimiento-wordpress-segunda-semana",
+    "slug_en": "wordpress-hardening-second-week",
     "title": {
       "es": "WordPress Segunda Semana: Endurecimiento y Estabilización Prioritaria",
       "en": "WordPress Second Week: Priority Hardening & Stabilization"
