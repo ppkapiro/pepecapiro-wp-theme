@@ -43,14 +43,24 @@ jobs:
           run_lh(){
             local path="$1"; local name="$2";
             echo "==> Auditing $path -> $name"
-            lighthouse "${base}${path}" \
+            if ! lighthouse "${base}${path}" \
               --output=json --output=html \
               --output-path="lighthouse_reports/${name}" \
               --preset=perf \
               --emulated-form-factor=mobile \
               --throttling-method=devtools \
               --chrome-flags="--headless=new --no-sandbox --disable-gpu" \
-              ${CHROME_PATH:+--chrome-path="$CHROME_PATH"}
+              ${CHROME_PATH:+--chrome-path="$CHROME_PATH"}; then
+              echo "[retry] Reintentando $path -> $name"
+              lighthouse "${base}${path}" \
+                --output=json --output=html \
+                --output-path="lighthouse_reports/${name}" \
+                --preset=perf \
+                --emulated-form-factor=mobile \
+                --throttling-method=devtools \
+                --chrome-flags="--headless=new --no-sandbox --disable-gpu" \
+                ${CHROME_PATH:+--chrome-path="$CHROME_PATH"}
+            fi
             # Normalizar nombres
             mv "lighthouse_reports/${name}.report.json" "lighthouse_reports/${name}.json"
             mv "lighthouse_reports/${name}.report.html" "lighthouse_reports/${name}.html"
@@ -76,14 +86,24 @@ jobs:
           run_lh(){
             local path="$1"; local name="$2";
             echo "==> Auditing (desktop) $path -> ${name}-d"
-            lighthouse "${base}${path}" \
+            if ! lighthouse "${base}${path}" \
               --output=json --output=html \
               --output-path="lighthouse_reports/${name}-d" \
               --preset=perf \
               --emulated-form-factor=desktop \
               --throttling-method=devtools \
               --chrome-flags="--headless=new --no-sandbox --disable-gpu" \
-              ${CHROME_PATH:+--chrome-path="$CHROME_PATH"}
+              ${CHROME_PATH:+--chrome-path="$CHROME_PATH"}; then
+              echo "[retry] Reintentando (desktop) $path -> ${name}-d"
+              lighthouse "${base}${path}" \
+                --output=json --output=html \
+                --output-path="lighthouse_reports/${name}-d" \
+                --preset=perf \
+                --emulated-form-factor=desktop \
+                --throttling-method=devtools \
+                --chrome-flags="--headless=new --no-sandbox --disable-gpu" \
+                ${CHROME_PATH:+--chrome-path="$CHROME_PATH"}
+            fi
             # Normalizar nombres
             mv "lighthouse_reports/${name}-d.report.json" "lighthouse_reports/${name}-d.json"
             mv "lighthouse_reports/${name}-d.report.html" "lighthouse_reports/${name}-d.html"
@@ -105,27 +125,35 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Assert Lighthouse thresholds (mobile)
+      - name: Assert Lighthouse thresholds
         run: |
           python3 scripts/assert_lh_thresholds.py
 
       - name: Generate Markdown summary
+        if: always()
         run: |
           python3 scripts/summarize_lh_to_md.py
 
       - name: Publish Lighthouse HTML reports to docs
+        if: always()
         run: |
           set -e
           mkdir -p docs/lighthouse
           cp -f lighthouse_reports/*.html docs/lighthouse/
+          # Copiar resumen del assert si existe
+          if [ -f lighthouse_reports/assert_summary.txt ]; then
+            cp -f lighthouse_reports/assert_summary.txt docs/lighthouse/_assert_summary.txt
+          fi
 
       - name: Upload Lighthouse artifacts
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: lighthouse_reports
           path: lighthouse_reports
 
       - name: Commit updated reports and docs
+        if: always()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -133,7 +161,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
-          git add docs/VALIDACION_MVP_v0_2_1.md docs/lighthouse/*.html || true
+          git add docs/VALIDACION_MVP_v0_2_1.md docs/lighthouse/*.html docs/lighthouse/_assert_summary.txt || true
           if git diff --cached --quiet; then
             echo "No changes to commit in docs/"
           else

@@ -18,7 +18,7 @@ Este documento resume los cambios y cómo verificarlos.
   - Enlace "Saltar al contenido" al inicio del `<body>`.
 - CI (Lighthouse Gate)
   - Script `scripts/assert_lh_thresholds.py` valida Performance/LCP/CLS (móvil y desktop) contra `configs/perf_thresholds.json`.
-  - Workflow actualizado `.github/workflows/lighthouse.yml` para ejecutar móvil y desktop, fallar si no se cumplen umbrales, publicar HTML en `docs/lighthouse/` y generar resumen en Markdown.
+  - Workflow actualizado `.github/workflows/lighthouse.yml` para ejecutar móvil y desktop, con reintento simple por URL, fallar si no se cumplen umbrales, publicar HTML en `docs/lighthouse/`, generar resumen en Markdown y adjuntar `_assert_summary.txt` con el detalle de fallos.
 
 ## Cómo validar
 

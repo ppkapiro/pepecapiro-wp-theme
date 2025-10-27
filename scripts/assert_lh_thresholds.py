@@ -61,6 +61,7 @@ def parse_report(path):
 
 
 def main():
+    summary_lines = []
     thr_all = load_thresholds()
     m_thr = thr_all['mobile']
     d_thr = thr_all['desktop']
@@ -73,7 +74,10 @@ def main():
 
     json_files = { os.path.splitext(os.path.basename(p))[0]: p for p in glob.glob(os.path.join(REPORT_DIR, '*.json')) }
     if not json_files:
-        print('[error] No se encontraron reportes JSON en lighthouse_reports/. ¿Se ejecutó Lighthouse?', file=sys.stderr)
+        msg = '[error] No se encontraron reportes JSON en lighthouse_reports/. ¿Se ejecutó Lighthouse?'
+        print(msg, file=sys.stderr)
+        summary_lines.append(msg)
+        _write_summary(summary_lines)
         return 2
 
     failures = []
@@ -84,7 +88,9 @@ def main():
         # Mobile
         jf_m = json_files.get(name)
         if not jf_m:
-            print(f"[warn] Falta reporte móvil: {name} ({NAME_TO_PATH.get(name, '')})")
+            warn = f"[warn] Falta reporte móvil: {name} ({NAME_TO_PATH.get(name, '')})"
+            print(warn)
+            summary_lines.append(warn)
         else:
             checked_m += 1
             try:
@@ -105,7 +111,9 @@ def main():
         # Desktop (sufijo -d)
         jf_d = json_files.get(f"{name}-d")
         if not jf_d:
-            print(f"[warn] Falta reporte desktop: {name}-d ({NAME_TO_PATH.get(name, '')})")
+            warn = f"[warn] Falta reporte desktop: {name}-d ({NAME_TO_PATH.get(name, '')})"
+            print(warn)
+            summary_lines.append(warn)
         else:
             checked_d += 1
             try:
@@ -124,17 +132,38 @@ def main():
                     failures.append((f"{name}-d", '; '.join(issues)))
 
     if checked_m == 0 and checked_d == 0:
-        print('[error] No se pudo validar, no hay reportes coincidentes con PAGES_ORDER (ni móvil ni desktop).', file=sys.stderr)
+        msg = '[error] No se pudo validar, no hay reportes coincidentes con PAGES_ORDER (ni móvil ni desktop).'
+        print(msg, file=sys.stderr)
+        summary_lines.append(msg)
+        _write_summary(summary_lines)
         return 3
 
     if failures:
         print('=== Lighthouse assert: FALLA ===')
+        summary_lines.append('=== Lighthouse assert: FALLA ===')
         for name, why in failures:
-            print(f"- {name}: {why}")
+            line = f"- {name}: {why}"
+            print(line)
+            summary_lines.append(line)
+        _write_summary(summary_lines)
         return 1
 
-    print('=== Lighthouse assert: OK ===')
+    ok_msg = '=== Lighthouse assert: OK ==='
+    print(ok_msg)
+    summary_lines.append(ok_msg)
+    _write_summary(summary_lines)
     return 0
+
+
+def _write_summary(lines):
+    try:
+        out_dir = os.path.join(os.getcwd(), 'lighthouse_reports')
+        os.makedirs(out_dir, exist_ok=True)
+        path = os.path.join(out_dir, 'assert_summary.txt')
+        with open(path, 'w', encoding='utf-8') as f:
+            f.write('\n'.join(lines) + '\n')
+    except Exception:
+        pass
 
 
 if __name__ == '__main__':
