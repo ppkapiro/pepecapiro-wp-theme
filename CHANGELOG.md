@@ -2,9 +2,9 @@
 - Fase 4 — Rendimiento, Accesibilidad y SEO:
 	- Preloads de fuentes woff2 (Montserrat SemiBold, OpenSans Regular/SemiBold) para mejorar LCP.
 	- JSON-LD extra en Home: Organization y WebSite con SearchAction.
-	- Fallback OG: si falta imagen específica, usa la de Home según idioma.
+	- OG dinámico y fallback: imágenes dedicadas por plantilla/idioma (placeholders válidos) y fallback a Home por idioma si falta.
 	- Accesibilidad: landmarks (role="main"), aria-labelledby, grillas marcadas como listas, enlace "Saltar al contenido".
-	- CI: gate Lighthouse móvil con `scripts/assert_lh_thresholds.py` y paso en workflow `lighthouse.yml` (Performance/LCP/CLS contra `configs/perf_thresholds.json`).
+	- CI: gate Lighthouse móvil y desktop con `scripts/assert_lh_thresholds.py` (Performance/LCP/CLS contra `configs/perf_thresholds.json`). Publicación automática de reportes HTML en `docs/lighthouse/` y resumen en `docs/VALIDACION_MVP_v0_2_1.md`.
 
 ## 0.9.1 – 20251027 (en desarrollo)
 - **Fase 3 — Maquetado bilingüe y OG dinámico**:

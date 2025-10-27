@@ -4,7 +4,7 @@ set -euo pipefail
 # Configuración por defecto (puedes sobreescribir por env)
 GH_OWNER=${GH_OWNER:-"ppkapiro"}
 GH_REPO=${GH_REPO:-"pepecapiro-wp-theme"}
-WF_FILE=${WF_FILE:-"lighthouse_docs.yml"}
+WF_FILE=${WF_FILE:-"lighthouse.yml"}
 BRANCH=${BRANCH:-"main"}
 URLS_FILE=${URLS_FILE:-"scripts/urls_lighthouse.txt"}
 POLL_SECONDS=${POLL_SECONDS:-15}

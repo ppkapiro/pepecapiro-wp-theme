@@ -9,7 +9,6 @@ DOC_PATH = os.path.join(os.getcwd(), 'docs', 'VALIDACION_MVP_v0_2_1.md')
 DOCS_LH_DIR = os.path.join(os.getcwd(), 'docs', 'lighthouse')
 
 # Map file base name to page path for the table
-# Map file base name to page path for the table
 PAGE_MAP = {
   'home': '/',
   'en-home': '/en/',
@@ -73,10 +72,11 @@ def parse_report(path):
     return perf, ms_to_pretty(lcp), ms_to_pretty(tti), ms_to_pretty(inp), top2
 
 
-def build_table(rows):
+def build_table(rows, kind: str):
     ts = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    title = "móvil" if kind == "mobile" else "desktop"
     lines = []
-    lines.append(f"## Lighthouse móvil (métricas reales) — {ts}")
+    lines.append(f"## Lighthouse {title} (métricas reales) — {ts}")
     lines.append("")
     lines.append("| Página | Perf | LCP | TTI | INP | Top 2 oportunidades |")
     lines.append("|--------|------|-----|-----|-----|----------------------|")
@@ -93,14 +93,25 @@ def main():
         return 0
 
     # Build rows in the fixed order defined by PAGE_MAP
-    rows = []
-    name_to_metrics = {}
+    rows_mobile = []
+    rows_desktop = []
+    name_to_metrics_m = {}
+    name_to_metrics_d = {}
     for jf in json_files:
         name = os.path.splitext(os.path.basename(jf))[0]
-        if name not in PAGE_MAP:
+        # desktop suffix handling
+        is_desktop = False
+        base_name = name
+        if name.endswith('-d'):
+            is_desktop = True
+            base_name = name[:-2]
+        if base_name not in PAGE_MAP:
             continue
         perf, lcp, tti, inp, top2 = parse_report(jf)
-        name_to_metrics[name] = (perf, lcp, tti, inp, top2)
+        if is_desktop:
+            name_to_metrics_d[base_name] = (perf, lcp, tti, inp, top2)
+        else:
+            name_to_metrics_m[base_name] = (perf, lcp, tti, inp, top2)
 
     ordered_keys = [
         'home','en-home','sobre-mi','en-about','proyectos','en-projects',
@@ -108,15 +119,21 @@ def main():
     ]
     for k in ordered_keys:
         page_path = PAGE_MAP[k]
-        html_path = os.path.join(DOCS_LH_DIR, f"{k}.html")
-        # Solo enlazar si existe el HTML
-        link = f"[{page_path}](lighthouse/{k}.html)" if (k in name_to_metrics and os.path.isfile(html_path)) else page_path
-        perf, lcp, tti, inp, top2 = name_to_metrics.get(k, ('n/a','n/a','n/a','n/a','—'))
-        rows.append((link, perf, lcp, tti, inp, top2))
+        # mobile row
+        html_path_m = os.path.join(DOCS_LH_DIR, f"{k}.html")
+        link_m = f"[{page_path}](lighthouse/{k}.html)" if (k in name_to_metrics_m and os.path.isfile(html_path_m)) else page_path
+        perf, lcp, tti, inp, top2 = name_to_metrics_m.get(k, ('n/a','n/a','n/a','n/a','—'))
+        rows_mobile.append((link_m, perf, lcp, tti, inp, top2))
+        # desktop row
+        html_path_d = os.path.join(DOCS_LH_DIR, f"{k}-d.html")
+        link_d = f"[{page_path}](lighthouse/{k}-d.html)" if (k in name_to_metrics_d and os.path.isfile(html_path_d)) else page_path
+        perf_d, lcp_d, tti_d, inp_d, top2_d = name_to_metrics_d.get(k, ('n/a','n/a','n/a','n/a','—'))
+        rows_desktop.append((link_d, perf_d, lcp_d, tti_d, inp_d, top2_d))
 
-    table_md = build_table(rows)
+    table_mobile_md = build_table(rows_mobile, kind="mobile")
+    table_desktop_md = build_table(rows_desktop, kind="desktop")
 
-    # Append or replace in doc: find section starting with '## Lighthouse móvil (métricas reales) —'
+    # Append or replace in doc: find sections for mobile and desktop
     if not os.path.isfile(DOC_PATH):
         print(f"[warn] Doc file not found: {DOC_PATH}")
         return 0
@@ -124,19 +141,27 @@ def main():
     with open(DOC_PATH, 'r', encoding='utf-8') as f:
         content = f.read()
 
-    # Strategy: replace the last '## Lighthouse móvil (métricas reales)' block with new one
+    # Strategy: replace the last '## Lighthouse móvil (métricas reales)' and
+    # '## Lighthouse desktop (métricas reales)' blocks with new ones
     import re
-    pattern = r"## Lighthouse móvil \(métricas reales\)[\s\S]*$"
-    if re.search(pattern, content, flags=re.M):
-        new_content = re.sub(pattern, table_md + "\n", content, flags=re.M)
+    pattern_mobile = r"## Lighthouse móvil \(métricas reales\)[\s\S]*?(?=\n## |\Z)"
+    pattern_desktop = r"## Lighthouse desktop \(métricas reales\)[\s\S]*?(?=\n## |\Z)"
+
+    new_content = content
+    if re.search(pattern_mobile, new_content, flags=re.M):
+        new_content = re.sub(pattern_mobile, table_mobile_md, new_content, flags=re.M)
     else:
-        # If not found, append
-        new_content = content.rstrip() + "\n\n" + table_md + "\n"
+        new_content = new_content.rstrip() + "\n\n" + table_mobile_md + "\n"
+
+    if re.search(pattern_desktop, new_content, flags=re.M):
+        new_content = re.sub(pattern_desktop, table_desktop_md, new_content, flags=re.M)
+    else:
+        new_content = new_content.rstrip() + "\n\n" + table_desktop_md + "\n"
 
     with open(DOC_PATH, 'w', encoding='utf-8') as f:
         f.write(new_content)
 
-    print('[ok] Markdown table updated in', DOC_PATH)
+    print('[ok] Markdown tables (mobile/desktop) updated in', DOC_PATH)
     return 0
 
 
