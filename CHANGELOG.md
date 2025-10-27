@@ -1,3 +1,14 @@
+## 0.9.1 – 20251027 (en desarrollo)
+- **Fase 3 — Maquetado bilingüe y OG dinámico**:
+  - Plantillas creadas: `page-projects.php`, `page-resources.php` (grids con placeholders, copy ES/EN).
+  - Plantillas refactorizadas: `page-home.php`, `page-about.php` (hero bilingüe, detección idioma via `pll_current_language`, tokens CSS completos).
+  - `page-contact.php`: auditado OK (tokens CSS, honeypot, nonce, estados `?status=ok|error`).
+  - Open Graph: generados `og-home-es.png` y `og-home-en.png` (1200×630, colores de tokens). Lógica OG dinámica en `functions.php` detecta plantillas y sirve imagen por idioma.
+  - Menús: `content/menus/menus.json` actualizado con 6 ítems ES/EN (Inicio, Sobre mí, Proyectos, Recursos, Blog, Contacto).
+  - Validación anti-hex: **PASS** — sin colores hardcodeados fuera de `tokens.css`.
+  - Evidencia: capturas en `evidence/ui/fase3_*` (Home, About, Projects, Resources ES desktop/mobile).
+  - Reportes: `reports/fase3_plan.md`, `reports/fase3_cierre.md`, `reports/deuda_visual.md` actualizado.
+
 ## 0.9.0 – 20251021 (Release)
 - Hub Central (v0.9.0): `docs/hub/instances.json`, `docs/hub/hub_status.json`, `docs/hub/index.md`.
 - Agregación planificada para v0.9.1 y workflow programado para refrescar `hub_status.json`.

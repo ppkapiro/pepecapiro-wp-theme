@@ -1,12 +1,20 @@
 {
   "main": {
     "es": [
-      { "title": "Inicio", "url": "/", "children": [] },
-      { "title": "Blog", "url": "/blog/", "children": [] }
+      { "title": "Inicio", "url": "/inicio/", "children": [] },
+      { "title": "Sobre mí", "url": "/sobre-mi/", "children": [] },
+      { "title": "Proyectos", "url": "/proyectos/", "children": [] },
+      { "title": "Recursos", "url": "/recursos/", "children": [] },
+      { "title": "Blog", "url": "/blog/", "children": [] },
+      { "title": "Contacto", "url": "/contacto/", "children": [] }
     ],
     "en": [
-      { "title": "Home", "url": "/en/", "children": [] },
-      { "title": "Blog", "url": "/en/blog/", "children": [] }
+      { "title": "Home", "url": "/en/home/", "children": [] },
+      { "title": "About", "url": "/en/about/", "children": [] },
+      { "title": "Projects", "url": "/en/projects/", "children": [] },
+      { "title": "Resources", "url": "/en/resources/", "children": [] },
+      { "title": "Blog", "url": "/en/blog-en/", "children": [] },
+      { "title": "Contact", "url": "/en/contact/", "children": [] }
     ]
   },
   "footer": {
