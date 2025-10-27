@@ -17,8 +17,8 @@ Este documento resume los cambios y cómo verificarlos.
   - Landmarks y labels: `role="main"`, `aria-labelledby`, grillas como listas (`role="list"/`listitem`).
   - Enlace "Saltar al contenido" al inicio del `<body>`.
 - CI (Lighthouse Gate)
-  - Script `scripts/assert_lh_thresholds.py` valida Performance/LCP/CLS (móvil) contra `configs/perf_thresholds.json`.
-  - Workflow actualizado `.github/workflows/lighthouse.yml` para fallar si no se cumplen umbrales y luego generar resumen.
+  - Script `scripts/assert_lh_thresholds.py` valida Performance/LCP/CLS (móvil y desktop) contra `configs/perf_thresholds.json`.
+  - Workflow actualizado `.github/workflows/lighthouse.yml` para ejecutar móvil y desktop, fallar si no se cumplen umbrales y luego generar resumen.
 
 ## Cómo validar
 

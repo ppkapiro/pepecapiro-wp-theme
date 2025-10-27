@@ -29,12 +29,18 @@ NAME_TO_PATH = {
 def load_thresholds():
     with open(THRESHOLDS_FILE, 'r', encoding='utf-8') as f:
         data = json.load(f)
-    # Only mobile thresholds for now
-    return data.get('psi', {}).get('mobile', {
+    psi = data.get('psi', {})
+    mobile = psi.get('mobile', {
         'performance_min': 90,
         'lcp_max_ms': 2500,
         'cls_max': 0.1,
     })
+    desktop = psi.get('desktop', {
+        'performance_min': 95,
+        'lcp_max_ms': 1800,
+        'cls_max': 0.05,
+    })
+    return {'mobile': mobile, 'desktop': desktop}
 
 
 def parse_report(path):
@@ -55,10 +61,15 @@ def parse_report(path):
 
 
 def main():
-    thr = load_thresholds()
-    perf_min = int(thr.get('performance_min', 90))
-    lcp_max = float(thr.get('lcp_max_ms', 2500))
-    cls_max = float(thr.get('cls_max', 0.1))
+    thr_all = load_thresholds()
+    m_thr = thr_all['mobile']
+    d_thr = thr_all['desktop']
+    m_perf_min = int(m_thr.get('performance_min', 90))
+    m_lcp_max = float(m_thr.get('lcp_max_ms', 2500))
+    m_cls_max = float(m_thr.get('cls_max', 0.1))
+    d_perf_min = int(d_thr.get('performance_min', 95))
+    d_lcp_max = float(d_thr.get('lcp_max_ms', 1800))
+    d_cls_max = float(d_thr.get('cls_max', 0.05))
 
     json_files = { os.path.splitext(os.path.basename(p))[0]: p for p in glob.glob(os.path.join(REPORT_DIR, '*.json')) }
     if not json_files:
@@ -66,32 +77,54 @@ def main():
         return 2
 
     failures = []
-    checked = 0
+    checked_m = 0
+    checked_d = 0
 
     for name in PAGES_ORDER:
-        jf = json_files.get(name)
-        if not jf:
-            # Solo avisar, no fallar por ausencia de alguna página
-            print(f"[warn] Falta reporte: {name} ({NAME_TO_PATH.get(name, '')})")
-            continue
-        checked += 1
-        try:
-            perf, lcp, cls = parse_report(jf)
-        except Exception as e:
-            failures.append((name, f'parse-error: {e}'))
-            continue
-        issues = []
-        if perf is None or perf < perf_min:
-            issues.append(f'performance {perf} < {perf_min}')
-        if lcp is None or lcp > lcp_max:
-            issues.append(f'LCP {lcp}ms > {lcp_max}ms')
-        if cls is None or cls > cls_max:
-            issues.append(f'CLS {cls} > {cls_max}')
-        if issues:
-            failures.append((name, '; '.join(issues)))
+        # Mobile
+        jf_m = json_files.get(name)
+        if not jf_m:
+            print(f"[warn] Falta reporte móvil: {name} ({NAME_TO_PATH.get(name, '')})")
+        else:
+            checked_m += 1
+            try:
+                perf, lcp, cls = parse_report(jf_m)
+            except Exception as e:
+                failures.append((name, f'mobile-parse-error: {e}'))
+            else:
+                issues = []
+                if perf is None or perf < m_perf_min:
+                    issues.append(f'mobile performance {perf} < {m_perf_min}')
+                if lcp is None or lcp > m_lcp_max:
+                    issues.append(f'mobile LCP {lcp}ms > {m_lcp_max}ms')
+                if cls is None or cls > m_cls_max:
+                    issues.append(f'mobile CLS {cls} > {m_cls_max}')
+                if issues:
+                    failures.append((name, '; '.join(issues)))
 
-    if checked == 0:
-        print('[error] No se pudo validar, no hay reportes coincidentes con PAGES_ORDER.', file=sys.stderr)
+        # Desktop (sufijo -d)
+        jf_d = json_files.get(f"{name}-d")
+        if not jf_d:
+            print(f"[warn] Falta reporte desktop: {name}-d ({NAME_TO_PATH.get(name, '')})")
+        else:
+            checked_d += 1
+            try:
+                perf, lcp, cls = parse_report(jf_d)
+            except Exception as e:
+                failures.append((f"{name}-d", f'desktop-parse-error: {e}'))
+            else:
+                issues = []
+                if perf is None or perf < d_perf_min:
+                    issues.append(f'desktop performance {perf} < {d_perf_min}')
+                if lcp is None or lcp > d_lcp_max:
+                    issues.append(f'desktop LCP {lcp}ms > {d_lcp_max}ms')
+                if cls is None or cls > d_cls_max:
+                    issues.append(f'desktop CLS {cls} > {d_cls_max}')
+                if issues:
+                    failures.append((f"{name}-d", '; '.join(issues)))
+
+    if checked_m == 0 and checked_d == 0:
+        print('[error] No se pudo validar, no hay reportes coincidentes con PAGES_ORDER (ni móvil ni desktop).', file=sys.stderr)
         return 3
 
     if failures:

@@ -67,6 +67,39 @@ jobs:
           run_lh "/contacto/"     "contacto"
           run_lh "/en/contact/"   "en-contact"
 
+      - name: Run Lighthouse (desktop) for target URLs
+        env:
+          CHROME_PATH: ${{ steps.setup-chrome.outputs.chrome-path }}
+        run: |
+          set -euo pipefail
+          base="https://pepecapiro.com"
+          run_lh(){
+            local path="$1"; local name="$2";
+            echo "==> Auditing (desktop) $path -> ${name}-d"
+            lighthouse "${base}${path}" \
+              --output=json --output=html \
+              --output-path="lighthouse_reports/${name}-d" \
+              --preset=perf \
+              --emulated-form-factor=desktop \
+              --throttling-method=devtools \
+              --chrome-flags="--headless=new --no-sandbox --disable-gpu" \
+              ${CHROME_PATH:+--chrome-path="$CHROME_PATH"}
+            # Normalizar nombres
+            mv "lighthouse_reports/${name}-d.report.json" "lighthouse_reports/${name}-d.json"
+            mv "lighthouse_reports/${name}-d.report.html" "lighthouse_reports/${name}-d.html"
+          }
+
+          run_lh "/"              "home"
+          run_lh "/en/"           "en-home"
+          run_lh "/sobre-mi/"     "sobre-mi"
+          run_lh "/en/about/"     "en-about"
+          run_lh "/proyectos/"    "proyectos"
+          run_lh "/en/projects/"  "en-projects"
+          run_lh "/recursos/"     "recursos"
+          run_lh "/en/resources/" "en-resources"
+          run_lh "/contacto/"     "contacto"
+          run_lh "/en/contact/"   "en-contact"
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
