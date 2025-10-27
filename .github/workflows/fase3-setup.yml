@@ -1,0 +1,162 @@
+name: Fase 3 WP Setup
+
+on:
+  workflow_dispatch:
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configurar WordPress Fase 3
+        env:
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          AUTH="$WP_USER:$WP_APP_PASSWORD"
+          API="${WP_URL}/wp-json/wp/v2"
+          
+          echo "=== Fase 3 WP Setup ==="
+          echo ""
+          
+          # 1. Front page
+          echo "1️⃣  Configurando front page (Inicio ID 5)..."
+          SETTINGS=$(curl -s -u "$AUTH" -X POST \
+            -H "Content-Type: application/json" \
+            -d '{"show_on_front":"page","page_on_front":5}' \
+            "${WP_URL}/wp-json/wp/v2/settings")
+          
+          if echo "$SETTINGS" | jq -e '.page_on_front == 5' > /dev/null 2>&1; then
+            echo "✅ Front page configurada: Inicio (ID 5)"
+            echo "   URL: ${WP_URL}/"
+          else
+            echo "⚠️  Error configurando front page"
+            echo "$SETTINGS" | jq -r '.message // "Error desconocido"'
+          fi
+          echo ""
+          
+          # 2. Proyectos (ES)
+          echo "2️⃣  Creando página Proyectos (ES)..."
+          PROY=$(curl -s -u "$AUTH" -X POST \
+            -H "Content-Type: application/json" \
+            -d '{"title":"Proyectos","slug":"proyectos","status":"publish","template":"page-projects.php","excerpt":"Portafolio de proyectos"}' \
+            "${API}/pages" 2>&1)
+          
+          PROY_ID=$(echo "$PROY" | jq -r '.id // empty' 2>/dev/null || echo "")
+          if [ -n "$PROY_ID" ]; then
+            PROY_LINK=$(echo "$PROY" | jq -r '.link')
+            echo "✅ Proyectos creada"
+            echo "   ID: $PROY_ID"
+            echo "   URL: $PROY_LINK"
+          else
+            ERROR=$(echo "$PROY" | jq -r '.message // .code // "Error desconocido"' 2>/dev/null || echo "Error")
+            if echo "$ERROR" | grep -qi "already\|existe"; then
+              echo "⚠️  Página ya existe, obteniendo ID..."
+              EXISTING=$(curl -s -u "$AUTH" "${API}/pages?slug=proyectos&per_page=1")
+              PROY_ID=$(echo "$EXISTING" | jq -r '.[0].id // empty')
+              PROY_LINK=$(echo "$EXISTING" | jq -r '.[0].link // empty')
+              echo "   ID existente: $PROY_ID"
+              echo "   URL: $PROY_LINK"
+            else
+              echo "⚠️  Error: $ERROR"
+            fi
+          fi
+          echo ""
+          
+          # 3. Projects (EN)
+          echo "3️⃣  Creando página Projects (EN)..."
+          PROJ=$(curl -s -u "$AUTH" -X POST \
+            -H "Content-Type: application/json" \
+            -d '{"title":"Projects","slug":"projects","status":"publish","template":"page-projects.php","excerpt":"Projects portfolio"}' \
+            "${API}/pages" 2>&1)
+          
+          PROJ_ID=$(echo "$PROJ" | jq -r '.id // empty' 2>/dev/null || echo "")
+          if [ -n "$PROJ_ID" ]; then
+            PROJ_LINK=$(echo "$PROJ" | jq -r '.link')
+            echo "✅ Projects creada"
+            echo "   ID: $PROJ_ID"
+            echo "   URL: $PROJ_LINK"
+          else
+            ERROR=$(echo "$PROJ" | jq -r '.message // .code // "Error desconocido"' 2>/dev/null || echo "Error")
+            if echo "$ERROR" | grep -qi "already\|existe"; then
+              echo "⚠️  Página ya existe, obteniendo ID..."
+              EXISTING=$(curl -s -u "$AUTH" "${API}/pages?slug=projects&per_page=1")
+              PROJ_ID=$(echo "$EXISTING" | jq -r '.[0].id // empty')
+              PROJ_LINK=$(echo "$EXISTING" | jq -r '.[0].link // empty')
+              echo "   ID existente: $PROJ_ID"
+              echo "   URL: $PROJ_LINK"
+            else
+              echo "⚠️  Error: $ERROR"
+            fi
+          fi
+          echo ""
+          
+          # 4. Recursos (ES)
+          echo "4️⃣  Creando página Recursos (ES)..."
+          REC=$(curl -s -u "$AUTH" -X POST \
+            -H "Content-Type: application/json" \
+            -d '{"title":"Recursos","slug":"recursos","status":"publish","template":"page-resources.php","excerpt":"Colección de recursos"}' \
+            "${API}/pages" 2>&1)
+          
+          REC_ID=$(echo "$REC" | jq -r '.id // empty' 2>/dev/null || echo "")
+          if [ -n "$REC_ID" ]; then
+            REC_LINK=$(echo "$REC" | jq -r '.link')
+            echo "✅ Recursos creada"
+            echo "   ID: $REC_ID"
+            echo "   URL: $REC_LINK"
+          else
+            ERROR=$(echo "$REC" | jq -r '.message // .code // "Error desconocido"' 2>/dev/null || echo "Error")
+            if echo "$ERROR" | grep -qi "already\|existe"; then
+              echo "⚠️  Página ya existe, obteniendo ID..."
+              EXISTING=$(curl -s -u "$AUTH" "${API}/pages?slug=recursos&per_page=1")
+              REC_ID=$(echo "$EXISTING" | jq -r '.[0].id // empty')
+              REC_LINK=$(echo "$EXISTING" | jq -r '.[0].link // empty')
+              echo "   ID existente: $REC_ID"
+              echo "   URL: $REC_LINK"
+            else
+              echo "⚠️  Error: $ERROR"
+            fi
+          fi
+          echo ""
+          
+          # 5. Resources (EN)
+          echo "5️⃣  Creando página Resources (EN)..."
+          RES=$(curl -s -u "$AUTH" -X POST \
+            -H "Content-Type: application/json" \
+            -d '{"title":"Resources","slug":"resources","status":"publish","template":"page-resources.php","excerpt":"Resources collection"}' \
+            "${API}/pages" 2>&1)
+          
+          RES_ID=$(echo "$RES" | jq -r '.id // empty' 2>/dev/null || echo "")
+          if [ -n "$RES_ID" ]; then
+            RES_LINK=$(echo "$RES" | jq -r '.link')
+            echo "✅ Resources creada"
+            echo "   ID: $RES_ID"
+            echo "   URL: $RES_LINK"
+          else
+            ERROR=$(echo "$RES" | jq -r '.message // .code // "Error desconocido"' 2>/dev/null || echo "Error")
+            if echo "$ERROR" | grep -qi "already\|existe"; then
+              echo "⚠️  Página ya existe, obteniendo ID..."
+              EXISTING=$(curl -s -u "$AUTH" "${API}/pages?slug=resources&per_page=1")
+              RES_ID=$(echo "$EXISTING" | jq -r '.[0].id // empty')
+              RES_LINK=$(echo "$EXISTING" | jq -r '.[0].link // empty')
+              echo "   ID existente: $RES_ID"
+              echo "   URL: $RES_LINK"
+            else
+              echo "⚠️  Error: $ERROR"
+            fi
+          fi
+          echo ""
+          
+          # Resumen
+          echo "=== RESUMEN FASE 3 ==="
+          echo ""
+          echo "✅ Página principal: ${WP_URL}/ (ID 5)"
+          echo "✅ Proyectos: ${WP_URL}/proyectos/ (ID: ${PROY_ID:-N/A})"
+          echo "✅ Projects: ${WP_URL}/projects/ (ID: ${PROJ_ID:-N/A})"
+          echo "✅ Recursos: ${WP_URL}/recursos/ (ID: ${REC_ID:-N/A})"
+          echo "✅ Resources: ${WP_URL}/resources/ (ID: ${RES_ID:-N/A})"
+          echo ""
+          echo "⚠️  PENDIENTE MANUAL:"
+          echo "   1. Actualizar menús en WP Admin"
+          echo "   2. Purgar cache: ${WP_URL}/?LSCWP_CTRL=PURGE_ALL"

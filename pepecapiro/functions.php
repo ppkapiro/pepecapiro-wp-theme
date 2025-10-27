@@ -18,14 +18,15 @@ add_action('wp_enqueue_scripts', function(){
   if ( file_exists( $preferred ) ) {
       $version = filemtime( $preferred );
   }
-  $public_path = get_stylesheet_directory_uri() . '/assets/css/' . basename($preferred);
-  wp_enqueue_style('pepecapiro-theme', $public_path, [], $version);
-
-  // Enqueue tokens CSS (Design System) después del CSS principal
+  // Enqueue tokens CSS (Design System) primero, para que las variables estén disponibles
   $tokens_file = $theme_dir . '/assets/css/tokens.css';
   if ( file_exists($tokens_file) ) {
-    wp_enqueue_style('pepecapiro-tokens', get_stylesheet_directory_uri() . '/assets/css/tokens.css', ['pepecapiro-theme'], filemtime($tokens_file));
+    wp_enqueue_style('pepecapiro-tokens', get_stylesheet_directory_uri() . '/assets/css/tokens.css', [], filemtime($tokens_file));
   }
+
+  // Encolar CSS de tema dependiendo de tokens (para usar las variables)
+  $public_path = get_stylesheet_directory_uri() . '/assets/css/' . basename($preferred);
+  wp_enqueue_style('pepecapiro-theme', $public_path, ['pepecapiro-tokens'], $version);
 
   // Critical CSS opcional
   $critical_file = $theme_dir . '/assets/css/critical.css';
@@ -167,9 +168,18 @@ add_action('wp_head', function(){
     echo '<script type="application/ld+json">'.wp_json_encode( count($json_ld)===1 ? $json_ld[0] : $json_ld , JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE ).'</script>' . "\n";
   }
 
-  // Imagen OG para Home
+  // Imagen OG dinámica según página y idioma
+  $og_img_url = null;
   if ($is_home) {
-    $og_img_url  = get_stylesheet_directory_uri() . ( $is_en ? '/assets/og/og-home-en.png' : '/assets/og/og-home-es.png' );
+    $og_img_url = get_stylesheet_directory_uri() . ( $is_en ? '/assets/og/og-home-en.png' : '/assets/og/og-home-es.png' );
+  } elseif (is_page_template('page-about.php')) {
+    $og_img_url = get_stylesheet_directory_uri() . ( $is_en ? '/assets/og/og-about-en.png' : '/assets/og/og-about-es.png' );
+  } elseif (is_page_template('page-projects.php')) {
+    $og_img_url = get_stylesheet_directory_uri() . ( $is_en ? '/assets/og/og-projects-en.png' : '/assets/og/og-projects-es.png' );
+  } elseif (is_page_template('page-resources.php')) {
+    $og_img_url = get_stylesheet_directory_uri() . ( $is_en ? '/assets/og/og-resources-en.png' : '/assets/og/og-resources-es.png' );
+  }
+  if ($og_img_url) {
     echo '<meta property="og:image" content="'.esc_url($og_img_url).'" />' . "\n";
     echo '<meta property="og:image:width" content="1200" />' . "\n";
     echo '<meta property="og:image:height" content="630" />' . "\n";

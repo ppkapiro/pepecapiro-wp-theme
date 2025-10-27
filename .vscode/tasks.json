@@ -1,0 +1,15 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "UI Gate: Anti-hex CSS",
+      "type": "shell",
+      "command": "python",
+      "args": [
+        "scripts/ci/check_css_tokens.py"
+      ],
+      "group": "test",
+      "problemMatcher": []
+    }
+  ]
+}

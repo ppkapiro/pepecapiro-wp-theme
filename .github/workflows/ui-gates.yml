@@ -1,0 +1,28 @@
+name: UI Visual Gates
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'pepecapiro/**/*.css'
+      - 'scripts/ci/check_css_tokens.py'
+      - '.github/workflows/ui-gates.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'pepecapiro/**/*.css'
+      - 'scripts/ci/check_css_tokens.py'
+
+jobs:
+  css-anti-hex:
+    name: CSS anti-hex outside tokens
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Run anti-hex check
+        run: python scripts/ci/check_css_tokens.py
