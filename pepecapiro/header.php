@@ -3,8 +3,9 @@
 <head>
   <meta charset="<?php bloginfo('charset'); ?>">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <!-- Preload de la fuente crítica del LCP -->
+  <!-- Preload fuente crítica del LCP (hero H1) -->
   <link rel="preload" href="<?php echo esc_url( get_stylesheet_directory_uri() ); ?>/assets/fonts/montserrat/Montserrat-Bold.woff2" as="font" type="font/woff2" crossorigin>
+  <!-- Preconnect para recursos externos si los hubiera -->
   <?php wp_head(); ?>
 </head>
 <body <?php body_class(); ?>>
@@ -26,11 +27,6 @@
       ?></nav>
       <?php if (function_exists('pll_the_languages')): ?>
   <div class="lang-switcher"><?php pll_the_languages(['show_flags'=>1,'show_names'=>0]); ?></div>
-      <?php else: ?>
-        <div class="lang-switcher">
-          <a href="<?php echo esc_url(home_url('/')); ?>">ES</a> |
-          <a href="<?php echo esc_url(home_url('/en/')); ?>">EN</a>
-        </div>
       <?php endif; ?>
     </div>
   </div>

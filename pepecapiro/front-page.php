@@ -4,11 +4,11 @@ $lang = function_exists('pll_current_language') ? pll_current_language('slug') :
 $is_en = ($lang === 'en');
 // Textos por idioma
 $H1 = $is_en ? 'Technical support and automation—without the headache.' : 'Soporte técnico y automatización, sin drama.';
-$SUB = $is_en ? "I fix what’s urgent today and simplify your processes for tomorrow." : "Arreglo lo urgente hoy y dejo procesos más simples para mañana.";
+$SUB = $is_en ? "I fix what's urgent today and simplify your processes for tomorrow." : "Arreglo lo urgente hoy y dejo procesos más simples para mañana.";
 $CTA = $is_en ? "Let's talk" : "Hablemos";
 $CTA_URL = $is_en ? home_url('/en/contact') : home_url('/contacto');
 ?>
-<main>
+<main id="main" class="site-main">
   <section class="hero">
     <div class="container">
       <h1><?php echo esc_html($H1); ?></h1>
@@ -54,7 +54,7 @@ $CTA_URL = $is_en ? home_url('/en/contact') : home_url('/contacto');
 
   <section class="container section-center">
     <h2><?php echo $is_en ? 'Ready to start?' : '¿Listos para empezar?'; ?></h2>
-    <p class="subtitle"><?php echo $is_en ? 'Let’s talk for 15 minutes to identify the next step.' : 'Conversemos 15 minutos para identificar el siguiente paso.'; ?></p>
+    <p class="subtitle"><?php echo $is_en ? 'Let's talk for 15 minutes to identify the next step.' : 'Conversemos 15 minutos para identificar el siguiente paso.'; ?></p>
     <a class="btn" href="<?php echo esc_url($CTA_URL); ?>"><?php echo esc_html($CTA); ?></a>
   </section>
 </main>

@@ -3,7 +3,7 @@ Theme Name: pepecapiro
 Theme URI: https://pepecapiro.com
 Author: Pepe Capiro
  Description: Tema ligero personalizado.
- Version: 0.9.2
+ Version: 0.3.21
  License: GNU General Public License v2 or later
  License URI: http://www.gnu.org/licenses/gpl-2.0.html
  Text Domain: pepecapiro
@@ -351,4 +351,14 @@ textarea:focus-visible {
 		width: 100%;
 		justify-content: center;
 	}
+}
+
+/* CLS fixes - minimum heights for cards to prevent layout shifts */
+.card {
+min-height: 200px;
+}
+
+.grid {
+/* Ensure grid has proper spacing to avoid shifts when content loads */
+contain: layout;
 }

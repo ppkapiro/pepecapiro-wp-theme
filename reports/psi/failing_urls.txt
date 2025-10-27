@@ -1,0 +1,6 @@
+# Failing URLs (Mobile Priority) - Based on typical LCP/CLS issues
+# Format: URL | Expected Issue
+https://pepecapiro.com/ | LCP hero image, CLS layout shifts
+https://pepecapiro.com/en/ | LCP hero image, CLS layout shifts
+https://pepecapiro.com/sobre-mi/ | LCP content image, font-display
+https://pepecapiro.com/en/about/ | LCP content image, font-display
