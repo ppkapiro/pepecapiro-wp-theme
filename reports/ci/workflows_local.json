@@ -1,0 +1,275 @@
+[
+  {
+    "file": "api-automation-trigger.yml",
+    "valid": true,
+    "name": "API Automation Trigger",
+    "has_dispatch": true,
+    "on_as_bool": true
+  },
+  {
+    "file": "cleanup-test-posts.yml",
+    "valid": true,
+    "name": "Cleanup Test Posts",
+    "has_dispatch": true,
+    "on_as_bool": true
+  },
+  {
+    "file": "content-ops.yml",
+    "valid": true,
+    "name": "Content Ops (remote WP-CLI)",
+    "has_dispatch": true,
+    "on_as_bool": true
+  },
+  {
+    "file": "content-sync.yml",
+    "valid": true,
+    "name": "Content Sync",
+    "has_dispatch": true,
+    "on_as_bool": true
+  },
+  {
+    "file": "deploy.yml",
+    "valid": true,
+    "name": "Deploy pepecapiro theme",
+    "has_dispatch": true,
+    "on_as_bool": true
+  },
+  {
+    "file": "external_links.yml",
+    "valid": true,
+    "name": "external_links_health",
+    "has_dispatch": true,
+    "on_as_bool": true
+  },
+  {
+    "file": "fase3-setup.yml",
+    "valid": true,
+    "name": "Fase 3 WP Setup",
+    "has_dispatch": true,
+    "on_as_bool": true
+  },
+  {
+    "file": "health-dashboard.yml",
+    "valid": true,
+    "name": "Health Dashboard",
+    "has_dispatch": true,
+    "on_as_bool": true
+  },
+  {
+    "file": "hub-aggregation.yml",
+    "valid": true,
+    "name": "Hub Aggregation",
+    "has_dispatch": true,
+    "on_as_bool": true
+  },
+  {
+    "file": "lighthouse.yml",
+    "valid": true,
+    "name": "Lighthouse Audit (Mobile + Desktop)",
+    "has_dispatch": true,
+    "on_as_bool": true
+  },
+  {
+    "file": "lighthouse_cli.yml",
+    "valid": true,
+    "name": "Lighthouse CLI Batch",
+    "has_dispatch": true,
+    "on_as_bool": true
+  },
+  {
+    "file": "lighthouse_docs.yml",
+    "valid": true,
+    "name": "Lighthouse Mobile + Docs",
+    "has_dispatch": true,
+    "on_as_bool": true
+  },
+  {
+    "file": "prune-runs.yml",
+    "valid": true,
+    "name": "Prune Old Workflow Runs",
+    "has_dispatch": true,
+    "on_as_bool": true
+  },
+  {
+    "file": "psi_metrics.yml",
+    "valid": true,
+    "name": "PSI Metrics",
+    "has_dispatch": true,
+    "on_as_bool": true
+  },
+  {
+    "file": "publish-prod-menu.yml",
+    "valid": true,
+    "name": "Publish Prod Menu",
+    "has_dispatch": true,
+    "on_as_bool": true
+  },
+  {
+    "file": "publish-prod-page.yml",
+    "valid": true,
+    "name": "Publish Prod Page",
+    "has_dispatch": true,
+    "on_as_bool": true
+  },
+  {
+    "file": "publish-prod-post.yml",
+    "valid": true,
+    "name": "Publish Prod Post",
+    "has_dispatch": true,
+    "on_as_bool": true
+  },
+  {
+    "file": "publish-test-menu.yml",
+    "valid": true,
+    "name": "Publish Test Menu",
+    "has_dispatch": true,
+    "on_as_bool": true
+  },
+  {
+    "file": "publish-test-page.yml",
+    "valid": true,
+    "name": "Publish Test Page",
+    "has_dispatch": true,
+    "on_as_bool": true
+  },
+  {
+    "file": "publish-test-post.yml",
+    "valid": true,
+    "name": "Publish Test Post",
+    "has_dispatch": true,
+    "on_as_bool": true
+  },
+  {
+    "file": "release.yml",
+    "valid": true,
+    "name": "Build Theme Release",
+    "has_dispatch": false,
+    "on_as_bool": true
+  },
+  {
+    "file": "rollback.yml",
+    "valid": true,
+    "name": "Rollback pepecapiro theme",
+    "has_dispatch": true,
+    "on_as_bool": true
+  },
+  {
+    "file": "rotate-app-password.yml",
+    "valid": true,
+    "name": "Rotate Application Password",
+    "has_dispatch": true,
+    "on_as_bool": true
+  },
+  {
+    "file": "run-repair.yml",
+    "valid": true,
+    "name": "Run Repair",
+    "has_dispatch": true,
+    "on_as_bool": true
+  },
+  {
+    "file": "runs-summary.yml",
+    "valid": true,
+    "name": "Workflow Runs Summary",
+    "has_dispatch": true,
+    "on_as_bool": true
+  },
+  {
+    "file": "seo_audit.yml",
+    "valid": true,
+    "name": "seo_audit",
+    "has_dispatch": true,
+    "on_as_bool": true
+  },
+  {
+    "file": "set-home.yml",
+    "valid": true,
+    "name": "Set Home Page",
+    "has_dispatch": true,
+    "on_as_bool": true
+  },
+  {
+    "file": "site-health.yml",
+    "valid": true,
+    "name": "Site Health & Auto-Remediation",
+    "has_dispatch": true,
+    "on_as_bool": true
+  },
+  {
+    "file": "site-settings.yml",
+    "valid": true,
+    "name": "Site Settings",
+    "has_dispatch": true,
+    "on_as_bool": true
+  },
+  {
+    "file": "smoke-tests.yml",
+    "valid": true,
+    "name": "Smoke Tests",
+    "has_dispatch": true,
+    "on_as_bool": true
+  },
+  {
+    "file": "status.yml",
+    "valid": true,
+    "name": "CI Status Probe",
+    "has_dispatch": true,
+    "on_as_bool": true
+  },
+  {
+    "file": "ui-gates.yml",
+    "valid": true,
+    "name": "UI Visual Gates",
+    "has_dispatch": true,
+    "on_as_bool": true
+  },
+  {
+    "file": "upload-media.yml",
+    "valid": true,
+    "name": "Upload Media",
+    "has_dispatch": true,
+    "on_as_bool": true
+  },
+  {
+    "file": "verify-home.yml",
+    "valid": true,
+    "name": "Verify Home",
+    "has_dispatch": true,
+    "on_as_bool": true
+  },
+  {
+    "file": "verify-media.yml",
+    "valid": true,
+    "name": "Verify Media",
+    "has_dispatch": true,
+    "on_as_bool": true
+  },
+  {
+    "file": "verify-menus.yml",
+    "valid": true,
+    "name": "Verify Menus",
+    "has_dispatch": true,
+    "on_as_bool": true
+  },
+  {
+    "file": "verify-settings.yml",
+    "valid": true,
+    "name": "Verify Settings",
+    "has_dispatch": true,
+    "on_as_bool": true
+  },
+  {
+    "file": "webhook-github-to-wp.yml",
+    "valid": true,
+    "name": "Webhook GitHub to WordPress",
+    "has_dispatch": true,
+    "on_as_bool": true
+  },
+  {
+    "file": "weekly-audit.yml",
+    "valid": true,
+    "name": "Weekly Audit",
+    "has_dispatch": true,
+    "on_as_bool": true
+  }
+]

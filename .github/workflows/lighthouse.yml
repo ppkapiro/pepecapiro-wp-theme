@@ -129,6 +129,19 @@ jobs:
         run: |
           python3 scripts/assert_lh_thresholds.py
 
+      - name: Publish Assert Summary to Job Summary
+        if: always()
+        run: |
+          if [ -f lighthouse_reports/assert_summary.txt ]; then
+            echo "## 📊 Lighthouse Assertion Summary" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            cat lighthouse_reports/assert_summary.txt >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ No assert_summary.txt found" >> $GITHUB_STEP_SUMMARY
+          fi
+
       - name: Generate Markdown summary
         if: always()
         run: |

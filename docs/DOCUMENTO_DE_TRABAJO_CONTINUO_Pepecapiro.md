@@ -157,6 +157,22 @@ El proyecto se encuentra en la iteración v0.3.0, operando sobre WordPress 6.8.2
 
 Referencias vivas: [`docs/WORKFLOWS_INDEX.md`](../docs/WORKFLOWS_INDEX.md) y [`reports/ci/workflows_inventory.md`](../reports/ci/workflows_inventory.md).
 
+### Diagnóstico y Reconciliación de Workflows (Enero 2025)
+
+**Estado actual**: 39 workflows totales; 39 válidos YAML; 39 con `workflow_dispatch`; 0 deshabilitados remotamente; 0 discrepancias local vs remoto.
+
+**Inventarios disponibles**:
+- [workflows_local.json](../reports/ci/workflows_local.json) — Parse local con detección de `workflow_dispatch` (corregido para `on:` → boolean `True` en PyYAML)
+- [workflows_remote.json](../reports/ci/workflows_remote.json) — Snapshot desde GitHub API (`gh api /repos/.../actions/workflows`)
+- [workflows_diff.md](../reports/ci/workflows_diff.md) — Reporte de cross-check (only-local, only-remote, missing-dispatch, disabled)
+- [workflows_health.md](../reports/ci/workflows_health.md) — Resumen de salud (totales, validación, cobertura, estado remoto)
+
+**Fixes aplicados**:
+1. **release.yml**: Añadido `workflow_dispatch` (era el único sin trigger manual).
+2. **lighthouse.yml**: Añadido step "Publish Assert Summary to Job Summary" para escribir `assert_summary.txt` en `$GITHUB_STEP_SUMMARY` → visibilidad inmediata en GitHub Actions UI.
+
+**Nota técnica**: PyYAML interpreta `on:` sin comillas como boolean `True` (no string "on"). La detección corregida verifica ambos `data.get('on')` y `data.get(True)`.
+
 **Nota operativa — Local vs Actions:** los secrets configurados en GitHub Actions no se replican en el entorno local. Para pruebas locales usar `secrets/.wp_env.local` u overrides temporales y limpiar inmediatamente tras validar.
 
 ---
