@@ -28,6 +28,12 @@ add_action('wp_enqueue_scripts', function(){
   $public_path = get_stylesheet_directory_uri() . '/assets/css/' . basename($preferred);
   wp_enqueue_style('pepecapiro-theme', $public_path, ['pepecapiro-tokens'], $version);
 
+  // Utilidades pequeñas (p.ej., .sr-only)
+  $utils_file = $theme_dir . '/assets/css/utilities.css';
+  if ( file_exists($utils_file) ) {
+    wp_enqueue_style('pepecapiro-utils', get_stylesheet_directory_uri() . '/assets/css/utilities.css', ['pepecapiro-theme'], filemtime($utils_file));
+  }
+
   // Critical CSS opcional
   $critical_file = $theme_dir . '/assets/css/critical.css';
   if ( file_exists( $critical_file ) ) {
