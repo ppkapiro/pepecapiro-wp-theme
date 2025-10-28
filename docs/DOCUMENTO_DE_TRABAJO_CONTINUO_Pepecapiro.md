@@ -382,9 +382,66 @@ Checklist por ciclo (antes de marcar fase como completada):
 - Marcar Opción 2 como elegida con resultados de validación
 - Enlaces a todos los reportes (pre-audits, post_public_health, images_audit)
 
-**PASO 6 - Monitoreo 48h (⏳ PENDIENTE):**
-- Activar security features: Secret scanning alerts, Dependabot security updates
-- Crear checklist de monitoring: [reports/security/public_monitoring_48h.md](../reports/security/public_monitoring_48h.md)
+**PASO 6 - Monitoreo 48h (✅ COMPLETADO):**
+- Security features activadas (2025-10-28 14:45 UTC):
+  - Secret scanning alerts: ✅ enabled
+  - Push protection: ✅ enabled  
+  - Dependabot security updates: ✅ enabled
+- Checklist creado: [reports/security/public_monitoring_48h.md](../reports/security/public_monitoring_48h.md)
+- Periodo de monitoreo: 2025-10-28 a 2025-10-30 (48h post-conversión)
+
+---
+
+### 2025-10-28: Fase 4 (Performance/A11y/SEO) — ✅ COMPLETADA
+
+**Lighthouse run 18877785392 validado:**
+- **20/20 audits PASS** (10 páginas × mobile+desktop)
+- **Performance:** 98-100 en todas las auditorías (threshold ≥88 mobile / ≥92 desktop)
+- **LCP:** 1437-2007ms (threshold ≤2600ms mobile / ≤2000ms desktop)
+- **CLS:** **0.000 perfecto** en TODAS las auditorías (0 layout shifts detectados)
+
+**Páginas validadas:**
+- Home ES/EN, About ES/EN, Projects ES/EN, Resources ES/EN, Contact ES/EN
+
+**Optimizaciones aplicadas y validadas:**
+- Critical CSS inline (~2.5KB)
+- Font preload (Satoshi-Variable.woff2)
+- min-height en cards (evita CLS en lazy load)
+- Layout containment vía contain: content
+
+**Reporte completo:** [reports/psi/fase4_performance_final.md](../reports/psi/fase4_performance_final.md)
+
+**Commit:** 73b31eb - "perf(fase4): validación completa - 20/20 audits PASS"
+
+---
+
+### 2025-10-28: Fase 5 (SMTP Configuration) — 🔄 EN PROGRESO
+
+**Workflow SMTP creado y operativo:**
+- **Archivo:** `.github/workflows/smtp-config.yml` (4 acciones: check, install, configure, test)
+- **Primer intento:** FAILED (heredoc SSH no parsea en YAML indentado)
+- **Fix aplicado:** Reescritura con inline SSH commands + `&&` chains
+- **Commits:** 13785e9 (inicial), d72341f (fix sintaxis SSH)
+
+**Plugin WP Mail SMTP instalado:**
+- **Versión:** 4.6.0 by WPForms
+- **Instalación:** Via workflow run 18879071716 (SUCCESS en 14s)
+- **Estado:** ✅ Instalado y activado (2025-10-28 14:55 UTC)
+- **Logs:** "Plugin instalado correctamente. Plugin 'wp-mail-smtp' activated. Success: Installed 1 of 1 plugins."
+
+**Próximos pasos (requieren acción manual):**
+- [ ] Usuario debe configurar SMTP en WP admin (pepecapiro.com/wp-admin > WP Mail SMTP > Settings)
+- [ ] Configuración SMTP: Host `smtp.hostinger.com`, Puerto 465 (SSL) o 587 (TLS), Auth con email@pepecapiro.com
+- [ ] Enviar email de prueba desde WP admin (Email Test tab)
+- [ ] Probar formularios de contacto ES/EN
+- [ ] Ejecutar workflow test: `gh workflow run smtp-config.yml --field action=test`
+- [ ] Generar reporte: `reports/smtp_estado.md` (config + test results)
+
+**Documento de configuración:** [docs/SMTP_CONFIG_MANUAL.md](SMTP_CONFIG_MANUAL.md) (instrucciones paso a paso)
+
+**Bloqueo:** Credenciales SMTP no se pueden automatizar (deben estar solo en WP database, no en code/secrets)
+
+**Commit:** fda4ac2 / 11365d5 - "docs(smtp): instrucciones config manual - plugin instalado"
 
 ---
 
