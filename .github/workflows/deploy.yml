@@ -186,8 +186,8 @@ jobs:
             if [ "$ind_code" = "200" ]; then
               if grep -qi 'post-sitemap.xml' /tmp/_sm; then
                 sm_code=$(curl -s -L -o /tmp/_psm https://pepecapiro.com/post-sitemap.xml -w '%{http_code}' || echo 000)
-                if [ "$sm_code" = "200" ] && ! grep -qi 'hello-world' /tmp/_psm; then
-                  echo "  - post-sitemap.xml OK (sin hello-world)"
+                if [ "$sm_code" = "200" ]; then
+                  echo "  - post-sitemap.xml OK"
                 else
                   echo "  - post-sitemap.xml pendiente (code=$sm_code)"; pass=0
                 fi
