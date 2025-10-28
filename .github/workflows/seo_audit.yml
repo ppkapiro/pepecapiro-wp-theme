@@ -7,6 +7,11 @@ on:
   push:
     branches: [ main ]
 
+# Evita ejecuciones concurrentes (anti-derroche con repo público)
+concurrency:
+  group: seo-audit-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   audit:
     runs-on: ubuntu-latest

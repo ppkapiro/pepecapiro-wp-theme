@@ -3,6 +3,12 @@ on:
   workflow_dispatch: {}
   schedule:
     - cron: '0 2 * * 0'  # Domingo 2:00 UTC
+
+# Evita concurrencia (solo debe haber 1 weekly audit activo)
+concurrency:
+  group: weekly-audit
+  cancel-in-progress: false  # No cancelar audit en curso si se dispara manualmente
+
 permissions:
   contents: write
   issues: write

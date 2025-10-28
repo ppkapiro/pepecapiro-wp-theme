@@ -5,6 +5,11 @@ on:
   push:
     branches: [ main ]
 
+# Evita ejecuciones concurrentes del mismo workflow (anti-derroche con repo público)
+concurrency:
+  group: lighthouse-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   lighthouse:
     runs-on: ubuntu-latest

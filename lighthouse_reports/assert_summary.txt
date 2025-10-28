@@ -1,0 +1,1 @@
+[error] No se encontraron reportes JSON en lighthouse_reports/. ¿Se ejecutó Lighthouse?
