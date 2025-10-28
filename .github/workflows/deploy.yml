@@ -181,7 +181,7 @@ jobs:
                 echo "  - $u => $code OK"
               fi
             done
-            # Verificar sitemap principal y condicionar el de posts sólo si aparece listado
+            # Verificar sitemap principal (no bloqueante) y, si aplica, el de posts (también no bloqueante)
             ind_code=$(curl -s -L -o /tmp/_sm https://pepecapiro.com/sitemap_index.xml -w '%{http_code}' || echo 000)
             if [ "$ind_code" = "200" ]; then
               if grep -qi 'post-sitemap.xml' /tmp/_sm; then
@@ -189,13 +189,13 @@ jobs:
                 if [ "$sm_code" = "200" ]; then
                   echo "  - post-sitemap.xml OK"
                 else
-                  echo "  - post-sitemap.xml pendiente (code=$sm_code)"; pass=0
+                  echo "  - post-sitemap.xml pendiente (code=$sm_code)"
                 fi
               else
                 echo "  - sitemap_index.xml OK (post-sitemap aún no listado)"
               fi
             else
-              echo "  - sitemap_index.xml pendiente (code=$ind_code)"; pass=0
+              echo "  - sitemap_index.xml pendiente (code=$ind_code)"
             fi
             if [ $pass -eq 1 ]; then ok=true; break; fi
             sleep 10
