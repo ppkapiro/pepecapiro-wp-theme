@@ -143,7 +143,8 @@ jobs:
           $SSH "cd '$ROOT' && wp rewrite flush --hard | tee -a '$LOG' && wp cache flush | tee -a '$LOG' && (wp plugin is-installed litespeed-cache && wp litespeed-purge all | tee -a '$LOG' || true)"
           # Limpiar transients y caché de sitemaps de Rank Math; recalentar sitemaps
           $SSH "cd '$ROOT' && wp transient delete --all | tee -a '$LOG' || true"
-          $SSH "cd '$ROOT' && PREFIX=\$(wp db prefix) && wp db query \"DELETE FROM \\\${PREFIX}options WHERE option_name LIKE 'rank_math_sitemap_%';\" | tee -a '$LOG' || true"
+          # Borrar caché de sitemaps de Rank Math de forma robusta (evita problemas de quoting con wp db prefix)
+          $SSH "cd '$ROOT' && TBL=\$(wp db prefix)options && wp db query \"DELETE FROM \$TBL WHERE option_name LIKE 'rank_math_sitemap_%';\" | tee -a '$LOG' || true"
           $SSH "cd '$ROOT' && curl -sS https://pepecapiro.com/sitemap_index.xml >/dev/null && curl -sS https://pepecapiro.com/post-sitemap.xml >/dev/null || true"
           # Estado final útil para depuración
           $SSH "cd '$ROOT' && echo 'PAGES:' >> '$LOG' && wp post list --post_type=page --fields=ID,post_name,post_title,post_status --format=table >> '$LOG' && echo 'POSTS:' >> '$LOG' && wp post list --post_type=post --fields=ID,post_name,post_title,post_status --format=table >> '$LOG'"
@@ -180,11 +181,21 @@ jobs:
                 echo "  - $u => $code OK"
               fi
             done
-            sm_code=$(curl -s -L -o /tmp/_psm https://pepecapiro.com/post-sitemap.xml -w '%{http_code}' || echo 000)
-            if [ "$sm_code" = "200" ] && ! grep -qi 'hello-world' /tmp/_psm; then
-              echo "  - post-sitemap.xml OK (sin hello-world)"
+            # Verificar sitemap principal y condicionar el de posts sólo si aparece listado
+            ind_code=$(curl -s -L -o /tmp/_sm https://pepecapiro.com/sitemap_index.xml -w '%{http_code}' || echo 000)
+            if [ "$ind_code" = "200" ]; then
+              if grep -qi 'post-sitemap.xml' /tmp/_sm; then
+                sm_code=$(curl -s -L -o /tmp/_psm https://pepecapiro.com/post-sitemap.xml -w '%{http_code}' || echo 000)
+                if [ "$sm_code" = "200" ] && ! grep -qi 'hello-world' /tmp/_psm; then
+                  echo "  - post-sitemap.xml OK (sin hello-world)"
+                else
+                  echo "  - post-sitemap.xml pendiente (code=$sm_code)"; pass=0
+                fi
+              else
+                echo "  - sitemap_index.xml OK (post-sitemap aún no listado)"
+              fi
             else
-              echo "  - post-sitemap.xml pendiente (code=$sm_code)"; pass=0
+              echo "  - sitemap_index.xml pendiente (code=$ind_code)"; pass=0
             fi
             if [ $pass -eq 1 ]; then ok=true; break; fi
             sleep 10
