@@ -561,3 +561,4 @@ gh api /repos/ppkapiro/pepecapiro-wp-theme/forks --jq '.[] | .full_name'
 
 **Última actualización:** 2025-10-28  
 **Próxima revisión:** Post-conversión (si se ejecuta)
+✅ Repositorio convertido a PÚBLICO
