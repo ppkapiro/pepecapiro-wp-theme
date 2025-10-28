@@ -117,7 +117,7 @@ jobs:
         run: |
           set -e
           ROOT="/home/u525829715/domains/pepecapiro.com/public_html"
-          SSH="ssh -p \"${{ env.SSH_PORT }}\" \"${{ env.SSH_USER }}@${{ env.SSH_HOST }}\""
+          SSH="ssh -p ${{ env.SSH_PORT }} ${{ env.SSH_USER }}@${{ env.SSH_HOST }}"
           LOG="/tmp/content_ops_$(date +%s).log"
           # Unificar Contacto ES con plantilla bilingüe
           $SSH "cd '$ROOT' && ID=\$(wp post list --post_type=page --name=contacto --field=ID || true) && if [ -n \"$ID\" ]; then wp post meta update \"$ID\" _wp_page_template page-contact.php | tee -a '$LOG'; fi"
