@@ -13,10 +13,34 @@
 		radial-gradient(circle at 80% 80%, rgba(15, 116, 144, 0.03) 0%, transparent 50%);
 }
 
-/* Cards: sombra hover suave y transición */
+/* Grid y tarjetas (cards) */
+.cards { padding-block: var(--space-xl); }
+.cards .grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+	gap: var(--space-lg);
+	margin-top: var(--space-lg);
+}
 .card {
+	background: var(--color-surface);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-md);
+	padding: var(--space-md);
 	transition: box-shadow var(--transition-base);
 }
+.card h3 { margin-bottom: var(--space-xs); font-family: var(--font-title); }
+.card p { color: var(--color-text-secondary); }
+
+/* Buttons base */
+.btn { display:inline-block; background: var(--color-accent); color: var(--color-text-inverse); padding: 0.75rem 1.25rem; border-radius: var(--radius-sm); font-weight: 700; border: 1px solid transparent; transition: background var(--transition-base), color var(--transition-base), box-shadow var(--transition-base), transform var(--transition-base); }
+.btn:hover { box-shadow: var(--shadow-xs); transform: translateY(-1px); }
+.btn--ghost { background: transparent; color: var(--color-accent); border-color: var(--color-accent); }
+.btn--ghost:hover { background: var(--color-accent-soft); color: var(--color-accent-strong); }
+
+/* Secciones centradas */
+.section-center { text-align: center; padding-block: var(--space-xl); }
+
+/* Cards: sombra hover suave y transición */
 .card:hover,
 .card:focus-within {
 	box-shadow: var(--shadow-xs);
