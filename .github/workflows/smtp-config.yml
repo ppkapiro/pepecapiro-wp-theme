@@ -1,0 +1,156 @@
+name: Configure WP Mail SMTP
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Acción a ejecutar'
+        required: true
+        default: 'check'
+        type: choice
+        options:
+          - check     # Verificar estado actual
+          - install   # Instalar plugin
+          - configure # Configurar SMTP (requiere credenciales)
+          - test      # Enviar email de prueba
+
+jobs:
+  smtp-config:
+    runs-on: ubuntu-latest
+    env:
+      SSH_HOST: ${{ secrets.PEPE_HOST }}
+      SSH_PORT: ${{ secrets.PEPE_PORT }}
+      SSH_USER: ${{ secrets.PEPE_USER }}
+      SITE_ROOT: /home/u525829715/domains/pepecapiro.com/public_html
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Cargar clave SSH
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.PEPE_SSH_KEY }}
+      
+      - name: Verificar estado WP Mail SMTP
+        if: inputs.action == 'check'
+        run: |
+          echo "=== Verificando plugin WP Mail SMTP ==="
+          ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" << 'EOSSH'
+            cd /home/u525829715/domains/pepecapiro.com/public_html
+            
+            # Verificar si plugin existe
+            if wp plugin is-installed wp-mail-smtp; then
+              echo "✅ Plugin wp-mail-smtp instalado"
+              wp plugin get wp-mail-smtp --fields=name,status,version
+              
+              # Verificar configuración (opciones)
+              echo ""
+              echo "=== Configuración actual (si existe) ==="
+              wp option get wp_mail_smtp 2>/dev/null || echo "No hay configuración guardada"
+            else
+              echo "❌ Plugin wp-mail-smtp NO instalado"
+            fi
+            
+            # Verificar funcionalidad email actual
+            echo ""
+            echo "=== Test de función wp_mail() ==="
+            wp eval 'echo wp_mail("test@example.com", "Test", "Body") ? "✅ wp_mail() funcional" : "❌ wp_mail() falla";'
+          EOSSH
+      
+      - name: Instalar WP Mail SMTP
+        if: inputs.action == 'install'
+        run: |
+          echo "=== Instalando WP Mail SMTP ==="
+          ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" << 'EOSSH'
+            cd /home/u525829715/domains/pepecapiro.com/public_html
+            
+            # Instalar plugin desde repo oficial
+            wp plugin install wp-mail-smtp --activate
+            
+            # Verificar instalación
+            if wp plugin is-installed wp-mail-smtp && wp plugin is-active wp-mail-smtp; then
+              echo "✅ Plugin instalado y activado correctamente"
+              wp plugin get wp-mail-smtp --fields=name,status,version
+            else
+              echo "❌ Error en instalación"
+              exit 1
+            fi
+          EOSSH
+      
+      - name: Configurar SMTP (manual - requiere credenciales)
+        if: inputs.action == 'configure'
+        run: |
+          echo "⚠️ CONFIGURACIÓN SMTP REQUIERE CREDENCIALES"
+          echo ""
+          echo "Para configurar SMTP de Hostinger:"
+          echo "1. Login en pepecapiro.com/wp-admin"
+          echo "2. Ir a: WP Mail SMTP > Settings"
+          echo "3. Configurar:"
+          echo "   - Mailer: Other SMTP"
+          echo "   - From Email: noreply@pepecapiro.com (o email válido Hostinger)"
+          echo "   - From Name: Pepe Capiro"
+          echo "   - Return Path: checked"
+          echo "   - SMTP Host: smtp.hostinger.com"
+          echo "   - Encryption: SSL (puerto 465) o TLS (puerto 587)"
+          echo "   - SMTP Port: 465 (SSL) o 587 (TLS)"
+          echo "   - Auto TLS: On"
+          echo "   - Authentication: On"
+          echo "   - SMTP Username: email completo (ej: noreply@pepecapiro.com)"
+          echo "   - SMTP Password: password del email"
+          echo "4. Guardar configuración"
+          echo "5. Enviar email de prueba (tab Email Test)"
+          echo ""
+          echo "⚠️ NO almacenar credenciales SMTP en código - solo en plugin (DB WordPress)"
+      
+      - name: Enviar email de prueba
+        if: inputs.action == 'test'
+        run: |
+          echo "=== Enviando email de prueba ==="
+          ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" << 'EOSSH'
+            cd /home/u525829715/domains/pepecapiro.com/public_html
+            
+            # Verificar que plugin está activo
+            if ! wp plugin is-active wp-mail-smtp; then
+              echo "❌ Plugin wp-mail-smtp no está activo"
+              exit 1
+            fi
+            
+            # Enviar email de prueba vía wp_mail()
+            wp eval '
+              $to = "test@example.com";  // CAMBIAR por email real para probar
+              $subject = "[pepecapiro.com] Test SMTP - " . date("Y-m-d H:i:s");
+              $body = "Este es un email de prueba desde pepecapiro.com.\n\nSMTP configurado correctamente.";
+              $headers = array("Content-Type: text/plain; charset=UTF-8");
+              
+              if (wp_mail($to, $subject, $body, $headers)) {
+                echo "✅ Email enviado exitosamente a: $to\n";
+                echo "Verificar bandeja de entrada (o spam).\n";
+              } else {
+                echo "❌ Error al enviar email\n";
+                exit(1);
+              }
+            '
+          EOSSH
+      
+      - name: Generar reporte
+        if: always()
+        run: |
+          mkdir -p reports
+          cat > reports/smtp_check_$(date +%Y%m%d_%H%M%S).txt << EOF
+          WP Mail SMTP Check - $(date)
+          Action: ${{ inputs.action }}
+          Host: pepecapiro.com
+          
+          Ver logs arriba para detalles del resultado.
+          EOF
+          
+          cat reports/smtp_check_*.txt | tail -20
+      
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smtp-check-report
+          path: reports/smtp_check_*.txt
+          retention-days: 30
