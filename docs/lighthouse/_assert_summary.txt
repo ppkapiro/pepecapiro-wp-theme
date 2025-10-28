@@ -1,1 +1,3 @@
-=== Lighthouse assert: OK ===
+=== Lighthouse assert: FALLA ===
+- en-projects-d: desktop performance 56 < 92; desktop LCP 10245.859ms > 2000.0ms
+- recursos-d: desktop performance 56 < 92; desktop LCP 10172.714ms > 2000.0ms
