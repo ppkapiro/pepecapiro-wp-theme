@@ -1,0 +1,106 @@
+name: Emergency - Deactivate All Plugins
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Action: deactivate OR reactivate'
+        required: true
+        default: 'deactivate'
+        type: choice
+        options:
+          - deactivate
+          - reactivate
+
+env:
+  REMOTE_PATH: /home/u525829715/domains/pepecapiro.com/public_html
+  SSH_HOST: ${{ secrets.PEPE_HOST }}
+  SSH_PORT: ${{ secrets.PEPE_PORT }}
+  SSH_USER: ${{ secrets.PEPE_USER }}
+
+jobs:
+  plugin-toggle:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cargar clave SSH
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.PEPE_SSH_KEY }}
+
+      - name: Preparar known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -T 5 -p ${{ env.SSH_PORT }} ${{ env.SSH_HOST }} >> ~/.ssh/known_hosts
+
+      - name: ${{ github.event.inputs.action == 'deactivate' && 'Deactivate all plugins' || 'Reactivate all plugins' }}
+        run: |
+          ssh -p ${{ env.SSH_PORT }} ${{ env.SSH_USER }}@${{ env.SSH_HOST }} "
+            cd '${{ env.REMOTE_PATH }}'
+            
+            if [ '${{ github.event.inputs.action }}' = 'deactivate' ]; then
+              echo '=== Desactivando TODOS los plugins ==='
+              wp plugin deactivate --all
+              
+              echo ''
+              echo '=== Plugins activos (debería estar vacío) ==='
+              wp plugin list --status=active
+            else
+              echo '=== Reactivando plugins esenciales ==='
+              wp plugin activate polylang
+              wp plugin activate seo-by-rank-math
+              wp plugin activate litespeed-cache
+              wp plugin activate wpforms-lite
+              wp plugin activate wp-mail-smtp
+              
+              echo ''
+              echo '=== Plugins activos ==='
+              wp plugin list --status=active
+            fi
+            
+            echo ''
+            echo '=== Flushing cache post-toggle ==='
+            wp cache flush
+            wp rewrite flush --hard
+            wp litespeed-purge all 2>/dev/null || true
+          "
+
+      - name: Test HTTP after toggle
+        run: |
+          echo "Esperando 5 segundos..."
+          sleep 5
+          
+          echo "Testing https://pepecapiro.com/"
+          HTTP_CODE=$(curl -sS -o /dev/null -w "%{http_code}" https://pepecapiro.com/)
+          echo "HTTP Status: $HTTP_CODE"
+          
+          if [ "$HTTP_CODE" = "200" ]; then
+            echo "✅ Site is UP (HTTP 200)"
+            exit 0
+          else
+            echo "⚠️ Site returned HTTP $HTTP_CODE"
+            
+            if [ "${{ github.event.inputs.action }}" = "deactivate" ]; then
+              echo ""
+              echo "Plugins desactivados pero sitio aún en error."
+              echo "Problema NO es de plugins. Verificar:"
+              echo "  - wp-config.php"
+              echo "  - theme files (syntax errors)"
+              echo "  - .htaccess"
+              echo "  - PHP version/memory limits"
+            else
+              echo ""
+              echo "Plugins reactivados pero sitio aún en error."
+            fi
+            
+            exit 1
+          fi
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "========================================="
+          echo "Plugin Toggle - Summary"
+          echo "========================================="
+          echo "Action: ${{ github.event.inputs.action }}"
+          echo "Check 'Test HTTP after toggle' step for site status"
+          echo "========================================="
