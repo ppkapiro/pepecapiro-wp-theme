@@ -443,6 +443,100 @@ Checklist por ciclo (antes de marcar fase como completada):
 
 **Commit:** fda4ac2 / 11365d5 - "docs(smtp): instrucciones config manual - plugin instalado"
 
+**ACTUALIZACIÓN 2025-10-28 15:40 UTC - ✅ FASE 5 COMPLETADA:**
+
+**Configuración SMTP finalizada tras 5 iteraciones de debug:**
+
+**Iteración 1 (run 18879774898) - FAILED:**
+- Error: "Could not connect to SMTP host"
+- Diagnóstico: Port 456 (typo), encryption "none"
+- Corrección: Port → 465, encryption → ssl
+
+**Iteración 2 (run 18879948146) - FAILED:**
+- Error: "Could not authenticate"
+- Diagnóstico: From Email "contac@pepecapiro.com" (typo), User "contact@ppcapiro.com" (domain error)
+- Corrección: Emails corregidos a contact@pepecapiro.com
+
+**Iteración 3 (run 18880217700) - FAILED:**
+- Error: "Could not authenticate"
+- Diagnóstico: Config correcta pero password incorrecto
+- Corrección: Password actualizada en WP admin
+
+**Iteración 4 (run 18880363918) - FAILED:**
+- Error: "Could not authenticate" (confirmación password issue)
+- Corrección: Password re-verificada
+
+**Iteración 5 (run 18880479135) - ✅ SUCCESS:**
+- Output: "OK ✅ Email enviado"
+- wp_mail() ejecutado con éxito via workflow
+- Método: Temporary PHP file `/tmp/test_smtp.php` → wp eval-file
+
+**Configuración final FUNCIONAL:**
+```
+Plugin: WP Mail SMTP 4.6.0
+Host: smtp.hostinger.com
+Port: 465 (SSL)
+From Email: contact@pepecapiro.com
+SMTP User: contact@pepecapiro.com
+Auth: enabled (password actualizada)
+```
+
+**Formularios operativos:**
+- ES: https://pepecapiro.com/contacto/ (WPForms 1.9.8.1)
+- EN: https://pepecapiro.com/en/contact/
+
+**Workflows operativos:**
+- `smtp-config.yml`: check/install/configure/test actions
+- `smtp-diagnostico.yml`: config inspection + wp_mail test + debug logs
+
+**Reporte completo:** [reports/smtp_estado.md](../reports/smtp_estado.md)
+
+**Commit:** f7105ab - "feat(smtp): Fase 5 completada - SMTP funcional con Hostinger"
+
+---
+
+### 2025-10-28: Fase 6 (Cierre v0.3.0) — ✅ COMPLETADA
+
+**Documento de cierre generado:**
+- **CIERRE_v0_3_0.md:** Documento maestro de cierre (50+ páginas)
+  - Resumen ejecutivo completo
+  - Fases 1-5 con métricas detalladas y evidencias
+  - **Fase 4 Performance:** 20/20 audits PASS, CLS 0.000 perfecto, LCP 1437-2007ms
+  - **Fase 5 SMTP:** 5 iteraciones debug documentadas, test SUCCESS (run 18880479135)
+  - **Seguridad:** Repo conversion PUBLIC, secret scanning + push protection + Dependabot
+  - **CI/CD:** 40 workflows operativos, PRE vs POST comparison (private→public metrics)
+  - **Métricas proyecto:** 150+ commits, 14 páginas bilingües ES/EN, performance stats
+  - **Checklist de entrega:** Todas las fases 1-6 ✅ completadas
+  - **Tareas futuras:** Roadmap post v0.3.0 (analytics, PWA, newsletter, etc.)
+  - **Conclusión:** ✅ PRODUCCIÓN - LISTO PARA USO SOSTENIDO
+
+**Metadata de release:**
+- **public/project_status.json:** Status machine-readable v0.3.21
+  - Version: 0.3.21, release_date: 2025-10-28, status: production
+  - Features: bilingüe ES/EN, performance 20/20 audits, CI/CD 40 workflows, SMTP funcional, security hardened
+  - Metrics: performance 98-100, LCP 1437-2007ms, CLS 0.000, lighthouse_run 18877785392
+  - Plugins: Polylang 3.7.1, Rank Math 1.0.233, LiteSpeed 6.6.1, WPForms 1.9.8.1, WP Mail SMTP 4.6.0
+  - URLs: home/about/projects/resources/contact ES/EN
+
+**Deployment readiness signal:**
+- **FINAL_DEPLOY_READY.flag:** Señal de deployment listo
+  - 6/6 fases completadas (contenido → design → maquetado → performance → SMTP → cierre)
+  - CI/CD: Repository PUBLIC, 40 workflows, Actions minutes UNLIMITED
+  - Performance: CLS 0.000 PERFECT, LCP 1437-2007ms, scores 98-100
+  - SMTP: WP Mail SMTP 4.6.0 funcional (test SUCCESS run 18880479135)
+  - Security: Secret scanning + push protection + Dependabot enabled
+  - Next steps: weekly audit baseline, monitor 48h checklist, validate forms ES/EN
+
+**Estado final:**
+- ✅ Todas las fases 1-6 completadas
+- ✅ Proyecto en PRODUCCIÓN (nivel EXCELENTE - Core Web Vitals)
+- ✅ Documentación completa y consolidada
+- ✅ CI/CD operativo (repo público, sin regresiones)
+- ✅ SMTP funcional (emails operativos)
+- ✅ Performance validada (20/20 audits PASS, CLS 0.000)
+
+**Commit:** [pending] - "release(v0.3.0): cierre completo - proyecto production-ready"
+
 ---
 
 **📋 REGLA DE OPERACIÓN CI/CD (Post-Conversión Pública):**
