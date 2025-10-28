@@ -1,1 +1,13 @@
-=== Lighthouse assert: OK ===
+[warn] Falta reporte desktop: home-d (/)
+[warn] Falta reporte desktop: en-home-d (/en/)
+[warn] Falta reporte desktop: sobre-mi-d (/sobre-mi/)
+[warn] Falta reporte desktop: en-about-d (/en/about/)
+[warn] Falta reporte desktop: proyectos-d (/proyectos/)
+[warn] Falta reporte desktop: en-projects-d (/en/projects/)
+[warn] Falta reporte desktop: recursos-d (/recursos/)
+[warn] Falta reporte desktop: en-resources-d (/en/resources/)
+[warn] Falta reporte desktop: contacto-d (/contacto/)
+[warn] Falta reporte desktop: en-contact-d (/en/contact/)
+=== Lighthouse assert: FALLA ===
+- contacto: mobile CLS 0.13034352858578774 > 0.12
+- en-contact: mobile CLS 0.1287415110792948 > 0.12
