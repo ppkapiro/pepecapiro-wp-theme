@@ -2,7 +2,7 @@
 # Diagnóstico SMTP - Verificar configuración y errores
 set -euo pipefail
 
-SITE_ROOT="/home/u912040369/domains/pepecapiro.com/public_html"
+SITE_ROOT="/home/u525829715/domains/pepecapiro.com/public_html"
 
 echo "=== Diagnóstico SMTP pepecapiro.com ==="
 echo ""

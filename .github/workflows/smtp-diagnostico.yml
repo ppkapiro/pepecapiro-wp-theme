@@ -10,7 +10,7 @@ jobs:
       SSH_HOST: ${{ secrets.PEPE_HOST }}
       SSH_PORT: ${{ secrets.PEPE_PORT }}
       SSH_USER: ${{ secrets.PEPE_USER }}
-      SITE_ROOT: /home/u912040369/domains/pepecapiro.com/public_html
+      SITE_ROOT: /home/u525829715/domains/pepecapiro.com/public_html
     
     steps:
       - name: Checkout
