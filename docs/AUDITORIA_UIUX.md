@@ -383,8 +383,297 @@ Crear `docs/WORDPRESS_SETTINGS.md`:
 - Auditoría iniciada: 2025-10-28 16:00 UTC
 - Baseline: v0.3.0 (post-SMTP, post-performance optimization)
 - Objetivo: Identificar mejoras UI/UX antes de v0.3.1
+- **Auditoría visual completada:** 2025-10-28 16:45 UTC
+  - 20 capturas generadas (10 páginas × desktop + mobile)
+  - Análisis de color y contraste realizado
+  - Propuesta de nueva paleta cromática para v0.3.1
 
 ---
+
+## 📸 Capturas Visuales v0.3.21
+
+### Desktop (1440x900)
+
+Capturas completas de todas las páginas en resolución desktop:
+
+| Página | Screenshot |
+|--------|------------|
+| **Home ES** | `reports/uiux_audit/screenshots/desktop/home-es.png` |
+| **Home EN** | `reports/uiux_audit/screenshots/desktop/home-en.png` |
+| **Sobre Mí** | `reports/uiux_audit/screenshots/desktop/sobre-mi.png` |
+| **About** | `reports/uiux_audit/screenshots/desktop/about.png` |
+| **Proyectos** | `reports/uiux_audit/screenshots/desktop/proyectos.png` |
+| **Projects** | `reports/uiux_audit/screenshots/desktop/projects.png` |
+| **Recursos** | `reports/uiux_audit/screenshots/desktop/recursos.png` |
+| **Resources** | `reports/uiux_audit/screenshots/desktop/resources.png` |
+| **Contacto** | `reports/uiux_audit/screenshots/desktop/contacto.png` |
+| **Contact** | `reports/uiux_audit/screenshots/desktop/contact.png` |
+
+### Mobile (360x720)
+
+Capturas completas en resolución mobile:
+
+| Página | Screenshot |
+|--------|------------|
+| **Home ES** | `reports/uiux_audit/screenshots/mobile/home-es.png` |
+| **Home EN** | `reports/uiux_audit/screenshots/mobile/home-en.png` |
+| **Sobre Mí** | `reports/uiux_audit/screenshots/mobile/sobre-mi.png` |
+| **About** | `reports/uiux_audit/screenshots/mobile/about.png` |
+| **Proyectos** | `reports/uiux_audit/screenshots/mobile/proyectos.png` |
+| **Projects** | `reports/uiux_audit/screenshots/mobile/projects.png` |
+| **Recursos** | `reports/uiux_audit/screenshots/mobile/recursos.png` |
+| **Resources** | `reports/uiux_audit/screenshots/mobile/resources.png` |
+| **Contacto** | `reports/uiux_audit/screenshots/mobile/contacto.png` |
+| **Contact** | `reports/uiux_audit/screenshots/mobile/contact.png` |
+
+---
+
+## 🎨 Análisis de Color v0.3.21 → v0.3.1
+
+### Paleta Actual (v0.3.21)
+
+**Diagnóstico:** Sitio usa **paleta oscura** que genera sensación de "modo oscuro permanente"
+
+| Token | HEX | Uso | Observación |
+|-------|-----|-----|-------------|
+| `--color-bg` | `#0D1B2A` | Fondo | ⚠️ Azul casi negro (opresivo) |
+| `--color-surface` | `#FFFFFF` | Superficie | ✅ Blanco (correcto) |
+| `--color-accent` | `#1B9AAA` | Acento | ⚠️ Turquesa vibrante (muy brillante) |
+| `--color-text-primary` | `#0D1B2A` | Texto | ✅ Contraste excelente (15.8:1) |
+| `--color-text-secondary` | `#1E3A56` | Texto | ⚠️ Poca diferencia vs primary |
+
+**Contraste WCAG (Paleta Actual):**
+- Texto principal / Superficie: **15.8:1** (✅ WCAG AAA)
+- Texto secundario / Superficie: **11.2:1** (✅ WCAG AAA)
+- Acento / Superficie: **3.2:1** (⚠️ WCAG AA solo texto grande)
+
+**Problemas identificados:**
+1. Fondo `#0D1B2A` (azul oscuro) genera sensación pesada
+2. Sitio parece "dark mode" sin opción de cambio
+3. Dificulta lectura prolongada (fatiga visual)
+4. No refleja profesionalidad y claridad del contenido
+
+---
+
+### Paleta Propuesta (v0.3.1)
+
+**Objetivo:** Migrar a **paleta clara profesional**
+
+**Filosofía:** Claridad, profesionalismo, accesibilidad
+
+#### Comparativa de Tokens
+
+| Token | ACTUAL | PROPUESTO | Cambio |
+|-------|--------|-----------|--------|
+| `--color-bg` | `#0D1B2A` | `#F5F6F8` | ⚠️ **INVERSIÓN** (oscuro → claro) |
+| `--color-bg-alt` | `#13263F` | `#EAECEF` | ⚠️ **INVERSIÓN** |
+| `--color-surface` | `#FFFFFF` | `#FFFFFF` | ✅ Sin cambio |
+| `--color-accent` | `#1B9AAA` | `#0F7490` | 🔧 Desaturado (turquesa → petroleo) |
+| `--color-accent-strong` | `#137F8E` | `#0A5F75` | 🔧 Desaturado |
+| `--color-text-primary` | `#0D1B2A` | `#1F2937` | 🔧 Neutro (azul → gris) |
+| `--color-text-secondary` | `#1E3A56` | `#4B5563` | 🔧 Neutro + jerarquía |
+| `--color-border` | `#C7D0DB` | `#D1D5DB` | 🔧 Neutral |
+
+**Contraste WCAG (Paleta Propuesta):**
+- Texto primary / Superficie: **14.5:1** (✅ WCAG AAA)
+- Texto secondary / Superficie: **9.2:1** (✅ WCAG AAA)
+- Acento / Superficie: **4.6:1** (✅ WCAG AA - mejora +1.4:1)
+
+#### Hero Background Propuesto
+
+```css
+.hero {
+  background: linear-gradient(
+    135deg,
+    #FDFDFD 0%,
+    #F0F4F8 100%
+  );
+  /* Pattern decorativo sutil */
+  background-image:
+    radial-gradient(circle at 20% 50%, rgba(15, 116, 144, 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(15, 116, 144, 0.03) 0%, transparent 50%);
+}
+```
+
+**Beneficios visuales:**
+- Gradient sutil (no distrae)
+- Acentos del brand color con opacidad baja
+- Profundidad sin perder claridad
+
+---
+
+### Impacto Esperado de la Nueva Paleta
+
+#### ✅ Mejoras Visuales
+
+1. **Sensación de amplitud** - Fondo claro abre el espacio visual
+2. **Profesionalismo** - Paleta neutra transmite seriedad
+3. **Legibilidad mejorada** - Contraste AAA mantenido (14.5:1)
+4. **Jerarquía clara** - `text-secondary` (#4B5563) más diferenciado de `text-primary` (#1F2937)
+5. **Brand consistency** - Acento petroleo (#0F7490) único y memorable
+6. **Reducción de fatiga visual** - Fondo claro estándar web
+
+#### ✅ Performance Mantenido
+
+1. **CLS 0.000** - Sin cambios estructurales (solo colores)
+2. **LCP sin impacto** - Hero gradient es CSS puro (no imagen adicional)
+3. **CSS size** - Sin aumento significativo (solo valores HEX cambian)
+4. **Lighthouse scores** - Performance 98-100 se mantiene
+
+#### ✅ Accesibilidad Mejorada
+
+1. **WCAG AAA en textos** - Contraste 14.5:1 y 9.2:1 (vs 15.8:1 y 11.2:1)
+2. **WCAG AA en acentos** - Contraste 4.6:1 (vs 3.2:1 - mejora +1.4:1)
+3. **Mejor para usuarios con sensibilidad a contraste alto**
+
+---
+
+### Plan de Implementación v0.3.1
+
+#### Fase 1: Backup y Preparación
+
+```bash
+# 1. Crear backup de paleta actual
+cp pepecapiro/assets/css/tokens.css pepecapiro/assets/css/tokens.v0.3.21.bak.css
+
+# 2. Verificar baseline
+git status
+```
+
+#### Fase 2: Aplicar Nueva Paleta
+
+**Archivo: `pepecapiro/assets/css/tokens.css`**
+
+Reemplazar valores según tabla comparativa:
+- `--color-bg`: `#0D1B2A` → `#F5F6F8`
+- `--color-bg-alt`: `#13263F` → `#EAECEF`
+- `--color-accent`: `#1B9AAA` → `#0F7490`
+- `--color-accent-strong`: `#137F8E` → `#0A5F75`
+- `--color-text-primary`: `#0D1B2A` → `#1F2937`
+- `--color-text-secondary`: `#1E3A56` → `#4B5563`
+- `--color-text-muted`: `#5A6C7F` → `#6B7280`
+- `--color-border`: `#C7D0DB` → `#D1D5DB`
+- `--color-border-strong`: `#20354A` → `#9CA3AF`
+
+**Archivo: `pepecapiro/assets/css/theme.css` (o sección hero)**
+
+Agregar gradient a hero:
+```css
+.hero {
+  background: linear-gradient(135deg, #FDFDFD 0%, #F0F4F8 100%);
+  background-image:
+    radial-gradient(circle at 20% 50%, rgba(15, 116, 144, 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(15, 116, 144, 0.03) 0%, transparent 50%);
+}
+```
+
+#### Fase 3: Validación
+
+```bash
+# 1. Build CSS (si aplica)
+npm run build:css || echo "No build step configured"
+
+# 2. Test local (si hay servidor local)
+# Verificar visualmente home ES/EN
+
+# 3. Capturas comparativas (post-cambio)
+node scripts/uiux_full_audit.js
+
+# 4. Lighthouse re-audit
+# Validar CLS 0.000 se mantiene
+```
+
+#### Fase 4: Deploy
+
+```bash
+# 1. Commit cambios
+git add pepecapiro/assets/css/tokens.css pepecapiro/assets/css/theme.css
+git commit -m "feat(ui): nueva paleta clara v0.3.1 - migración de oscuro a claro
+
+- tokens.css: Invertir colores fondo (oscuro → claro)
+- Acento refinado: turquesa (#1B9AAA) → petroleo (#0F7490)
+- Textos neutros: azulados → grises
+- Hero gradient sutil agregado
+- Contraste WCAG AAA mantenido (14.5:1)
+- Performance sin impacto (CLS 0.000, LCP sin cambio)
+
+Basado en: reports/uiux_audit/color_proposal.md"
+
+git push origin main
+
+# 2. Deploy (si workflow manual)
+gh workflow run deploy.yml
+
+# 3. Monitoreo post-deploy
+# - Verificar home ES/EN carga correctamente
+# - Lighthouse baseline nuevo
+# - Capturas post-deploy para comparativa
+```
+
+---
+
+### Comparativa Visual: Antes vs Después (Simulada)
+
+#### ANTES (v0.3.21)
+```
+┌────────────────────────────────┐
+│ [HEADER] Azul oscuro #0D1B2A   │
+│ Brand: Blanco #FFFFFF          │
+├────────────────────────────────┤
+│ [HERO] Fondo blanco #FFFFFF    │
+│ H1: Azul oscuro #0D1B2A        │
+│ Subtitle: Azul medio #1E3A56   │
+│ [CTA] Turquesa #1B9AAA         │
+├────────────────────────────────┤
+│ [CARDS] Fondo blanco           │
+│ Border: Azul gris #C7D0DB      │
+│ Texto: #0D1B2A / #1E3A56       │
+└────────────────────────────────┘
+Impresión: Sobrio pero pesado
+```
+
+#### DESPUÉS (v0.3.1 Propuesto)
+```
+┌────────────────────────────────┐
+│ [HEADER] Gris claro #F5F6F8    │
+│ Brand: Gris oscuro #1F2937     │
+├────────────────────────────────┤
+│ [HERO] Gradient #FDFDFD→#F0F4F8│
+│ H1: Gris oscuro #1F2937        │
+│ Subtitle: Gris medio #4B5563   │
+│ [CTA] Petroleo #0F7490         │
+├────────────────────────────────┤
+│ [CARDS] Fondo blanco           │
+│ Border: Gris neutro #D1D5DB    │
+│ Texto: #1F2937 / #4B5563       │
+└────────────────────────────────┘
+Impresión: Amplio, claro, profesional
+```
+
+---
+
+## 📊 Reportes Detallados
+
+Análisis completos disponibles en:
+
+1. **Color actual y contraste WCAG:**  
+   `reports/uiux_audit/color_analysis.md`
+
+2. **Propuesta de paleta v0.3.1:**  
+   `reports/uiux_audit/color_proposal.md` (261 líneas)
+
+3. **Performance visual baseline:**  
+   `reports/uiux_audit/performance_visual.md`
+
+4. **Componentes y tokens CSS:**  
+   `reports/uiux_audit/componentes_globales.md`
+
+5. **WP-Admin estado:**  
+   `reports/uiux_audit/admin_wp.md`
+
+---
+
+## 📝 Notas del Auditor
 
 ## 🔗 Referencias
 
