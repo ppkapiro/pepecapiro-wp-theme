@@ -1,0 +1,106 @@
+name: Debug - WordPress Error Logs
+
+on:
+  workflow_dispatch:
+
+env:
+  REMOTE_PATH: /home/u525829715/domains/pepecapiro.com/public_html
+  SSH_HOST: ${{ secrets.PEPE_HOST }}
+  SSH_PORT: ${{ secrets.PEPE_PORT }}
+  SSH_USER: ${{ secrets.PEPE_USER }}
+
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cargar clave SSH
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.PEPE_SSH_KEY }}
+
+      - name: Preparar known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -T 5 -p ${{ env.SSH_PORT }} ${{ env.SSH_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Verificar tema activo
+        run: |
+          ssh -p ${{ env.SSH_PORT }} ${{ env.SSH_USER }}@${{ env.SSH_HOST }} "
+            cd '${{ env.REMOTE_PATH }}'
+            echo '=== Tema activo ==='
+            wp theme list --status=active --fields=name,version,status
+            
+            echo ''
+            echo '=== Verificar archivos CSS del tema ==='
+            ls -lh wp-content/themes/pepecapiro/assets/css/
+            
+            echo ''
+            echo '=== Primeras líneas de tokens.css ==='
+            head -n 10 wp-content/themes/pepecapiro/assets/css/tokens.css
+            
+            echo ''
+            echo '=== Verificar body background en tokens.css ==='
+            grep -A 2 '^body {' wp-content/themes/pepecapiro/assets/css/tokens.css || echo 'No encontrado'
+          "
+
+      - name: Verificar error logs WordPress
+        run: |
+          ssh -p ${{ env.SSH_PORT }} ${{ env.SSH_USER }}@${{ env.SSH_HOST }} "
+            cd '${{ env.REMOTE_PATH }}'
+            
+            echo '=== Debug mode status ==='
+            wp config get WP_DEBUG || echo 'WP_DEBUG not defined'
+            wp config get WP_DEBUG_LOG || echo 'WP_DEBUG_LOG not defined'
+            
+            echo ''
+            echo '=== Últimas 50 líneas de debug.log (si existe) ==='
+            if [ -f wp-content/debug.log ]; then
+              tail -n 50 wp-content/debug.log
+            else
+              echo 'debug.log no existe'
+            fi
+            
+            echo ''
+            echo '=== Logs de error PHP del servidor (últimas 30 líneas) ==='
+            if [ -f ~/domains/pepecapiro.com/logs/error.log ]; then
+              tail -n 30 ~/domains/pepecapiro.com/logs/error.log
+            elif [ -f ~/.logs/error.log ]; then
+              tail -n 30 ~/.logs/error.log
+            else
+              echo 'error.log no encontrado en ubicaciones comunes'
+            fi
+          "
+
+      - name: Test directo con curl y headers completos
+        run: |
+          echo "=== Test pepecapiro.com (ES) ==="
+          curl -v https://pepecapiro.com/ 2>&1 | head -n 50
+          
+          echo ""
+          echo "=== Test pepecapiro.com/en/ (EN) ==="
+          curl -v https://pepecapiro.com/en/ 2>&1 | head -n 50
+
+      - name: Intentar activar WP_DEBUG temporalmente
+        continue-on-error: true
+        run: |
+          ssh -p ${{ env.SSH_PORT }} ${{ env.SSH_USER }}@${{ env.SSH_HOST }} "
+            cd '${{ env.REMOTE_PATH }}'
+            
+            echo 'Activando WP_DEBUG y WP_DEBUG_LOG...'
+            wp config set WP_DEBUG true --raw || true
+            wp config set WP_DEBUG_LOG true --raw || true
+            wp config set WP_DEBUG_DISPLAY false --raw || true
+            
+            echo 'Haciendo request de prueba...'
+            curl -sS https://pepecapiro.com/ >/dev/null 2>&1 || true
+            
+            sleep 2
+            
+            echo 'Verificando si se generó debug.log...'
+            if [ -f wp-content/debug.log ]; then
+              echo 'debug.log encontrado:'
+              tail -n 30 wp-content/debug.log
+            else
+              echo 'debug.log no se generó'
+            fi
+          "
