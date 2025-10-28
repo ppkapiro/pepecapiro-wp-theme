@@ -1,0 +1,106 @@
+name: "Emergency - Enable WP_DEBUG"
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Action: enable or disable'
+        required: true
+        default: 'enable'
+        type: choice
+        options:
+          - enable
+          - disable
+
+jobs:
+  debug-toggle:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enable or Disable WP_DEBUG
+        env:
+          REMOTE_PATH: /home/${{ secrets.PEPE_USER }}/domains/pepecapiro.com/public_html
+          SSH_HOST: ${{ secrets.PEPE_HOST }}
+          SSH_PORT: ${{ secrets.PEPE_PORT }}
+          SSH_USER: ${{ secrets.PEPE_USER }}
+        run: |
+          eval $(ssh-agent -s)
+          ssh-add - <<< "${{ secrets.PEPE_SSH_KEY }}"
+          
+          SSH_CMD="ssh -o StrictHostKeyChecking=no -p ${SSH_PORT} ${SSH_USER}@${SSH_HOST}"
+          
+          if [ "${{ inputs.action }}" = "enable" ]; then
+            echo "=== Habilitando WP_DEBUG ==="
+            $SSH_CMD "cd ${REMOTE_PATH} && wp config set WP_DEBUG true --raw"
+            $SSH_CMD "cd ${REMOTE_PATH} && wp config set WP_DEBUG_LOG true --raw"
+            $SSH_CMD "cd ${REMOTE_PATH} && wp config set WP_DEBUG_DISPLAY false --raw"
+            
+            echo ""
+            echo "=== Verificar configuración ==="
+            $SSH_CMD "cd ${REMOTE_PATH} && wp config get WP_DEBUG"
+            $SSH_CMD "cd ${REMOTE_PATH} && wp config get WP_DEBUG_LOG"
+            $SSH_CMD "cd ${REMOTE_PATH} && wp config get WP_DEBUG_DISPLAY"
+          else
+            echo "=== Deshabilitando WP_DEBUG ==="
+            $SSH_CMD "cd ${REMOTE_PATH} && wp config set WP_DEBUG false --raw"
+            $SSH_CMD "cd ${REMOTE_PATH} && wp config set WP_DEBUG_LOG false --raw"
+            $SSH_CMD "cd ${REMOTE_PATH} && wp config set WP_DEBUG_DISPLAY false --raw"
+          fi
+
+      - name: Trigger error and wait for log
+        if: inputs.action == 'enable'
+        env:
+          SSH_HOST: ${{ secrets.PEPE_HOST }}
+          SSH_PORT: ${{ secrets.PEPE_PORT }}
+          SSH_USER: ${{ secrets.PEPE_USER }}
+          REMOTE_PATH: /home/${{ secrets.PEPE_USER }}/domains/pepecapiro.com/public_html
+        run: |
+          eval $(ssh-agent -s)
+          ssh-add - <<< "${{ secrets.PEPE_SSH_KEY }}"
+          
+          SSH_CMD="ssh -o StrictHostKeyChecking=no -p ${SSH_PORT} ${SSH_USER}@${SSH_HOST}"
+          
+          echo "=== Provocando error HTTP 500 para generar log ==="
+          curl -sS https://pepecapiro.com/ > /dev/null 2>&1 || true
+          
+          echo "Esperando 3 segundos para que se escriba el log..."
+          sleep 3
+          
+          echo ""
+          echo "=== debug.log (últimas 100 líneas) ==="
+          $SSH_CMD "cd ${REMOTE_PATH} && tail -n 100 wp-content/debug.log 2>/dev/null || echo 'debug.log no existe aún'"
+
+      - name: Show recent PHP errors
+        if: inputs.action == 'enable'
+        env:
+          SSH_HOST: ${{ secrets.PEPE_HOST }}
+          SSH_PORT: ${{ secrets.PEPE_PORT }}
+          SSH_USER: ${{ secrets.PEPE_USER }}
+          REMOTE_PATH: /home/${{ secrets.PEPE_USER }}/domains/pepecapiro.com/public_html
+        run: |
+          eval $(ssh-agent -s)
+          ssh-add - <<< "${{ secrets.PEPE_SSH_KEY }}"
+          
+          SSH_CMD="ssh -o StrictHostKeyChecking=no -p ${SSH_PORT} ${SSH_USER}@${SSH_HOST}"
+          
+          echo "=== Buscar error_log en directorios comunes ==="
+          $SSH_CMD "find ~/domains/pepecapiro.com -name 'error_log' -o -name 'php_errors.log' 2>/dev/null | head -n 10" || echo "No se encontraron error logs"
+          
+          echo ""
+          echo "=== error_log en public_html (si existe) ==="
+          $SSH_CMD "tail -n 50 ${REMOTE_PATH}/error_log 2>/dev/null || echo 'error_log no existe'"
+
+      - name: Summary
+        run: |
+          echo "========================================="
+          echo "WP_DEBUG action: ${{ inputs.action }}"
+          echo ""
+          if [ "${{ inputs.action }}" = "enable" ]; then
+            echo "✅ Debug habilitado. Verificar debug.log arriba."
+            echo "Si no hay log, el problema puede ser:"
+            echo "  - Permisos wp-content/"
+            echo "  - PHP fatal antes de WordPress bootstrap"
+            echo "  - .htaccess bloqueando PHP"
+          else
+            echo "✅ Debug deshabilitado"
+          fi
+          echo "========================================="
