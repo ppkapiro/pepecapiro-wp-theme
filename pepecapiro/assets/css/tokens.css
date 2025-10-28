@@ -1,18 +1,18 @@
 /* Tokens de diseño pepecapiro — v0.3.0 */
 :root {
   /* Colores */
-  --color-bg: #0D1B2A;
-  --color-bg-alt: #13263F;
+  --color-bg: #F5F6F8;
+  --color-bg-alt: #EAECEF;
   --color-surface: #FFFFFF;
   --color-surface-muted: #E0E1DD;
-  --color-border: #C7D0DB;
-  --color-border-strong: #20354A;
-  --color-accent: #1B9AAA;
-  --color-accent-strong: #137F8E;
+  --color-border: #D1D5DB;
+  --color-border-strong: #9CA3AF;
+  --color-accent: #0F7490;
+  --color-accent-strong: #0A5F75;
   --color-accent-soft: #F1FBFC;
-  --color-text-primary: #0D1B2A;
-  --color-text-secondary: #1E3A56;
-  --color-text-muted: #5A6C7F;
+  --color-text-primary: #1F2937;
+  --color-text-secondary: #4B5563;
+  --color-text-muted: #6B7280;
   --color-text-inverse: #FFFFFF;
 
   /* Tipografía */
@@ -39,6 +39,7 @@
   --radius-lg: 1rem;
   --shadow-soft: 0 12px 32px rgba(13, 27, 42, 0.12);
   --shadow-sharp: 0 12px 24px rgba(19, 121, 144, 0.18);
+  --shadow-xs: 0 4px 12px rgba(13, 27, 42, 0.08);
 
   /* Otros */
   --focus-ring: 0 0 0 3px rgba(27, 154, 170, 0.34);
@@ -53,7 +54,7 @@ html {
 }
 
 body {
-  background: var(--color-surface);
+  background: var(--color-bg);
   color: var(--color-text-primary);
   font-family: var(--font-body);
   font-size: var(--font-size-step-0);

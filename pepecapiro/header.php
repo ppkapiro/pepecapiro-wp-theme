@@ -25,8 +25,8 @@
             } else { $fallback(); }
         } else { $fallback(); }
       ?></nav>
-      <?php if (function_exists('pll_the_languages')): ?>
-  <div class="lang-switcher"><?php pll_the_languages(['show_flags'=>1,'show_names'=>0]); ?></div>
+    <?php if (function_exists('pll_the_languages')): ?>
+  <div class="lang-switcher" aria-label="Cambiar idioma"><?php pll_the_languages(['show_flags'=>1,'show_names'=>0]); ?></div>
       <?php endif; ?>
     </div>
   </div>

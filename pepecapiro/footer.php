@@ -28,8 +28,9 @@
     $url_projects = $is_en ? home_url('/en/projects/') : home_url('/proyectos/');
     $url_blog = $is_en ? home_url('/en/blog-en/') : home_url('/blog/');
     // Legales: preferir EN si $is_en y existen, si no, fallback a ES
-    $url_priv = $is_en ? $pref('privacy','privacidad') : $pref('privacidad','privacy');
-    $url_cookies = $is_en ? $pref('cookies','cookies') : $pref('cookies','cookies');
+  $url_priv = $is_en ? $pref('privacy','privacidad') : $pref('privacidad','privacy');
+  // Forzar ruta unificada a /cookies/ para evitar enlaces incorrectos en EN
+  $url_cookies = home_url('/cookies/');
     $url_contact = $is_en ? home_url('/en/contact/') : home_url('/contacto/');
     $mailto = $is_en ? 'mailto:contact@pepecapiro.com' : 'mailto:contacto@pepecapiro.com';
     $brand_blurb = $is_en

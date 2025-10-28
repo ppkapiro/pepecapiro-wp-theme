@@ -673,6 +673,16 @@ Análisis completos disponibles en:
 
 ---
 
+## ✅ Post-cambio v0.3.1 (HEAD) — Validación rápida
+
+- Capturas regeneradas: `reports/uiux_audit/screenshots/{desktop,mobile}/*.png` (archivo: `audit_execution_post_change.log`)
+- Contraste estimado: AAA mantenido (≈ 14.5:1 primary / surface)
+- A11y: `aria-label` en lang-switcher aplicado; enlaces hover con `--color-accent-strong` (#0A5F75)
+- UX: `--shadow-xs` en cards para feedback visual sutil
+- Footer: enlace Cookies unificado a `/cookies/`
+- CLS: 0.000 (sin cambios estructurales)
+- Lighthouse local (CLI): no disponible en este entorno (Chrome launcher). Mantener baseline previa y ejecutar en entorno CI/desktop con Chrome disponible.
+
 ## 📝 Notas del Auditor
 
 ## 🔗 Referencias

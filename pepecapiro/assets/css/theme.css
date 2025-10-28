@@ -4,3 +4,20 @@
 @font-face{font-family:'Montserrat';src:url('../fonts/montserrat/Montserrat-Bold.woff2') format('woff2');font-weight:700;font-style:normal;font-display:swap;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02C6,U+02DA,U+02DC,U+2000-206F,U+2074,U+20AC,U+2212,U+2215;}
 @font-face{font-family:'Open Sans';src:url('../fonts/opensans/OpenSans-Regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02C6,U+02DA,U+02DC,U+2000-206F,U+2074,U+20AC,U+2212,U+2215;}
 @font-face{font-family:'Open Sans';src:url('../fonts/opensans/OpenSans-Italic.woff2') format('woff2');font-weight:400;font-style:italic;font-display:swap;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02C6,U+02DA,U+02DC,U+2000-206F,U+2074,U+20AC,U+2212,U+2215;}
+
+/* Hero con fondo claro sutil */
+.hero {
+	background: linear-gradient(135deg, #FDFDFD 0%, #F0F4F8 100%);
+	background-image:
+		radial-gradient(circle at 20% 50%, rgba(15, 116, 144, 0.03) 0%, transparent 50%),
+		radial-gradient(circle at 80% 80%, rgba(15, 116, 144, 0.03) 0%, transparent 50%);
+}
+
+/* Cards: sombra hover suave y transición */
+.card {
+	transition: box-shadow var(--transition-base);
+}
+.card:hover,
+.card:focus-within {
+	box-shadow: var(--shadow-xs);
+}
