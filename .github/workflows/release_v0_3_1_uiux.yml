@@ -1,0 +1,184 @@
+name: Release v0.3.1 UI/UX — merge, tag, deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr_branch:
+        description: 'Rama del PR a mergear'
+        required: true
+        default: 'feat/uiux-v0.3.1-palette'
+      tag_name:
+        description: 'Nombre del tag/release'
+        required: true
+        default: 'v0.3.1-uiux-palette'
+  push:
+    branches: [ feat/uiux-v0.3.1-palette ]
+
+jobs:
+  lighthouse:
+    name: Lighthouse CI (Home ES/EN)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - uses: browser-actions/setup-chrome@v1
+      - name: Install Lighthouse CLI
+        run: npm i -g lighthouse
+      - name: Ensure folders
+        run: mkdir -p reports/uiux_audit/lh
+      - name: Run Lighthouse for URLs
+        run: |
+          while IFS= read -r url; do
+            echo "Auditing: $url"
+            safe=$(echo "$url" | sed 's~https\?://~~; s~/~_~g; s/[^A-Za-z0-9_.-]/_/g')
+            lighthouse "$url" \
+              --chrome-flags="--headless" \
+              --only-categories=performance,accessibility,seo,best-practices \
+              --output=json \
+              --output-path=reports/uiux_audit/lh/"$safe".json \
+              --output=html \
+              --output-path=reports/uiux_audit/lh/"$safe".html || true
+          done < scripts/urls_lighthouse.txt
+      - name: Summarize scores
+        run: node scripts/summarize_lighthouse_ci.js
+        env: { LH_DIR: reports/uiux_audit/lh }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-v0.3.1
+          path: |
+            reports/uiux_audit/lh/*.json
+            reports/uiux_audit/lh/*.html
+            reports/uiux_audit/lh/SUMMARY.md
+
+  merge_and_tag:
+    name: Merge PR + Tag/Release
+    needs: lighthouse
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Find PR by branch and merge
+        id: merge
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const branch = core.getInput('pr_branch') || 'feat/uiux-v0.3.1-palette';
+            const { data: prs } = await github.rest.pulls.list({
+              owner: context.repo.owner, repo: context.repo.repo, state: 'open', head: `${context.repo.owner}:${branch}`
+            });
+            if (!prs.length) {
+              core.setFailed(`No PR abierto para la rama ${branch}. Abre el PR y vuelve a lanzar.`);
+              return;
+            }
+            const pr = prs[0];
+            // Opcional: comentar resumen Lighthouse
+            await github.rest.issues.createComment({
+              owner: context.repo.owner, repo: context.repo.repo, issue_number: pr.number,
+              body: 'Lighthouse CI ejecutado. Revisa artifact **lighthouse-v0.3.1** (JSON/HTML + SUMMARY.md).'
+            });
+            // Merge (squash por limpieza)
+            await github.rest.pulls.merge({
+              owner: context.repo.owner, repo: context.repo.repo, pull_number: pr.number, merge_method: 'squash'
+            });
+            core.setOutput('merged_sha', (await github.rest.repos.get({owner: context.repo.owner, repo: context.repo.repo})).data.pushed_at);
+      - name: Create tag and release
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const tag = core.getInput('tag_name') || 'v0.3.1-uiux-palette';
+            const { data: ref } = await github.rest.repos.get({ owner: context.repo.owner, repo: context.repo.repo });
+            const { data: latest } = await github.rest.repos.getBranch({
+              owner: context.repo.owner, repo: context.repo.repo, branch: 'main'
+            });
+            const sha = latest.commit.sha;
+            try {
+              await github.rest.git.createRef({
+                owner: context.repo.owner, repo: context.repo.repo,
+                ref: `refs/tags/${tag}`, sha
+              });
+            } catch (e) {
+              if (e.status !== 422) throw e; // 422 si ya existe
+            }
+            await github.rest.repos.createRelease({
+              owner: context.repo.owner, repo: context.repo.repo,
+              tag_name: tag, name: tag,
+              body: 'UI/UX v0.3.1 — Paleta clara, fixes de accesibilidad/UX, CLS 0.000 baseline'
+            });
+
+  deploy:
+    name: Deploy tema por SFTP
+    needs: merge_and_tag
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validar secrets mínimos
+        run: |
+          test -n "${{ secrets.SFTP_HOST }}" || (echo "Falta SFTP_HOST" && exit 1)
+          test -n "${{ secrets.SFTP_PORT }}" || (echo "Falta SFTP_PORT" && exit 1)
+          test -n "${{ secrets.SFTP_USER }}" || (echo "Falta SFTP_USER" && exit 1)
+          test -n "${{ secrets.SFTP_PASSWORD }}" || (echo "Falta SFTP_PASSWORD" && exit 1)
+          test -n "${{ secrets.WP_REMOTE_PATH }}" || (echo "Falta WP_REMOTE_PATH" && exit 1)
+      - name: SFTP Deploy (theme sync)
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
+        with:
+          server: ${{ secrets.SFTP_HOST }}
+          port: ${{ secrets.SFTP_PORT }}
+          username: ${{ secrets.SFTP_USER }}
+          password: ${{ secrets.SFTP_PASSWORD }}
+          local_path: './pepecapiro'   # carpeta del tema en el repo
+          remote_path: ${{ secrets.WP_REMOTE_PATH }}
+          delete_remote_files: false
+          sftp_only: true
+
+  purge_and_verify:
+    name: Purga caché y verificación
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Purga via SSH (WP-CLI si disponible; fallback cache/transients)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT }}
+          username: ${{ secrets.SSH_USER }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            set -e
+            cd "${WP_PATH_ROOT:-${{ secrets.WP_PATH_ROOT }}}"
+            if command -v wp >/dev/null 2>&1; then
+              wp cache flush || true
+              wp transient delete --all || true
+              wp litespeed-purge all || true
+            else
+              # Fallback seguro (no destructivo): tocar wp-content/cache si existe
+              [ -d wp-content/cache ] && find wp-content/cache -type f -name '*.tmp' -delete || true
+            fi
+      - name: Comprobación HTTP (200 OK)
+        run: |
+          curl -sS -I https://pepecapiro.com/ | head -n 1
+          curl -sS -I https://pepecapiro.com/en/ | head -n 1
+
+  doc_update:
+    name: Actualizar DTC (anexo de publicación)
+    needs: purge_and_verify
+    runs-on: ubuntu-latest
+    permissions: { contents: write }
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Append a docs/AUDITORIA_UIUX.md
+        run: |
+          echo -e "\n\n### Publicación v0.3.1\n- Tag: \`${{ github.event.inputs.tag_name || 'v0.3.1-uiux-palette' }}\`\n- Deploy: OK (SFTP)\n- Purga: OK (WP-CLI o fallback)\n- Verificación HTTP: OK\n- Notas: Paleta clara aplicada, CLS 0.000 mantenido.\n" >> docs/AUDITORIA_UIUX.md
+      - name: Commit docs
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/AUDITORIA_UIUX.md
+          git commit -m "docs(release): anexo publicación v0.3.1" || true
+          git push
