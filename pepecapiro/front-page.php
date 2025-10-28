@@ -54,7 +54,7 @@ $CTA_URL = $is_en ? home_url('/en/contact') : home_url('/contacto');
 
   <section class="container section-center">
     <h2><?php echo $is_en ? 'Ready to start?' : '&iquest;Listos para empezar?'; ?></h2>
-    <p class="subtitle"><?php echo $is_en ? 'Let's talk for 15 minutes to identify the next step.' : 'Conversemos 15 minutos para identificar el siguiente paso.'; ?></p>
+    <p class="subtitle"><?php echo $is_en ? "Let's talk for 15 minutes to identify the next step." : 'Conversemos 15 minutos para identificar el siguiente paso.'; ?></p>
     <a class="btn" href="<?php echo esc_url($CTA_URL); ?>"><?php echo esc_html($CTA); ?></a>
   </section>
 </main>
