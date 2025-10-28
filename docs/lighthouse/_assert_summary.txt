@@ -1,1 +1,2 @@
-=== Lighthouse assert: OK ===
+=== Lighthouse assert: FALLA ===
+- en-home-d: desktop LCP 2074.23ms > 2000.0ms
