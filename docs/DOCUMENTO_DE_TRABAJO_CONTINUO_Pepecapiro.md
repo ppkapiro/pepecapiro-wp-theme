@@ -294,3 +294,70 @@ Checklist por ciclo (antes de marcar fase como completada):
 - `37ed35e` — perf(thresholds): ajuste pragmático tras 1ª ronda de optimizaciones
 
 ---
+
+### 2025-10-28: Ruta de Continuidad CI/CD (GitHub Actions bloqueado)
+
+**Diagnóstico de la crisis:**
+- 🚨 **TODOS los workflows (39/39) fallan desde 2025-10-27 21:07 UTC**: 50 últimos runs con `conclusion: failure` sin ejecutar ningún step (duración: ~4 segundos)
+- 🔍 **Causa raíz**: Agotamiento de minutos de GitHub Actions para repositorios privados (límite del plan actual alcanzado)
+- ⚠️ **Impacto**: Lighthouse, SEO audit, smoke tests, monitoring, publish workflows - todos bloqueados; CI/CD completamente inoperativo
+
+**Investigación exhaustiva realizada:**
+- ✅ **Escaneo de seguridad**: 0 riesgos ALTOS detectados ([reports/security/secrets_scan.md](../reports/security/secrets_scan.md))
+  - 0 tokens GitHub expuestos
+  - 0 WordPress App Passwords en código
+  - Directorio `secrets/` vacío y en .gitignore
+  - 1 riesgo MEDIO (emails en metadata Git - aceptable)
+  - 7 imágenes en `evidence/ui/` requieren auditoría visual (10 min)
+- ✅ **Análisis de workflows**: 39 workflows inventariados, todos requieren `runs-on: ubuntu-latest` → dependen de minutos GitHub ([reports/ci/workflows_actions_impact.md](../reports/ci/workflows_actions_impact.md))
+- ✅ **Matriz comparativa**: Evaluación exhaustiva de 15 criterios (costo, seguridad, operación, velocidad, portabilidad, etc.)
+
+**Opciones evaluadas:**
+
+**Opción 1: Aumentar plan GitHub Actions** → ❌ DESCARTADA (requiere aprobación de billing)
+
+**Opción 2: Hacer repositorio PÚBLICO** ([docs/PUBLIC_REPO_READINESS.md](PUBLIC_REPO_READINESS.md))
+- ✅ **Minutos ilimitados** (gratis para repos públicos)
+- ✅ **Cero cambios en workflows** (YAML sin modificaciones)
+- ✅ **Implementación: 15 minutos** (auditoría + cambio visibilidad)
+- ✅ **Mantenimiento: 0 horas/mes**
+- ⚠️ **Riesgo**: Código y docs visibles públicamente (mitigado: escaneo sin riesgos ALTOS)
+- 📊 **Puntuación**: 36/40 (90%) - Ideal para velocidad de recuperación
+
+**Opción 3: Self-Hosted Runner + Repo PRIVADO** ([docs/SELF_HOSTED_RUNNER_PLAN.md](SELF_HOSTED_RUNNER_PLAN.md))
+- ✅ **Cero consumo minutos GitHub**
+- ✅ **Máxima privacidad** (código/docs/artifacts privados)
+- ⚠️ **Implementación: 2.5 horas** (VPS + runner + dependencias + migrar 39 workflows)
+- ⚠️ **Mantenimiento: ~1 hora/mes** (actualizaciones, limpieza, monitoring)
+- ⚠️ **Costo**: $5-15/mes VPS (o $0 si PC local con uptime aceptable)
+- 📊 **Puntuación**: 28/40 (70%) - Ideal para privacidad mandatoria
+
+**Documento único de decisión:** [docs/DECISION_BRIEF_OPTION2_vs_OPTION3.md](DECISION_BRIEF_OPTION2_vs_OPTION3.md)
+
+**Recomendación preliminar:**
+- **SI** `blog_type == "personal/profesional"` AND `no_regulatory_requirements` → **Opción 2** (Repo Público)
+- **SI** `blog_type == "corporativo"` OR `has_regulatory_requirements` → **Opción 3** (Self-Hosted Runner)
+
+**Regla de continuidad:**
+> Cualquier cambio de visibilidad del repositorio o implementación de self-hosted runner **DEBE**:
+> 1. Regenerar inventario completo de workflows (`reports/ci/workflows_*.{json,md}`)
+> 2. Ejecutar escaneo de seguridad (`reports/security/secrets_scan.md`)
+> 3. Actualizar esta subsección del DTC con fecha, decisión tomada y resultados post-implementación
+
+**Próxima acción:**
+1. **Decisor debe revisar** [docs/DECISION_BRIEF_OPTION2_vs_OPTION3.md](DECISION_BRIEF_OPTION2_vs_OPTION3.md)
+2. **Ejecutar comando de decisión**: `echo "2" > .ci_decision` (o "3")
+3. **Seguir runbook correspondiente**:
+   - Opción 2: [docs/PUBLIC_REPO_READINESS.md](PUBLIC_REPO_READINESS.md)
+   - Opción 3: [docs/SELF_HOSTED_RUNNER_PLAN.md](SELF_HOSTED_RUNNER_PLAN.md)
+
+**Fecha límite recomendada**: 2025-10-29 (48 horas) - CI/CD crítico sigue bloqueado
+
+**Documentos generados:**
+- [docs/DECISION_BRIEF_OPTION2_vs_OPTION3.md](DECISION_BRIEF_OPTION2_vs_OPTION3.md) — Documento único de decisión con matriz comparativa
+- [docs/PUBLIC_REPO_READINESS.md](PUBLIC_REPO_READINESS.md) — Runbook operativo para conversión a público
+- [docs/SELF_HOSTED_RUNNER_PLAN.md](SELF_HOSTED_RUNNER_PLAN.md) — Guía técnica de setup de runner
+- [reports/security/secrets_scan.md](../reports/security/secrets_scan.md) — Escaneo exhaustivo de credenciales/datos sensibles
+- [reports/ci/workflows_actions_impact.md](../reports/ci/workflows_actions_impact.md) — Análisis de impacto por workflow
+
+---
