@@ -86,7 +86,9 @@ jobs:
           ssh -o StrictHostKeyChecking=no -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "
             cd '$SITE_ROOT' &&
             (wp plugin is-active wp-mail-smtp || (echo '❌ Plugin no activo' && exit 1)) &&
-            wp eval 'wp_mail(\"test@example.com\", \"[pepecapiro.com] Test SMTP\", \"Email de prueba\") && echo \"✅ Email enviado\" || (echo \"❌ Error envío\" && exit 1);'
+            echo '<?php \$r = wp_mail(\"test@example.com\", \"[Test] pepecapiro.com\", \"Prueba SMTP\"); echo \$r ? \"OK\" : \"FAIL\"; exit(\$r ? 0 : 1);' > /tmp/test_smtp.php &&
+            wp eval-file /tmp/test_smtp.php && echo '✅ Email enviado' || (echo '❌ Error envío' && exit 1) &&
+            rm /tmp/test_smtp.php
           "
       
       - name: Generar reporte
