@@ -1,0 +1,89 @@
+name: Diagnóstico - Error Logs WordPress
+
+on:
+  workflow_dispatch:
+
+env:
+  SSH_HOST: ${{ secrets.PEPE_HOST }}
+  SSH_PORT: ${{ secrets.PEPE_PORT }}
+  SSH_USER: ${{ secrets.PEPE_USER }}
+  WP_ROOT: /home/u525829715/domains/pepecapiro.com/public_html
+
+jobs:
+  diagnostico:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cargar clave SSH
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.PEPE_SSH_KEY }}
+
+      - name: Preparar known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -T 5 -p "$SSH_PORT" "$SSH_HOST" >> ~/.ssh/known_hosts
+
+      - name: Obtener error logs PHP
+        run: |
+          ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "
+            cd $WP_ROOT
+            echo '=== PHP Error Log (últimas 50 líneas) ==='
+            tail -n 50 /home/u525829715/domains/pepecapiro.com/logs/error_log 2>/dev/null || echo 'Error log no encontrado en ruta estándar'
+            
+            echo ''
+            echo '=== WordPress Debug Log (últimas 30 líneas) ==='
+            tail -n 30 wp-content/debug.log 2>/dev/null || echo 'debug.log no existe o WP_DEBUG_LOG no está activado'
+            
+            echo ''
+            echo '=== Verificar permisos archivos tema ==='
+            ls -lah wp-content/themes/pepecapiro/{style.css,functions.php,header.php,footer.php} 2>/dev/null || echo 'No se pueden listar archivos del tema'
+            
+            echo ''
+            echo '=== Test carga de página con wp-cli ==='
+            wp eval 'echo \"WP Eval OK: \" . get_bloginfo(\"name\");' 2>&1 || echo 'Error en wp eval'
+            
+            echo ''
+            echo '=== Verificar errores recientes en base de datos ==='
+            wp db query \"SHOW ERRORS;\" 2>&1 || echo 'No se puede mostrar errores DB'
+          "
+
+      - name: Test directo de archivos modificados
+        run: |
+          ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "
+            cd $WP_ROOT/wp-content/themes/pepecapiro
+            
+            echo '=== Syntax check footer.php ==='
+            php -l footer.php || echo 'Error sintaxis en footer.php'
+            
+            echo ''
+            echo '=== Syntax check header.php ==='
+            php -l header.php || echo 'Error sintaxis en header.php'
+            
+            echo ''
+            echo '=== Verificar style.css version ==='
+            grep 'Version:' style.css || echo 'No se encuentra Version en style.css'
+            
+            echo ''
+            echo '=== Verificar tokens.css (primeras 20 líneas) ==='
+            head -n 20 assets/css/tokens.css
+          "
+
+      - name: Intentar activar tema por defecto temporalmente
+        run: |
+          ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "
+            cd $WP_ROOT
+            echo '=== Activando Twenty Twenty-Four para diagnóstico ==='
+            wp theme activate twentytwentyfour 2>&1 || wp theme activate twentytwentythree 2>&1 || echo 'No hay tema por defecto disponible'
+            
+            echo ''
+            echo '=== Test HTTP con tema por defecto ==='
+            curl -sS -I https://pepecapiro.com/ | head -n 1
+          "
+
+      - name: Re-activar pepecapiro si fue desactivado
+        if: always()
+        run: |
+          ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "
+            cd $WP_ROOT
+            wp theme activate pepecapiro 2>&1 || echo 'No se pudo reactivar pepecapiro'
+          "
