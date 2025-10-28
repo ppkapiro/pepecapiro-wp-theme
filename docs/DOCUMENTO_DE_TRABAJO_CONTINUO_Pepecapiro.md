@@ -423,3 +423,51 @@ Checklist por ciclo (antes de marcar fase como completada):
 - [docs/RUNBOOK_CI.md](RUNBOOK_CI.md) — Runbook actualizado con triggers, concurrency, troubleshooting
 
 ---
+
+### 2025-10-28: Fase 4 (Performance/A11y/SEO) — ✅ COMPLETADA
+
+**Validación Lighthouse post-CI/CD recovery:**
+- 🎉 **20/20 audits PASS** (10 páginas ES/EN × 2 modos: mobile + desktop)
+- ✅ **Performance Score:** 98-100 (threshold: ≥88 mobile / ≥92 desktop) → **SUPERADO**
+- ✅ **LCP:** 1437-2007ms (threshold: ≤2600ms mobile / ≤2000ms desktop) → **CUMPLIDO**
+- ✅ **CLS:** **0.000 en TODAS** (threshold: ≤0.12 mobile / ≤0.06 desktop) → **PERFECTO**
+
+**Páginas auditadas (todas PASS):**
+- Home ES/EN: Perf 98-100, LCP 1451-2007ms, CLS 0.000
+- About ES/EN: Perf 99-100, LCP 1446-1557ms, CLS 0.000
+- Projects ES/EN: Perf 100 (todas), LCP 1447-1531ms, CLS 0.000
+- Resources ES/EN: Perf 100 (todas), LCP 1448-1519ms, CLS 0.000
+- Contact ES/EN: Perf 100 (todas), LCP 1437-1487ms, CLS 0.000
+
+**Optimizaciones aplicadas (exitosas):**
+1. ✅ Critical CSS inline (~2.5KB) - elimina render-blocking
+2. ✅ Font preload (Montserrat Bold WOFF2) con `font-display:swap` - LCP texto reducido ~150-200ms
+3. ✅ `min-height:200px` en `.card` - CLS 0.05-0.08 → **0.000**
+4. ✅ `contain:layout` en `.grid` - previene reflows, perf 100 en pages con grids
+5. ✅ `id="main"` para skip link - WCAG 2.4.1 compliance
+
+**Lighthouse run validado:** 18877785392 (8m duración, 18 steps, artifacts 15 MB)
+
+**Thresholds ajustados (pragmáticos) vs resultados:**
+- Mobile perf: threshold 88 → resultado 98-100 (+10-12 puntos margen)
+- Desktop perf: threshold 92 → resultado 98-100 (+6-8 puntos margen)
+- Mobile LCP: threshold 2600ms → resultado 1562-2007ms (-493 a -1038ms margen)
+- Desktop LCP: threshold 2000ms → resultado 1437-1965ms (-35 a -563ms margen)
+- CLS: threshold 0.12/0.06 → resultado **0.000 perfecto** (sin layout shifts)
+
+**Conclusión:**
+- pepecapiro.com en nivel **"EXCELENTE"** de Core Web Vitals
+- Ya superando thresholds ideales (no solo pragmáticos)
+- CLS perfecto indica fixes estructurales bien aplicados (no fluke)
+- CI/CD operativo con Lighthouse ejecutándose automáticamente en cada push
+
+**Reporte completo:** [reports/psi/fase4_performance_final.md](../reports/psi/fase4_performance_final.md)
+
+**Commits:**
+- `70deba0` — ci(public): repo público aplicado; CI/CD reactivado; endurecimiento anti-regresión
+- `91c8c91` — (rebase de workflows automáticos)
+- `dd8aaee` — security(public): PASO 6 - monitoreo 48h configurado
+
+**Próximo paso:** Fase 5 (SMTP config) para completar funcionalidad de formularios ES/EN.
+
+---
