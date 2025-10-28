@@ -1,0 +1,108 @@
+name: Hotfix - Cache Flush v0.3.21
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Confirmar flush (yes/no)'
+        required: true
+        default: 'no'
+
+env:
+  REMOTE_PATH: /home/u525829715/domains/pepecapiro.com/public_html
+  SSH_HOST: ${{ secrets.PEPE_HOST }}
+  SSH_PORT: ${{ secrets.PEPE_PORT }}
+  SSH_USER: ${{ secrets.PEPE_USER }}
+
+jobs:
+  hotfix:
+    runs-on: ubuntu-latest
+    if: github.event.inputs.confirm == 'yes'
+    steps:
+      - name: Cargar clave SSH
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.PEPE_SSH_KEY }}
+
+      - name: Preparar known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -T 5 -p ${{ env.SSH_PORT }} ${{ env.SSH_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Test conexión SSH
+        run: |
+          ssh -o BatchMode=yes -p ${{ env.SSH_PORT }} ${{ env.SSH_USER }}@${{ env.SSH_HOST }} "echo 'SSH OK' && uname -a"
+
+      - name: Flush cache y rewrite rules
+        run: |
+          set -e
+          ROOT="${{ env.REMOTE_PATH }}"
+          
+          ssh -p ${{ env.SSH_PORT }} ${{ env.SSH_USER }}@${{ env.SSH_HOST }} "
+            set -e
+            cd '$ROOT'
+            echo '=== Flushing WordPress cache ==='
+            wp cache flush
+            
+            echo '=== Flushing rewrite rules ==='
+            wp rewrite flush --hard
+            
+            echo '=== Purging LiteSpeed cache ==='
+            wp litespeed-purge all || true
+            
+            echo '=== Deleting transients ==='
+            wp transient delete --all || true
+            
+            echo '=== Cleaning Rank Math sitemap cache ==='
+            PREFIX=\$(wp db prefix)
+            wp db query \"DELETE FROM \${PREFIX}options WHERE option_name LIKE 'rank_math_sitemap_%';\" || true
+            
+            echo '=== Warming up sitemaps ==='
+            curl -sS https://pepecapiro.com/sitemap_index.xml >/dev/null || true
+            curl -sS https://pepecapiro.com/post-sitemap.xml >/dev/null || true
+            
+            echo '=== Verification ==='
+            wp theme list --status=active
+            wp plugin list --status=active | head -n 10
+            echo 'Home URL:' \$(wp option get home)
+            echo 'Site URL:' \$(wp option get siteurl)
+          "
+
+      - name: Test HTTP status
+        run: |
+          echo "Testing https://pepecapiro.com/"
+          HTTP_CODE=$(curl -sS -o /dev/null -w "%{http_code}" https://pepecapiro.com/)
+          echo "HTTP Status: $HTTP_CODE"
+          if [ "$HTTP_CODE" = "200" ]; then
+            echo "✅ Site is UP (HTTP 200)"
+          else
+            echo "⚠️ Site returned HTTP $HTTP_CODE"
+            exit 1
+          fi
+
+      - name: Test EN homepage
+        run: |
+          echo "Testing https://pepecapiro.com/en/"
+          HTTP_CODE=$(curl -sS -o /dev/null -w "%{http_code}" https://pepecapiro.com/en/)
+          echo "HTTP Status EN: $HTTP_CODE"
+          if [ "$HTTP_CODE" = "200" ]; then
+            echo "✅ EN homepage is UP (HTTP 200)"
+          else
+            echo "⚠️ EN homepage returned HTTP $HTTP_CODE"
+          fi
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "========================================="
+          echo "Hotfix Cache Flush - Summary"
+          echo "========================================="
+          echo "Executed operations:"
+          echo "  ✓ wp cache flush"
+          echo "  ✓ wp rewrite flush --hard"
+          echo "  ✓ wp litespeed-purge all"
+          echo "  ✓ wp transient delete --all"
+          echo "  ✓ Rank Math sitemap cache cleared"
+          echo "  ✓ Sitemaps warmed up"
+          echo "========================================="
+          echo "Site status: Check 'Test HTTP status' step above"
