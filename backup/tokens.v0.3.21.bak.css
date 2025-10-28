@@ -1,0 +1,124 @@
+/* Tokens de diseño pepecapiro — v0.3.0 */
+:root {
+  /* Colores */
+  --color-bg: #0D1B2A;
+  --color-bg-alt: #13263F;
+  --color-surface: #FFFFFF;
+  --color-surface-muted: #E0E1DD;
+  --color-border: #C7D0DB;
+  --color-border-strong: #20354A;
+  --color-accent: #1B9AAA;
+  --color-accent-strong: #137F8E;
+  --color-accent-soft: #F1FBFC;
+  --color-text-primary: #0D1B2A;
+  --color-text-secondary: #1E3A56;
+  --color-text-muted: #5A6C7F;
+  --color-text-inverse: #FFFFFF;
+
+  /* Tipografía */
+  --font-title: "Montserrat", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-body: "Open Sans", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-size-step--1: clamp(0.9rem, 0.88rem + 0.15vw, 1rem);
+  --font-size-step-0: clamp(1rem, 0.97rem + 0.35vw, 1.125rem);
+  --font-size-step-1: clamp(1.25rem, 1.18rem + 0.60vw, 1.5rem);
+  --font-size-step-2: clamp(1.6rem, 1.45rem + 0.90vw, 2rem);
+  --font-size-step-3: clamp(2.1rem, 1.8rem + 1.35vw, 2.8rem);
+
+  /* Espaciado */
+  --space-3xs: 0.25rem;
+  --space-2xs: 0.5rem;
+  --space-xs: 0.75rem;
+  --space-sm: 1rem;
+  --space-md: 1.5rem;
+  --space-lg: 2rem;
+  --space-xl: 3rem;
+
+  /* Bordes y sombras */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --shadow-soft: 0 12px 32px rgba(13, 27, 42, 0.12);
+  --shadow-sharp: 0 12px 24px rgba(19, 121, 144, 0.18);
+
+  /* Otros */
+  --focus-ring: 0 0 0 3px rgba(27, 154, 170, 0.34);
+  --max-width-content: 60rem;
+  --max-width-wide: 75rem;
+  --transition-base: 150ms ease-in-out;
+}
+
+html {
+  color-scheme: light;
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+  font-size: var(--font-size-step-0);
+  line-height: 1.6;
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  color: var(--color-text-primary);
+  font-family: var(--font-title);
+  margin: 0 0 var(--space-xs);
+}
+
+h1 { font-size: var(--font-size-step-3); line-height: 1.15; }
+h2 { font-size: var(--font-size-step-2); line-height: 1.2; }
+h3 { font-size: var(--font-size-step-1); }
+h4 { font-size: var(--font-size-step-0); }
+
+p,
+ul,
+ol {
+  color: var(--color-text-secondary);
+  margin: 0 0 var(--space-sm);
+}
+
+a {
+  color: var(--color-accent);
+  text-decoration: none;
+  transition: color var(--transition-base);
+}
+
+a:hover {
+  color: var(--color-accent-strong);
+  text-decoration: underline;
+}
+
+a:focus-visible,
+button:focus-visible,
+.btn:focus-visible,
+.cta-button:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+::selection {
+  background: var(--color-accent);
+  color: var(--color-text-inverse);
+}
+
+img,
+svg,
+video {
+  max-width: 100%;
+  display: block;
+}

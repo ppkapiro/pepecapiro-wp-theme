@@ -1,0 +1,50 @@
+cache-flush	Test HTTP final	2025-10-28T18:48:45.6830753Z HTTP/2 500 
+cache-flush	Test HTTP final	2025-10-28T18:48:45.7643824Z HTTP/2 301 
+cache-flush	Test HTTP final	2025-10-28T18:48:45.7660108Z ✓ HTTP tests completed
+cache-flush	Resumen	﻿2025-10-28T18:48:45.7686697Z ##[group]Run echo "✅ Hotfix completado"
+cache-flush	Resumen	2025-10-28T18:48:45.7687068Z [36;1mecho "✅ Hotfix completado"[0m
+cache-flush	Resumen	2025-10-28T18:48:45.7687364Z [36;1mecho "Operaciones ejecutadas:"[0m
+cache-flush	Resumen	2025-10-28T18:48:45.7687654Z [36;1mecho "  - wp cache flush"[0m
+cache-flush	Resumen	2025-10-28T18:48:45.7687957Z [36;1mecho "  - wp rewrite flush --hard"[0m
+cache-flush	Resumen	2025-10-28T18:48:45.7688581Z [36;1mecho "  - wp litespeed-purge all"[0m
+cache-flush	Resumen	2025-10-28T18:48:45.7689007Z [36;1mecho "  - wp transient delete --all"[0m
+cache-flush	Resumen	2025-10-28T18:48:45.7689397Z [36;1mecho "  - Rank Math sitemap cache cleared"[0m
+cache-flush	Resumen	2025-10-28T18:48:45.7689744Z [36;1mecho "  - Sitemaps warm-up"[0m
+cache-flush	Resumen	2025-10-28T18:48:45.7690007Z [36;1mecho ""[0m
+cache-flush	Resumen	2025-10-28T18:48:45.7690299Z [36;1mecho "Verificar sitio: https://pepecapiro.com/"[0m
+cache-flush	Resumen	2025-10-28T18:48:45.7721737Z shell: /usr/bin/bash -e {0}
+cache-flush	Resumen	2025-10-28T18:48:45.7721990Z env:
+cache-flush	Resumen	2025-10-28T18:48:45.7722245Z   SSH_HOST: ***
+cache-flush	Resumen	2025-10-28T18:48:45.7722464Z   SSH_PORT: ***
+cache-flush	Resumen	2025-10-28T18:48:45.7722686Z   SSH_USER: ***
+cache-flush	Resumen	2025-10-28T18:48:45.7722988Z   WP_ROOT: /home/***/domains/pepecapiro.com/public_html
+cache-flush	Resumen	2025-10-28T18:48:45.7723381Z   SSH_AUTH_SOCK: /tmp/ssh-244VHtEWnkS1/agent.2057
+cache-flush	Resumen	2025-10-28T18:48:45.7723683Z   SSH_AGENT_PID: 2058
+cache-flush	Resumen	2025-10-28T18:48:45.7723916Z ##[endgroup]
+cache-flush	Resumen	2025-10-28T18:48:45.7772136Z ✅ Hotfix completado
+cache-flush	Resumen	2025-10-28T18:48:45.7772568Z Operaciones ejecutadas:
+cache-flush	Resumen	2025-10-28T18:48:45.7772977Z   - wp cache flush
+cache-flush	Resumen	2025-10-28T18:48:45.7773593Z   - wp rewrite flush --hard
+cache-flush	Resumen	2025-10-28T18:48:45.7773995Z   - wp litespeed-purge all
+cache-flush	Resumen	2025-10-28T18:48:45.7774273Z   - wp transient delete --all
+cache-flush	Resumen	2025-10-28T18:48:45.7774625Z   - Rank Math sitemap cache cleared
+cache-flush	Resumen	2025-10-28T18:48:45.7775068Z   - Sitemaps warm-up
+cache-flush	Resumen	2025-10-28T18:48:45.7775218Z 
+cache-flush	Resumen	2025-10-28T18:48:45.7775354Z Verificar sitio: https://pepecapiro.com/
+cache-flush	Post Cargar clave SSH	﻿2025-10-28T18:48:45.7842899Z Post job cleanup.
+cache-flush	Post Cargar clave SSH	2025-10-28T18:48:45.8159669Z Stopping SSH agent
+cache-flush	Post Cargar clave SSH	2025-10-28T18:48:45.8169885Z The "file" argument must be of type string. Received undefined
+cache-flush	Post Cargar clave SSH	2025-10-28T18:48:45.8170547Z Error stopping the SSH agent, proceeding anyway
+cache-flush	Post Checkout (para contexto)	﻿2025-10-28T18:48:45.8271264Z Post job cleanup.
+cache-flush	Post Checkout (para contexto)	2025-10-28T18:48:45.9189189Z [command]/usr/bin/git version
+cache-flush	Post Checkout (para contexto)	2025-10-28T18:48:45.9223810Z git version 2.51.0
+cache-flush	Post Checkout (para contexto)	2025-10-28T18:48:45.9264424Z Temporarily overriding HOME='/home/runner/work/_temp/fa419d5f-fcd7-4829-9cc9-c0007c735cb8' before making global git config changes
+cache-flush	Post Checkout (para contexto)	2025-10-28T18:48:45.9265368Z Adding repository directory to the temporary git global config as a safe directory
+cache-flush	Post Checkout (para contexto)	2025-10-28T18:48:45.9276053Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/pepecapiro-wp-theme/pepecapiro-wp-theme
+cache-flush	Post Checkout (para contexto)	2025-10-28T18:48:45.9307954Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+cache-flush	Post Checkout (para contexto)	2025-10-28T18:48:45.9339123Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+cache-flush	Post Checkout (para contexto)	2025-10-28T18:48:45.9566917Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+cache-flush	Post Checkout (para contexto)	2025-10-28T18:48:45.9587629Z http.https://github.com/.extraheader
+cache-flush	Post Checkout (para contexto)	2025-10-28T18:48:45.9600517Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+cache-flush	Post Checkout (para contexto)	2025-10-28T18:48:45.9630105Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+cache-flush	Complete job	﻿2025-10-28T18:48:45.9956152Z Cleaning up orphan processes

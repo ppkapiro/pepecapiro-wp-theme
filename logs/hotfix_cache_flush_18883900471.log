@@ -1,0 +1,58 @@
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* main Hotfix - Cache Flush v0.3.21 · 18883900471
+Triggered via workflow_dispatch less than a minute ago
+
+JOBS
+* hotfix (ID 53894119627)
+  ✓ Set up job
+  ✓ Cargar clave SSH
+  ✓ Preparar known_hosts
+  ✓ Test conexión SSH
+  * Flush cache y rewrite rules
+  * Test HTTP status
+  * Test EN homepage
+  * Summary
+  * Post Cargar clave SSH
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* main Hotfix - Cache Flush v0.3.21 · 18883900471
+Triggered via workflow_dispatch less than a minute ago
+
+JOBS
+X hotfix in 16s (ID 53894119627)
+  ✓ Set up job
+  ✓ Cargar clave SSH
+  ✓ Preparar known_hosts
+  ✓ Test conexión SSH
+  ✓ Flush cache y rewrite rules
+  X Test HTTP status
+  - Test EN homepage
+  ✓ Summary
+  ✓ Post Cargar clave SSH
+  ✓ Complete job
+
+ANNOTATIONS
+X Process completed with exit code 1.
+hotfix: .github#23
+
+X main Hotfix - Cache Flush v0.3.21 · 18883900471
+Triggered via workflow_dispatch less than a minute ago
+
+JOBS
+X hotfix in 16s (ID 53894119627)
+  ✓ Set up job
+  ✓ Cargar clave SSH
+  ✓ Preparar known_hosts
+  ✓ Test conexión SSH
+  ✓ Flush cache y rewrite rules
+  X Test HTTP status
+  - Test EN homepage
+  ✓ Summary
+  ✓ Post Cargar clave SSH
+  ✓ Complete job
+
+ANNOTATIONS
+X Process completed with exit code 1.
+hotfix: .github#23
+

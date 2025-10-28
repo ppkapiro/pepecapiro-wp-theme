@@ -1,0 +1,59 @@
+name: Fix - Activar Polylang
+
+on:
+  workflow_dispatch:
+
+env:
+  SSH_HOST: ${{ secrets.PEPE_HOST }}
+  SSH_PORT: ${{ secrets.PEPE_PORT }}
+  SSH_USER: ${{ secrets.PEPE_USER }}
+  WP_ROOT: /home/u525829715/domains/pepecapiro.com/public_html
+
+jobs:
+  fix-polylang:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cargar clave SSH
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.PEPE_SSH_KEY }}
+
+      - name: Preparar known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -T 5 -p "$SSH_PORT" "$SSH_HOST" >> ~/.ssh/known_hosts
+
+      - name: Verificar estado Polylang
+        run: |
+          ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "
+            cd $WP_ROOT
+            echo '=== Estado actual de plugins ==='
+            wp plugin list | grep -E 'polylang|rank-math|litespeed|wpforms|wp-mail-smtp'
+          "
+
+      - name: Activar Polylang si está inactivo
+        run: |
+          ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "
+            cd $WP_ROOT
+            echo '=== Activando Polylang ==='
+            wp plugin activate polylang 2>&1 || echo 'Error activando Polylang'
+            
+            echo ''
+            echo '=== Verificando Polylang post-activación ==='
+            wp plugin is-active polylang && echo '✓ Polylang ACTIVE' || echo '✗ Polylang INACTIVE'
+          "
+
+      - name: Flush cache post-activación
+        run: |
+          ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "
+            cd $WP_ROOT
+            wp cache flush
+            wp rewrite flush --hard
+            wp transient delete --all
+          "
+
+      - name: Test HTTP final
+        run: |
+          echo '=== Test HTTP endpoints ==='
+          curl -sS -I https://pepecapiro.com/ | head -n 1
+          curl -sS -I https://pepecapiro.com/en/ | head -n 1
