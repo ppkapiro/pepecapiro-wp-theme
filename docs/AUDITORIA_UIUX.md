@@ -695,3 +695,27 @@ Análisis completos disponibles en:
 ---
 
 _Este documento se actualizará progresivamente con los hallazgos de cada sección._
+
+
+---
+
+## ⚠️ Intento de Deploy v0.3.21 — Incidente Registrado
+
+**Fecha:** 2025-10-28 17:30 UTC
+**PR:** #9 (merged)
+**Tag:** v0.3.21
+**Estado:** FAILED (sitio HTTP 500)
+
+### Cronología
+1. ✅ PR #9 mergeado exitosamente (commit 305821a)
+2. ✅ Tag v0.3.21 creado y pusheado
+3. ❌ Deploy automático (run 18883696015) falló en step "Content Ops"
+   - Error: `Bad port '"***"'` (comillas extra en variables SSH del workflow)
+   - Deploy parcial ejecutado: tema actualizado, pero cache/rewrite no flusheados
+4. ❌ Sitio quedó en HTTP 500 (WordPress error)
+5. ❌ Rollback automático (run 18883730121) falló (archivo restore.zip no existe)
+
+### Resolución Pendiente
+Ver plan detallado en: `reports/deploy/INCIDENTE_v0_3_21_deploy.md`
+
+**Documentación:** Logs completos en `logs/deploy_watch_*.log`
