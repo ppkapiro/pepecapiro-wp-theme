@@ -1,0 +1,72 @@
+name: SMTP Diagnostico
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnostico:
+    runs-on: ubuntu-latest
+    env:
+      SSH_HOST: ${{ secrets.PEPE_HOST }}
+      SSH_PORT: ${{ secrets.PEPE_PORT }}
+      SSH_USER: ${{ secrets.PEPE_USER }}
+      SITE_ROOT: /home/u912040369/domains/pepecapiro.com/public_html
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Cargar clave SSH
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.PEPE_SSH_KEY }}
+      
+      - name: Diagnostico SMTP completo
+        run: |
+          echo "=== Diagnóstico SMTP pepecapiro.com ==="
+          echo ""
+          
+          ssh -o StrictHostKeyChecking=no -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "
+            cd '$SITE_ROOT' &&
+            echo '1. Plugin WP Mail SMTP:' &&
+            wp plugin get wp-mail-smtp --fields=name,status,version 2>&1 || echo '❌ Plugin no encontrado' &&
+            echo '' &&
+            
+            echo '2. Configuración SMTP (wp_mail_smtp option):' &&
+            wp option get wp_mail_smtp --format=json 2>&1 | head -50 || echo '❌ Sin configuración' &&
+            echo '' &&
+            
+            echo '3. Test wp_mail() detallado:' &&
+            wp eval '
+            \$result = wp_mail(\"test@example.com\", \"[TEST SMTP] pepecapiro.com\", \"Prueba SMTP\");
+            echo \"Resultado wp_mail(): \" . (\$result ? \"TRUE (éxito)\" : \"FALSE (fallo)\") . \"\n\";
+            global \$phpmailer;
+            if (isset(\$phpmailer)) {
+                echo \"PHPMailer ErrorInfo: \" . \$phpmailer->ErrorInfo . \"\n\";
+            }
+            ' 2>&1 &&
+            echo '' &&
+            
+            echo '4. Debug log (últimas 30 líneas):' &&
+            if [ -f wp-content/debug.log ]; then
+              tail -30 wp-content/debug.log 2>&1 || echo 'No se puede leer debug.log'
+            else
+              echo '⚠️ debug.log no existe (WP_DEBUG desactivado)'
+            fi &&
+            echo '' &&
+            
+            echo '5. Verificar WPForms (para contacto):' &&
+            wp plugin list | grep wpforms || echo '⚠️ WPForms no instalado' &&
+            echo '' &&
+            
+            echo '=== Fin diagnóstico ==='
+          "
+      
+      - name: Upload diagnostic report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smtp_diagnostico
+          path: |
+            **/*.log
+          retention-days: 7
