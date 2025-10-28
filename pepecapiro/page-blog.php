@@ -5,13 +5,13 @@ Description: Lista entradas recientes bilingüe sin depender de page_for_posts.
 */
 get_header();
 ?>
-<main class="container" style="padding:48px 0;max-width:960px;">
-  <header style="margin-bottom:32px;">
-    <h1 style="font-family:var(--ff-title);font-size:clamp(1.8rem,4vw,2.6rem);margin:0 0 8px;">
+<main class="container">
+  <header class="page-header">
+    <h1>
       <?php the_title(); ?>
     </h1>
     <?php if(get_the_excerpt()) : ?>
-      <p style="color:var(--color-fg-muted);margin:0;"><?php echo esc_html( get_the_excerpt() ); ?></p>
+      <p><?php echo esc_html( get_the_excerpt() ); ?></p>
     <?php endif; ?>
   </header>
 
@@ -34,29 +34,29 @@ get_header();
   ?>
 
   <?php if($q->have_posts()): ?>
-    <div class="blog-list" style="display:grid;gap:32px;">
+    <div class="blog-list">
       <?php while($q->have_posts()): $q->the_post(); ?>
-        <article style="border:1px solid var(--color-border);padding:20px;border-radius:var(--radius);background:var(--color-surface);">
-          <h2 style="margin:0 0 8px;font-size:1.25rem;">
-            <a href="<?php the_permalink(); ?>" style="text-decoration:none;color:var(--color-fg);">
+        <article>
+          <h2>
+            <a href="<?php the_permalink(); ?>">
               <?php the_title(); ?>
             </a>
           </h2>
-            <p style="margin:0 0 12px;font-size:.875rem;color:var(--color-fg-muted);">
+            <p style="margin:0 0 var(--space-sm);">
               <time datetime="<?php echo esc_attr(get_the_date('c')); ?>"><?php echo esc_html(get_the_date()); ?></time>
             </p>
-            <div style="line-height:1.5;">
+            <div style="line-height:1.6;">
               <?php the_excerpt(); ?>
             </div>
-            <p style="margin-top:12px;">
-              <a href="<?php the_permalink(); ?>" class="btn" style="--btn-bg:var(--color-accent);--btn-fg:#000;padding:8px 14px;font-size:.85rem;border-radius:var(--radius);display:inline-block;font-weight:600;text-decoration:none;">
+            <p style="margin-top:var(--space-sm);">
+              <a href="<?php the_permalink(); ?>" class="btn">
                 <?php echo (pll_current_language() === 'en') ? 'Read more' : 'Leer más'; ?> →
               </a>
             </p>
         </article>
       <?php endwhile; wp_reset_postdata(); ?>
     </div>
-    <nav class="pagination" style="margin-top:40px;">
+    <nav class="pagination">
       <?php
         echo paginate_links([
           'total' => $q->max_num_pages,

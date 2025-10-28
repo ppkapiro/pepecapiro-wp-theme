@@ -17,14 +17,14 @@ $error = $is_en ? "Couldn’t send. Please email me at contact@pepecapiro.com" :
 $status = isset($_GET['status']) ? sanitize_text_field($_GET['status']) : '';
 ?>
 
-<main class="container" style="padding: var(--space-6) 0;">
+<main class="container">
   <h1><?php echo esc_html($title); ?></h1>
   <p class="muted"><?php echo esc_html($intro); ?></p>
 
   <p><a class="btn btn--ghost" href="<?php echo esc_url($mailto); ?>"><?php echo esc_html($mailto_label); ?></a></p>
 
   <div class="card">
-    <div role="status" aria-live="polite" class="muted" style="min-height:1.2em; margin-bottom: var(--space-3);">
+    <div role="status" aria-live="polite" class="muted" style="min-height:1.2em; margin-bottom: var(--space-md);">
       <?php if ($status === 'ok'): ?>
         <span><?php echo esc_html($success); ?></span>
       <?php elseif ($status === 'error'): ?>

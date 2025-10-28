@@ -50,26 +50,26 @@ $resources = [
 ];
 ?>
 
-<main class="container" role="main" style="padding:var(--space-5) 0;">
-  <header class="page-header" style="margin-bottom:var(--space-5);">
-    <h1 style="font-family:var(--font-title); color:var(--color-fg);"><?php echo esc_html($t_title); ?></h1>
-    <p style="font-size:var(--font-size-step-1); color:var(--color-fg-muted); margin-top:var(--space-2);">
+<main class="container" role="main">
+  <header class="page-header">
+    <h1><?php echo esc_html($t_title); ?></h1>
+    <p>
       <?php echo esc_html($t_intro); ?>
     </p>
   </header>
 
-  <div class="grid" role="list" aria-label="<?php echo $is_en ? 'Resource list' : 'Lista de recursos'; ?>" style="gap:var(--space-4);">
+  <div class="grid" role="list" aria-label="<?php echo $is_en ? 'Resource list' : 'Lista de recursos'; ?>">
     <?php foreach ($resources as $res): ?>
-      <article class="card" role="listitem" style="padding:var(--space-4); background:var(--color-surface); border:1px solid var(--color-border); border-radius:var(--radius-card);">
-        <div style="font-size:2rem; margin-bottom:var(--space-2);"><?php echo $res['icon']; ?></div>
-        <h2 style="font-family:var(--font-title); font-size:var(--font-size-step-1); color:var(--color-fg); margin-bottom:var(--space-2);">
+      <article class="card" role="listitem">
+        <div style="font-size:2rem; margin-bottom:var(--space-sm);"><?php echo $res['icon']; ?></div>
+        <h2>
           <?php echo esc_html($res['title']); ?>
         </h2>
-        <p style="color:var(--color-fg-muted); margin-bottom:var(--space-3);">
+        <p style="color:var(--color-text-secondary); margin-bottom:var(--space-md);">
           <?php echo esc_html($res['desc']); ?>
         </p>
         <?php if ($res['link'] !== '#'): ?>
-          <a href="<?php echo esc_url($res['link']); ?>" class="cta-button" style="display:inline-block;">
+          <a href="<?php echo esc_url($res['link']); ?>" class="btn">
             <?php echo $is_en ? 'View resource' : 'Ver recurso'; ?>
           </a>
         <?php endif; ?>
