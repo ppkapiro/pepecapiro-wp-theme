@@ -16,9 +16,11 @@ body{font-family:var(--font-body,system-ui,-apple-system,'Segoe UI',Roboto,'Helv
 .nav-toggle[aria-expanded="true"] .icon-menu{display:none}
 .nav-toggle[aria-expanded="true"] .icon-close{display:inline-block}
 .site-nav__panel{display:block;width:100%}
-/* Progressive enhancement + animación: solo colapsar con JS */
+/* Progressive enhancement + animación: solo colapsar con JS en móvil */
+@media (max-width:767px){
 .js .site-nav__panel{max-height:0;overflow:hidden;opacity:0;transform:translateY(-4px);visibility:hidden;transition:max-height .25s ease,opacity .2s ease,transform .2s ease}
 .js .site-header.nav-open .site-nav__panel{max-height:80vh;opacity:1;transform:none;visibility:visible}
+}
 /* Overlay para click-outside */
 .nav-overlay{position:fixed;inset:0;background:rgba(0,0,0,.32);z-index:10}
 .site-header.nav-open .nav-toggle{border-color:var(--color-accent,#0f7490)}
