@@ -44,7 +44,18 @@
 .lang-switcher li { margin: 0; padding: 0; }
 
 /* Nav links - padding y altura táctil */
-.site-nav nav a { padding: .5rem .25rem; line-height: 1.2; }
+.site-nav nav a {
+	display: inline-flex;
+	align-items: center;
+	padding: .5rem .5rem;
+	line-height: 1.2;
+	min-height: 44px; /* objetivo táctil recomendado */
+	border-radius: var(--radius-sm);
+}
+.site-nav nav a:focus-visible {
+	outline: 2px solid var(--color-accent);
+	outline-offset: 2px;
+}
 
 
 /* Grid y tarjetas (cards) */

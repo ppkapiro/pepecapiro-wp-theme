@@ -17,13 +17,13 @@
       $lang = function_exists('pll_current_language') ? pll_current_language('slug') : 'es';
       $is_en = ($lang === 'en');
     ?>
-    <button class="nav-toggle" aria-expanded="false" aria-controls="primary-menu">
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-menu">
       <span class="sr-only"><?php echo $is_en ? 'Open menu' : 'Abrir menú'; ?></span>
       <span aria-hidden="true">☰</span>
     </button>
     <div class="site-nav">
       <div id="primary-menu" class="site-nav__panel">
-        <nav><?php
+  <nav aria-label="<?php echo esc_attr($is_en ? 'Primary navigation' : 'Navegación principal'); ?>"><?php
         $fallback = function(){ wp_nav_menu(['theme_location'=>'primary','container'=>false]); };
         if (function_exists('pll_current_language')) {
           $lang = pll_current_language('slug');
@@ -45,15 +45,44 @@
 <script>
 (function(){
   try {
+    // Progresivo: marcar que hay JS
+    document.documentElement.classList.add('js');
     var header = document.querySelector('.site-header');
     var btn = document.querySelector('.nav-toggle');
     var panel = document.getElementById('primary-menu');
     if (!header || !btn || !panel) return;
-    btn.addEventListener('click', function(){
-      var expanded = this.getAttribute('aria-expanded') === 'true';
-      this.setAttribute('aria-expanded', String(!expanded));
-      header.classList.toggle('nav-open');
-    });
+
+    // Inicial: colapsar panel cuando hay JS
+    panel.setAttribute('hidden','');
+
+    function openMenu(){
+      btn.setAttribute('aria-expanded','true');
+      header.classList.add('nav-open');
+      panel.removeAttribute('hidden');
+      // foco al primer enlace del menú
+      var firstLink = panel.querySelector('a');
+      if (firstLink) setTimeout(function(){ firstLink.focus(); }, 0);
+      document.addEventListener('keydown', onKeyDown);
+      document.addEventListener('click', onDocClick);
+    }
+    function closeMenu(){
+      btn.setAttribute('aria-expanded','false');
+      header.classList.remove('nav-open');
+      panel.setAttribute('hidden','');
+      document.removeEventListener('keydown', onKeyDown);
+      document.removeEventListener('click', onDocClick);
+    }
+    function toggleMenu(){
+      var expanded = btn.getAttribute('aria-expanded') === 'true';
+      expanded ? closeMenu() : openMenu();
+    }
+    function onKeyDown(e){ if (e.key === 'Escape') { closeMenu(); btn.focus(); } }
+    function onDocClick(e){
+      if (!header.contains(e.target) && btn.getAttribute('aria-expanded') === 'true') closeMenu();
+    }
+    btn.addEventListener('click', toggleMenu);
+    // Cerrar al hacer click en enlace
+    panel.addEventListener('click', function(e){ if (e.target.closest('a')) closeMenu(); });
   } catch(e) { /* no-op */ }
 })();
 </script>
