@@ -25,6 +25,22 @@
 	color: var(--color-text-secondary);
 }
 
+/* Lang switcher: mejoras adicionales */
+.lang-switcher a {
+	line-height: 1;
+	border: 1px solid transparent;
+	border-radius: var(--radius-sm);
+	padding: 2px;
+	transition: border-color var(--transition-base), opacity var(--transition-base);
+}
+.lang-switcher a:hover {
+	border-color: var(--color-border);
+}
+.lang-switcher a.current-lang {
+	border-color: var(--color-accent);
+	opacity: 1;
+}
+
 
 /* Grid y tarjetas (cards) */
 .cards { padding-block: var(--space-xl); }
