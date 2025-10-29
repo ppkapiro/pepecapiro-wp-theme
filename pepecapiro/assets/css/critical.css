@@ -27,8 +27,11 @@ body{font-family:var(--font-body,system-ui,-apple-system,'Segoe UI',Roboto,'Helv
 .site-nav nav{flex-shrink:1}
 .site-nav nav ul{list-style:none;display:flex;gap:0.5rem;margin:0;padding:0;flex-wrap:wrap}
 .site-nav nav a{text-decoration:none;color:var(--color-text-primary,#1f2937);font-weight:600;font-size:0.95rem;white-space:nowrap}
+/* Layout columna solo en móvil */
+@media (max-width:767px){
 .site-header .site-nav__panel nav ul{flex-direction:column;gap:.25rem}
 .site-header .site-nav__panel nav a{display:block;padding:.5rem 0}
+}
 .lang-switcher{display:flex;gap:0.25rem;align-items:center;flex-shrink:0}
 .lang-switcher ul{list-style:none;margin:0;padding:0;display:flex;gap:0.25rem}
 .lang-switcher li{margin:0;padding:0}
