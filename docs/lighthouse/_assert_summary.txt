@@ -1,7 +1,6 @@
 === Lighthouse assert: FALLA ===
-- en-home-d: desktop LCP 2019.614ms > 2000.0ms
-- sobre-mi-d: desktop CLS 0.1076715669750171 > 0.06
-- proyectos-d: desktop CLS 0.07397180623434536 > 0.06
-- en-projects-d: desktop CLS 0.07942587456728054 > 0.06
-- en-resources-d: desktop CLS 0.11902857009124806 > 0.06
-- contacto-d: desktop CLS 0.06646834388193017 > 0.06
+- en-home: mobile performance 84 < 88; mobile CLS 0.26997151428769606 > 0.12
+- en-home-d: desktop LCP 2027.877ms > 2000.0ms
+- en-about: mobile performance 85 < 88; mobile CLS 0.26869555274990986 > 0.12
+- en-projects: mobile performance 86 < 88; mobile CLS 0.26869555274990986 > 0.12
+- en-resources: mobile performance 86 < 88; mobile CLS 0.26869555274990986 > 0.12
