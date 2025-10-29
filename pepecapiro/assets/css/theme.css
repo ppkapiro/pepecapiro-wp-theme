@@ -43,6 +43,9 @@
 .lang-switcher ul { list-style: none; margin: 0; padding: 0; display: flex; gap: var(--space-2xs); }
 .lang-switcher li { margin: 0; padding: 0; }
 
+/* Nav links - padding y altura táctil */
+.site-nav nav a { padding: .5rem .25rem; line-height: 1.2; }
+
 
 /* Grid y tarjetas (cards) */
 .cards { padding-block: var(--space-xl); }

@@ -13,8 +13,17 @@
 <header class="site-header">
   <div class="container site-header__inner">
     <a class="brand" href="<?php echo esc_url(function_exists('pll_home_url') ? pll_home_url() : home_url('/')); ?>">Pepecapiro</a>
-  <div class="site-nav">
-      <nav><?php
+    <?php 
+      $lang = function_exists('pll_current_language') ? pll_current_language('slug') : 'es';
+      $is_en = ($lang === 'en');
+    ?>
+    <button class="nav-toggle" aria-expanded="false" aria-controls="primary-menu">
+      <span class="sr-only"><?php echo $is_en ? 'Open menu' : 'Abrir menú'; ?></span>
+      <span aria-hidden="true">☰</span>
+    </button>
+    <div class="site-nav">
+      <div id="primary-menu" class="site-nav__panel">
+        <nav><?php
         $fallback = function(){ wp_nav_menu(['theme_location'=>'primary','container'=>false]); };
         if (function_exists('pll_current_language')) {
           $lang = pll_current_language('slug');
@@ -25,9 +34,26 @@
             } else { $fallback(); }
         } else { $fallback(); }
       ?></nav>
-    <?php if (function_exists('pll_the_languages')): ?>
-  <div class="lang-switcher" aria-label="Cambiar idioma"><?php pll_the_languages(['show_flags'=>1,'show_names'=>0]); ?></div>
+      <?php if (function_exists('pll_the_languages')): ?>
+        <div class="lang-switcher" aria-label="<?php echo $is_en ? 'Change language' : 'Cambiar idioma'; ?>"><?php pll_the_languages(['show_flags'=>1,'show_names'=>0]); ?></div>
       <?php endif; ?>
+      </div>
     </div>
   </div>
 </header>
+
+<script>
+(function(){
+  try {
+    var header = document.querySelector('.site-header');
+    var btn = document.querySelector('.nav-toggle');
+    var panel = document.getElementById('primary-menu');
+    if (!header || !btn || !panel) return;
+    btn.addEventListener('click', function(){
+      var expanded = this.getAttribute('aria-expanded') === 'true';
+      this.setAttribute('aria-expanded', String(!expanded));
+      header.classList.toggle('nav-open');
+    });
+  } catch(e) { /* no-op */ }
+})();
+</script>
