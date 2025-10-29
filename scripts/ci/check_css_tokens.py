@@ -30,6 +30,9 @@ def should_skip(path: Path) -> bool:
     # Allow tokens to define canonical palette
     if name == "tokens.css":
         return True
+    # Allow critical.css (inlined, needs hardcoded values for performance)
+    if name == "critical.css":
+        return True
     return False
 
 
