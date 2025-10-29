@@ -10,10 +10,17 @@ body{font-family:var(--font-body,system-ui,-apple-system,'Segoe UI',Roboto,'Helv
 .site-nav{display:flex;gap:0.5rem;align-items:center;justify-content:space-between;width:100%}
 .nav-toggle{display:inline-flex;align-items:center;justify-content:center;padding:.5rem;border:1px solid var(--color-border,#d1d5db);border-radius:.5rem;background:var(--color-surface,#fff);color:var(--color-text-primary,#1f2937);font-weight:700}
 .nav-toggle:focus-visible{outline:2px solid var(--color-accent,#0f7490);outline-offset:2px}
+/* Toggle icons */
+.nav-toggle .icon{display:inline-block}
+.nav-toggle .icon-close{display:none}
+.nav-toggle[aria-expanded="true"] .icon-menu{display:none}
+.nav-toggle[aria-expanded="true"] .icon-close{display:inline-block}
 .site-nav__panel{display:block;width:100%}
-/* Progressive enhancement: solo ocultar menú en móviles cuando hay JS */
-.js .site-nav__panel{display:none}
-.js .site-header.nav-open .site-nav__panel{display:block}
+/* Progressive enhancement + animación: solo colapsar con JS */
+.js .site-nav__panel{max-height:0;overflow:hidden;opacity:0;transform:translateY(-4px);visibility:hidden;transition:max-height .25s ease,opacity .2s ease,transform .2s ease}
+.js .site-header.nav-open .site-nav__panel{max-height:80vh;opacity:1;transform:none;visibility:visible}
+/* Overlay para click-outside */
+.nav-overlay{position:fixed;inset:0;background:rgba(0,0,0,.32);z-index:10}
 .site-header.nav-open .nav-toggle{border-color:var(--color-accent,#0f7490)}
 .site-nav nav{flex-shrink:1}
 .site-nav nav ul{list-style:none;display:flex;gap:0.5rem;margin:0;padding:0;flex-wrap:wrap}
@@ -26,7 +33,7 @@ body{font-family:var(--font-body,system-ui,-apple-system,'Segoe UI',Roboto,'Helv
 .lang-switcher a{display:inline-block;opacity:0.7;transition:opacity .2s}
 .lang-switcher a:hover,.lang-switcher a.current-lang{opacity:1}
 .lang-switcher img{height:16px;width:auto;display:block}
-@media (min-width:768px){.site-header{padding:1rem 0}.site-header__inner{gap:1rem}.brand{font-size:1.5rem;flex-basis:auto}.nav-toggle{display:none}.site-nav__panel{display:flex;width:auto;align-items:center;gap:1rem}.site-nav{gap:1rem;justify-content:flex-end;width:auto}.site-nav nav ul{flex-direction:row;gap:0.75rem}.site-nav nav a{font-size:1rem;padding:0}.lang-switcher img{height:18px}}
+@media (min-width:768px){.site-header{padding:1rem 0}.site-header__inner{gap:1rem}.brand{font-size:1.5rem;flex-basis:auto}.nav-toggle{display:none}.site-nav__panel{display:flex;width:auto;align-items:center;gap:1rem;max-height:none;opacity:1;transform:none;visibility:visible}.site-nav{gap:1rem;justify-content:flex-end;width:auto}.site-nav nav ul{flex-direction:row;gap:0.75rem}.site-nav nav a{font-size:1rem;padding:0}.lang-switcher img{height:18px}}
 @media (min-width:1024px){.site-nav nav ul{gap:1rem}.site-nav nav a{font-size:1rem}}
 
 /* Hero section - LCP target (claro) */

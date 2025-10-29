@@ -19,7 +19,12 @@
     ?>
     <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-menu">
       <span class="sr-only"><?php echo $is_en ? 'Open menu' : 'Abrir menú'; ?></span>
-      <span aria-hidden="true">☰</span>
+      <svg class="icon icon-menu" aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" focusable="false">
+        <path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <svg class="icon icon-close" aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" focusable="false">
+        <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
     </button>
     <div class="site-nav">
       <div id="primary-menu" class="site-nav__panel">
@@ -55,20 +60,42 @@
     // Inicial: colapsar panel cuando hay JS
     panel.setAttribute('hidden','');
 
+    var overlay;
+    function ensureOverlay(){
+      if (!overlay){
+        overlay = document.createElement('div');
+        overlay.className = 'nav-overlay';
+        overlay.setAttribute('aria-hidden','true');
+      }
+      return overlay;
+    }
+
     function openMenu(){
       btn.setAttribute('aria-expanded','true');
-      header.classList.add('nav-open');
       panel.removeAttribute('hidden');
+      // Forzar reflow antes de abrir para transiciones de max-height/opacity
+      void panel.offsetHeight;
+      header.classList.add('nav-open');
       // foco al primer enlace del menú
       var firstLink = panel.querySelector('a');
       if (firstLink) setTimeout(function(){ firstLink.focus(); }, 0);
+      // overlay clicable
+      var ov = ensureOverlay();
+      document.body.appendChild(ov);
+      ov.addEventListener('click', closeMenu, { once: true });
       document.addEventListener('keydown', onKeyDown);
       document.addEventListener('click', onDocClick);
     }
     function closeMenu(){
       btn.setAttribute('aria-expanded','false');
       header.classList.remove('nav-open');
-      panel.setAttribute('hidden','');
+      // Esperar a que termine la transición para aplicar hidden
+      var onEnd = function(){
+        panel.setAttribute('hidden','');
+        panel.removeEventListener('transitionend', onEnd);
+      };
+      panel.addEventListener('transitionend', onEnd);
+      if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
       document.removeEventListener('keydown', onKeyDown);
       document.removeEventListener('click', onDocClick);
     }
