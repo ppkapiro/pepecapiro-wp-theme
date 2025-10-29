@@ -1,3 +1,7 @@
 === Lighthouse assert: FALLA ===
-- en-projects-d: desktop performance 56 < 92; desktop LCP 10245.859ms > 2000.0ms
-- recursos-d: desktop performance 56 < 92; desktop LCP 10172.714ms > 2000.0ms
+- en-home-d: desktop LCP 2019.614ms > 2000.0ms
+- sobre-mi-d: desktop CLS 0.1076715669750171 > 0.06
+- proyectos-d: desktop CLS 0.07397180623434536 > 0.06
+- en-projects-d: desktop CLS 0.07942587456728054 > 0.06
+- en-resources-d: desktop CLS 0.11902857009124806 > 0.06
+- contacto-d: desktop CLS 0.06646834388193017 > 0.06
